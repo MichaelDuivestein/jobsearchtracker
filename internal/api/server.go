@@ -12,8 +12,8 @@ type Server struct {
 
 func NewServer() *Server {
 	router := mux.NewRouter()
-
 	slog.Info("Server created. Returning Server.")
+
 	return &Server{router: router}
 }
 

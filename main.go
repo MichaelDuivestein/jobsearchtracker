@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-
 	container, err := setupContainer()
 	if err != nil {
 		log.Fatal(err)
