@@ -31,3 +31,6 @@ go.work.sum
 .idea
 **/.idea/**
 .idea/**
+
+# Exclude any debug binaries
+__debug_bin

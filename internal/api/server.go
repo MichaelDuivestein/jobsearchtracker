@@ -8,13 +8,16 @@ import (
 
 type Server struct {
 	router *mux.Router
+	logger *slog.Logger
 }
 
-func NewServer() *Server {
-	router := mux.NewRouter()
-	slog.Info("Server created. Returning Server.")
+func NewServer(logger *slog.Logger) *Server {
+	slog.SetDefault(logger)
 
-	return &Server{router: router}
+	router := mux.NewRouter()
+	logger.Info("Server created. Returning Server.")
+
+	return &Server{router: router, logger: logger}
 }
 
 func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {

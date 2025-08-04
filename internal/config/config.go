@@ -7,12 +7,12 @@ import (
 )
 
 type Config struct {
-	DatabaseFilePath                     string `json:"database file path"`
-	DatabaseFileName                     string `json:"database file name"`
-	IsDatabaseFileLocationAbsolutePath   bool   `json:"is database file location absolute path"`
-	DatabaseMigrationsPath               string `json:"database migrations path"`
-	IsDatabaseMigrationsPathAbsolutePath bool   `json:"is database migrations path absolute path"`
-	ServerPort                           int    `json:"server port"`
+	DatabaseFilePath                     string `json:"database_file_path"`
+	DatabaseFileName                     string `json:"database_file_name"`
+	IsDatabaseFileLocationAbsolutePath   bool   `json:"is_database_file_location_absolute_path"`
+	DatabaseMigrationsPath               string `json:"database_migrations_path"`
+	IsDatabaseMigrationsPathAbsolutePath bool   `json:"is_database_migrations_path_absolute_path"`
+	ServerPort                           int    `json:"server_port"`
 }
 
 func NewConfig() (*Config, error) {
