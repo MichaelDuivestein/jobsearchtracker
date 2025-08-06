@@ -28,5 +28,9 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea
+**/.idea/**
+.idea/**
+
+# Exclude any debug binaries
+__debug_bin

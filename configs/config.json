@@ -1,0 +1,8 @@
+{
+  "database_file_path": "resources/database/",
+  "database_file_name": "jobSearchDatabase.sqlite",
+  "is_database_file_location_absolute_path": false,
+  "database_migrations_path": "migrations",
+  "is_database_migrations_path_absolute_path": false,
+  "server_port": 8080
+}
