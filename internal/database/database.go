@@ -38,7 +38,7 @@ func (database *FileDatabase) buildAndEnsureFilePath(config *config.Config) stri
 	} else {
 		absoluteFileLocation, err := filepath.Abs(config.DatabaseFilePath)
 		if err != nil {
-			slog.Error("Error getting database path", err)
+			slog.Error("Error getting database path", "error", err.Error())
 			os.Exit(1)
 		}
 		dbFilePath = absoluteFileLocation
@@ -50,7 +50,7 @@ func (database *FileDatabase) buildAndEnsureFilePath(config *config.Config) stri
 	if _, err := os.Stat(dbFilePath); os.IsNotExist(err) {
 		err = os.MkdirAll(dbFilePath, os.ModePerm)
 		if err != nil {
-			slog.Error("Error ensuring database path exists", err)
+			slog.Error("Error ensuring database path exists", "error", err)
 			os.Exit(1)
 		}
 	}

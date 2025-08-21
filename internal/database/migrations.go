@@ -25,7 +25,7 @@ func RunMigrations(database *sql.DB, config *config.Config) error {
 	} else {
 		absoluteMigrationLocation, err := filepath.Abs(config.DatabaseMigrationsPath)
 		if err != nil {
-			slog.Error("Error getting migrations path", err)
+			slog.Error("Error getting migrations path", "error", err)
 			os.Exit(1)
 		}
 		migrationsPath = absoluteMigrationLocation

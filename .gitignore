@@ -37,3 +37,6 @@ __debug_bin
 
 # exclude default path of file DB
 /resources/database/*
+
+# Exclude executable
+jobsearchtracker
