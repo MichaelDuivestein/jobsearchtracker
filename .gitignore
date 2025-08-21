@@ -34,3 +34,6 @@ go.work.sum
 
 # Exclude any debug binaries
 __debug_bin
+
+# exclude default path of file DB
+/resources/database/*
