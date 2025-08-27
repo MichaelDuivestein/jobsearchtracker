@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"go.uber.org/dig"
@@ -31,18 +32,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	signalChannel := make(chan os.Signal, 1)
-	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
+	errChan := make(chan error, 1)
 	go func() {
-		err = container.Invoke(startServer)
-		if err != nil {
-			log.Fatal("Failed to start server", "error", err)
-		}
+		errChan <- container.Invoke(startServer)
 	}()
 
-	<-signalChannel
-	log.Println("Shutting down gracefully...")
+	// Wait for interruption
+	select {
+	case err = <-errChan:
+		// Error when starting HTTP server.
+		slog.Error("Failed to start server", "error", err)
+		os.Exit(1)
+	case <-ctx.Done():
+		// Stop receiving signal notifications as soon as possible.
+		slog.Info("Shutting down gracefully...")
+		stop()
+	}
 }
 
 func setupContainer() (*dig.Container, error) {
