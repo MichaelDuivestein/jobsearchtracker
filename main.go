@@ -31,12 +31,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = container.Invoke(startServer)
-	if err != nil {
-		slog.Error("Failed to start server", "error", err)
-		os.Exit(1)
-	}
-
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
 
