@@ -17,23 +17,22 @@ import (
 	"syscall"
 )
 
-func main() {
+func run() error {
+	// Handle SIGINT (CTRL+C) and SIGTERM gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	container, err := setupContainer()
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		return fmt.Errorf("failed to setup container: %w", err)
 	}
 
 	err = container.Invoke(func(database *sql.DB, config *configPackage.Config) error {
 		return databasePackage.RunMigrations(database, config)
 	})
 	if err != nil {
-		slog.Error("Failed to run migrations", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	errChan := make(chan error, 1)
 	go func() {
@@ -44,12 +43,19 @@ func main() {
 	select {
 	case err = <-errChan:
 		// Error when starting HTTP server.
-		slog.Error("Failed to start server", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to start server: %w", err)
 	case <-ctx.Done():
 		// Stop receiving signal notifications as soon as possible.
 		slog.Info("Shutting down gracefully...")
-		stop()
+	}
+
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		slog.Error("application failed to run", "error", err)
+		os.Exit(1)
 	}
 }
 
