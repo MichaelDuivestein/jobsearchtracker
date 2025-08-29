@@ -40,7 +40,9 @@ func (company *CreateCompany) Validate() error {
 
 	if company.UpdatedDate != nil && company.UpdatedDate.IsZero() {
 		updatedDate := "UpdatedDate"
-		return errors.NewValidationError(&updatedDate, "updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil")
+		return errors.NewValidationError(
+		&updatedDate, 
+		"updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil")
 	}
 
 	return nil
