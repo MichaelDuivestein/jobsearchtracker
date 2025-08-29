@@ -2,14 +2,16 @@ package dependencyinjection
 
 import (
 	"database/sql"
-	"go.uber.org/dig"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
 	"jobsearchtracker/internal/repositories"
+	"jobsearchtracker/internal/services"
 	"log"
 	"log/slog"
 	"os"
 	"testing"
+
+	"go.uber.org/dig"
 )
 
 func SetupDatabaseTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
@@ -65,6 +67,19 @@ func SetupCompanyRepositoryTestContainer(t *testing.T, config configPackage.Conf
 	})
 	if err != nil {
 		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	return container
+}
+
+func SetupCompanyServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(companyRepository *repositories.CompanyRepository) *services.CompanyService {
+		return services.NewCompanyService(companyRepository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyService", err)
 	}
 
 	return container

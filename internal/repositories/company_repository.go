@@ -64,7 +64,7 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 	result, err := repository.mapRow(row, "Create", &companyID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			slog.Info("company_repository.GetById: No result found for ID", "ID", companyID, "error", err.Error())
+			slog.Info("company_repository.Create: No result found for ID", "ID", companyID, "error", err.Error())
 			return nil, internalErrors.NewNotFoundError("ID: '" + companyID.String() + "'")
 		}
 		return nil, err
