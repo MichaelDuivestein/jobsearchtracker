@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/gorilla/mux"
 	"log/slog"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type Server struct {
@@ -15,8 +16,8 @@ func NewServer(logger *slog.Logger) *Server {
 	slog.SetDefault(logger)
 
 	router := mux.NewRouter()
-	logger.Info("Server created. Returning Server.")
 
+	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}
 }
 

@@ -2,8 +2,6 @@ package repositories_test
 
 import (
 	"errors"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	configPackage "jobsearchtracker/internal/config"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
@@ -11,6 +9,9 @@ import (
 	"jobsearchtracker/internal/testutil/dependencyinjection"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func setupCompanyRepository(t *testing.T) *repositories.CompanyRepository {
@@ -99,7 +100,7 @@ func TestCreate_ShouldInsertCompanyWithMinimumRequiredFields(t *testing.T) {
 	assert.Nil(t, insertedCompany.UpdatedDate, "inserted company.UpdatedDate should be nil, but got '%s'", insertedCompany.UpdatedDate)
 }
 
-func TestCreate_ShouldReturnConflictErrorOnDuplicateId(t *testing.T) {
+func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 	companyRepository := setupCompanyRepository(t)
 
 	id := uuid.New()
@@ -138,7 +139,10 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateId(t *testing.T) {
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
-	assert.Equal(t, "conflict error on insert: companyID already exists in database: '"+id.String()+"'", err.Error(), "returned error is not expected error")
+	assert.Equal(t,
+		"conflict error on insert: ID already exists in database: '"+id.String()+"'",
+		err.Error(),
+		"returned error is not expected error")
 }
 
 // -------- GetById tests: --------
@@ -188,7 +192,7 @@ func TestGetById_ShouldGetCompany(t *testing.T) {
 	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate, "retrievedCompany.UpdatedDate should be the same as companyToInsert.UpdatedDate")
 }
 
-func TestGetById_ShouldReturnErrorIfIdIsNil(t *testing.T) {
+func TestGetById_ShouldReturnErrorIfCompanyIDIsNil(t *testing.T) {
 	companyRepository := setupCompanyRepository(t)
 
 	response, err := companyRepository.GetById(nil)
@@ -197,12 +201,13 @@ func TestGetById_ShouldReturnErrorIfIdIsNil(t *testing.T) {
 	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error(), "Wrong error returned")
 }
 
-func TestGetById_ShouldReturnErrorIfIdDoesNotExist(t *testing.T) {
+func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
 	companyRepository := setupCompanyRepository(t)
 
 	id := uuid.New()
 
 	response, err := companyRepository.GetById(&id)
 	assert.Nil(t, response, "response should be nil")
-	assert.NotNil(t, err, "error should ID: '"+id.String()+"'", err.Error(), "Wrong error returned")
+	assert.NotNil(t, err, err.Error(), "Wrong error returned")
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error(), "Wrong error returned")
 }

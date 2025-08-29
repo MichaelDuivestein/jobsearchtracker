@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"jobsearchtracker/internal/config"
 	"log/slog"
-	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"strings"
+
+	_ "modernc.org/sqlite"
 )
 
 type Database interface {
@@ -38,7 +39,7 @@ func (database *FileDatabase) buildAndEnsureFilePath(config *config.Config) stri
 	} else {
 		absoluteFileLocation, err := filepath.Abs(config.DatabaseFilePath)
 		if err != nil {
-			slog.Error("Error getting database path", "error", err.Error())
+			slog.Error("Error getting database path", "error", err)
 			os.Exit(1)
 		}
 		dbFilePath = absoluteFileLocation

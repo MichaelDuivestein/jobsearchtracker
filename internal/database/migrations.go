@@ -3,17 +3,17 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"jobsearchtracker/internal/config"
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func RunMigrations(database *sql.DB, config *config.Config) error {
-	slog.Info("Starting to run DB migrations")
 	driver, err := sqlite.WithInstance(database, &sqlite.Config{})
 	if err != nil {
 		return err
@@ -46,6 +46,5 @@ func RunMigrations(database *sql.DB, config *config.Config) error {
 		return err
 	}
 
-	slog.Info("DB migrations complete.")
 	return nil
 }

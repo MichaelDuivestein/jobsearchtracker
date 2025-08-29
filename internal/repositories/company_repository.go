@@ -2,11 +2,13 @@ package repositories
 
 import (
 	"database/sql"
-	"github.com/google/uuid"
+	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type CompanyRepository struct {
@@ -47,10 +49,7 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 		updatedDate = company.UpdatedDate.Format(time.RFC3339)
 	}
 
-	var result models.Company
-	var lastContactStr, createdDateStr, updatedDateStr sql.NullString
-
-	err := repository.database.QueryRow(
+	row := repository.database.QueryRow(
 		sqlInsert,
 		companyID,
 		company.Name,
@@ -59,42 +58,19 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 		lastContact,
 		createdDate,
 		updatedDate,
-	).Scan(
-		&result.ID, &result.Name, &result.CompanyType, &result.Notes,
-		&lastContactStr, &createdDateStr, &updatedDateStr,
 	)
 
+	// can return ConflictError, InternalServiceError
+	result, err := repository.mapRow(row, "Create", &companyID)
 	if err != nil {
-		if err.Error() == "constraint failed: UNIQUE constraint failed: company.id (1555)" {
-			slog.Info("company_repository.createCompany: UNIQUE constraint failed", "companyID", companyID.String())
-			return nil, internalErrors.NewConflictError("companyID already exists in database: '" + companyID.String() + "'")
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Info("company_repository.GetById: No result found for ID", "ID", companyID, "error", err.Error())
+			return nil, internalErrors.NewNotFoundError("ID: '" + companyID.String() + "'")
 		}
-		slog.Error("company_repository.CreateCompany: error trying to insert", "error", err, "companyID", companyID.String())
-		return nil, internalErrors.NewInternalServiceError(err.Error())
+		return nil, err
 	}
 
-	parsedTime, err := parseTimeFromDB(lastContactStr)
-	if err != nil {
-		slog.Error("company_repository.CreateCompany: error trying to parse lastContact", "lastContact", lastContactStr, "companyID", companyID.String())
-		return nil, internalErrors.NewInternalServiceError(err.Error())
-	}
-	result.LastContact = parsedTime
-
-	parsedTime, err = parseTimeFromDB(createdDateStr)
-	if err != nil {
-		slog.Error("company_repository.CreateCompany: error trying to parse createdDate", "createdDate", lastContactStr, "companyID", companyID.String())
-		return nil, internalErrors.NewInternalServiceError(err.Error())
-	}
-	result.CreatedDate = *parsedTime
-
-	parsedTime, err = parseTimeFromDB(updatedDateStr)
-	if err != nil {
-		slog.Error("company_repository.CreateCompany: error trying to parse updatedDate", "updatedDate", lastContactStr, "companyID", companyID.String())
-		return nil, internalErrors.NewInternalServiceError(err.Error())
-	}
-	result.UpdatedDate = parsedTime
-
-	return &result, nil
+	return result, err
 }
 
 // GetById can return InternalServiceError, NotFoundError, ValidationError
@@ -110,10 +86,27 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 			"FROM company " +
 			"WHERE id = ?"
 
+	row := repository.database.QueryRow(sqlSelect, id)
+
+	// can return ConflictError, InternalServiceError
+	result, err := repository.mapRow(row, "GetById", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Info("company_repository.GetById: No result found for ID", "ID", id, "error", err.Error())
+			return nil, internalErrors.NewNotFoundError("ID: '" + id.String() + "'")
+		}
+		return nil, err
+	}
+
+	return result, err
+}
+
+// mapRow can return ConflictError, InternalServiceError
+func (repository *CompanyRepository) mapRow(scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Company, error) {
 	var result models.Company
 	var lastContact, createdDate, updatedDate sql.NullString
 
-	err := repository.database.QueryRow(sqlSelect, id).Scan(
+	err := scanner.Scan(
 		&result.ID,
 		&result.Name,
 		&result.CompanyType,
@@ -124,17 +117,30 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 	)
 
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			slog.Info("company_repository.GetById: No result found for ID", "ID", id, "error", err.Error())
-			return nil, internalErrors.NewNotFoundError("ID: '" + id.String() + "'")
+		if err.Error() == "constraint failed: UNIQUE constraint failed: company.id (1555)" {
+			var IDString string
+			if ID != nil {
+				IDString = ID.String()
+			} else {
+				IDString = "[not set]"
+			}
+			slog.Info(
+				"company_repository.createCompany: UNIQUE constraint failed",
+				"ID", IDString)
+			return nil, internalErrors.NewConflictError(
+				"ID already exists in database: '" + IDString + "'")
 		}
+
 		return nil, err
 	}
 
 	if lastContact.Valid {
 		timestamp, err := time.Parse(time.RFC3339, lastContact.String)
 		if err != nil {
-			slog.Error("company_repository.GetById: Error parsing lastContact", "lastContact", lastContact, "error", err.Error())
+			slog.Error(
+				"company_repository."+methodName+": Error parsing lastContact",
+				"lastContact", lastContact,
+				"error", err.Error())
 			return nil, internalErrors.NewInternalServiceError("Error parsing lastContact: " + err.Error())
 		}
 		result.LastContact = &timestamp
@@ -143,7 +149,9 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 	if createdDate.Valid {
 		timestamp, err := time.Parse(time.RFC3339, createdDate.String)
 		if err != nil {
-			slog.Error("company_repository.GetById: Error parsing createdDate", "createdDate", createdDate, "error", err.Error())
+			slog.Error("company_repository."+methodName+": Error parsing createdDate",
+				"createdDate", createdDate,
+				"error", err.Error())
 			return nil, internalErrors.NewInternalServiceError("Error parsing createdDate: " + err.Error())
 		}
 		result.CreatedDate = timestamp
@@ -152,24 +160,13 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 	if updatedDate.Valid {
 		timestamp, err := time.Parse(time.RFC3339, updatedDate.String)
 		if err != nil {
-			slog.Error("company_repository.GetById: Error parsing updatedDate", "updatedDate", updatedDate, "error", err.Error())
+			slog.Error("company_repository."+methodName+": Error parsing updatedDate",
+				"updatedDate", updatedDate,
+				"error", err.Error())
 			return nil, internalErrors.NewInternalServiceError("Error parsing updatedDate: " + err.Error())
 		}
 		result.UpdatedDate = &timestamp
 	}
 
 	return &result, nil
-}
-
-func parseTimeFromDB(timeString sql.NullString) (*time.Time, error) {
-	if !timeString.Valid {
-		return nil, nil
-	}
-
-	parsedTime, err := time.Parse(time.RFC3339, timeString.String)
-	if err != nil {
-		return nil, err
-	}
-
-	return &parsedTime, nil
 }
