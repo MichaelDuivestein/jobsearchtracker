@@ -86,7 +86,7 @@ func setupContainer() (*dig.Container, error) {
 		return nil, fmt.Errorf("failed to provide database: %w", err)
 	}
 
-	if err := container.Provide(api.NewServer); err != nil {
+	if err = container.Provide(api.NewServer); err != nil {
 		return nil, fmt.Errorf("failed to provide api server: %w", err)
 	}
 
