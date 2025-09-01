@@ -46,6 +46,7 @@ func run() error {
 		return fmt.Errorf("failed to start server: %w", err)
 	case <-ctx.Done():
 		// Stop receiving signal notifications as soon as possible.
+		stop()
 		slog.Info("Shutting down gracefully...")
 	}
 
