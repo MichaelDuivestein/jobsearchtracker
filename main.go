@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go.uber.org/dig"
 	"jobsearchtracker/internal/api"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
@@ -15,6 +14,8 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"go.uber.org/dig"
 )
 
 func run() error {
@@ -95,7 +96,7 @@ func setupContainer() (*dig.Container, error) {
 }
 
 func startServer(server *api.Server, config *configPackage.Config) {
+	slog.Info("Starting server...", "port", config.ServerPort)
 
-	log.Printf("Server starting on port %d", config.ServerPort)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.ServerPort), server))
 }
