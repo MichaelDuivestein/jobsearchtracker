@@ -1,6 +1,10 @@
 package api
 
 import (
+	"database/sql"
+	apiV1 "jobsearchtracker/internal/api/v1/handlers"
+	"jobsearchtracker/internal/repositories"
+	"jobsearchtracker/internal/services"
 	"log/slog"
 	"net/http"
 
@@ -12,10 +16,17 @@ type Server struct {
 	logger *slog.Logger
 }
 
-func NewServer(logger *slog.Logger) *Server {
+func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	slog.SetDefault(logger)
 
+	companyRepository := repositories.NewCompanyRepository(database)
+	companyService := services.NewCompanyService(companyRepository)
+	companyHandler := apiV1.NewCompanyHandler(companyService)
+
 	router := mux.NewRouter()
+
+	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company/get/id/{id}", companyHandler.GetCompanyById).Methods(http.MethodGet)
 
 	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}
