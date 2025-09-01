@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go.uber.org/dig"
 	"jobsearchtracker/internal/api"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
@@ -15,6 +14,8 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"go.uber.org/dig"
 )
 
 func run() error {
@@ -26,6 +27,17 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("failed to setup container: %w", err)
 	}
+
+	// Cleanup resources
+	defer func() {
+		dbErr := container.Invoke(func(db *sql.DB) error {
+			slog.Info("Closing database connection...")
+			return db.Close()
+		})
+		if dbErr != nil {
+			slog.Error("Failed to close database connection", "error", dbErr)
+		}
+	}()
 
 	err = container.Invoke(func(database *sql.DB, config *configPackage.Config) error {
 		return databasePackage.RunMigrations(database, config)
