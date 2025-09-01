@@ -7,12 +7,10 @@ import (
 	"jobsearchtracker/internal/api"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"go.uber.org/dig"
@@ -95,8 +93,7 @@ func setupContainer() (*dig.Container, error) {
 	return container, nil
 }
 
-func startServer(server *api.Server, config *configPackage.Config) {
+func startServer(server *api.Server, config *configPackage.Config) error {
 	slog.Info("Starting server...", "port", config.ServerPort)
-
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.ServerPort), server))
+	return http.ListenAndServe(fmt.Sprintf(":%d", config.ServerPort), server)
 }
