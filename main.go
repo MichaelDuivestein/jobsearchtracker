@@ -4,17 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go.uber.org/dig"
 	"jobsearchtracker/internal/api"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
+
+	"go.uber.org/dig"
 )
 
 func run() error {
@@ -87,15 +86,14 @@ func setupContainer() (*dig.Container, error) {
 		return nil, fmt.Errorf("failed to provide database: %w", err)
 	}
 
-	if err := container.Provide(api.NewServer); err != nil {
+	if err = container.Provide(api.NewServer); err != nil {
 		return nil, fmt.Errorf("failed to provide api server: %w", err)
 	}
 
 	return container, nil
 }
 
-func startServer(server *api.Server, config *configPackage.Config) {
-
-	log.Printf("Server starting on port %d", config.ServerPort)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.ServerPort), server))
+func startServer(server *api.Server, config *configPackage.Config) error {
+	slog.Info("Starting server...", "port", config.ServerPort)
+	return http.ListenAndServe(fmt.Sprintf(":%d", config.ServerPort), server)
 }
