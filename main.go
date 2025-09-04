@@ -26,6 +26,17 @@ func run() error {
 		return fmt.Errorf("failed to setup container: %w", err)
 	}
 
+	// Cleanup resources
+	defer func() {
+		dbErr := container.Invoke(func(db *sql.DB) error {
+			slog.Info("Closing database connection...")
+			return db.Close()
+		})
+		if dbErr != nil {
+			slog.Error("Failed to close database connection", "error", dbErr)
+		}
+	}()
+
 	err = container.Invoke(func(database *sql.DB, config *configPackage.Config) error {
 		return databasePackage.RunMigrations(database, config)
 	})
@@ -45,6 +56,7 @@ func run() error {
 		return fmt.Errorf("failed to start server: %w", err)
 	case <-ctx.Done():
 		// Stop receiving signal notifications as soon as possible.
+		stop()
 		slog.Info("Shutting down gracefully...")
 	}
 
