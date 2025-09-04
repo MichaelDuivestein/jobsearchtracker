@@ -243,3 +243,121 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *test
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: ID: '"+nonExistingId.String()+"'", err.Error())
 }
+
+// -------- GetCompaniesByName tests: --------
+
+func TestGetCompaniesByName_ShouldReturnASingleCompany(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	// insert companies
+	id1 := uuid.New()
+	name1 := "Software House"
+	companyToInsert1 := models.CreateCompany{
+		ID:          &id1,
+		Name:        name1,
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	_, err := companyService.CreateCompany(&companyToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Development Corp"
+	companyToInsert2 := models.CreateCompany{
+		ID:          &id2,
+		Name:        name2,
+		CompanyType: models.CompanyTypeRecruiter,
+	}
+	_, err = companyService.CreateCompany(&companyToInsert2)
+	assert.NoError(t, err)
+
+	// GetByName
+	nameToGet := "Corp"
+	companies, err := companyService.GetCompaniesByName(&nameToGet)
+	assert.NoError(t, err)
+	assert.NotNil(t, companies)
+	assert.Equal(t, 1, len(companies))
+
+	assert.Equal(t, id2, companies[0].ID)
+}
+
+func TestGetCompaniesByName_ShouldReturnMultipleCompanies(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	// insert companies
+
+	id1 := uuid.New()
+	name1 := "Sunday Developers"
+	companyToInsert1 := models.CreateCompany{
+		ID:          &id1,
+		Name:        name1,
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	_, err := companyService.CreateCompany(&companyToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Brand AB"
+	companyToInsert2 := models.CreateCompany{
+		ID:          &id2,
+		Name:        name2,
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	_, err = companyService.CreateCompany(&companyToInsert2)
+	assert.NoError(t, err)
+
+	id3 := uuid.New()
+	name3 := "Day Workers"
+	companyToInsert3 := models.CreateCompany{
+		ID:          &id3,
+		Name:        name3,
+		CompanyType: models.CompanyTypeRecruiter,
+	}
+	_, err = companyService.CreateCompany(&companyToInsert3)
+	assert.NoError(t, err)
+
+	// GetByName
+
+	nameToGet := "day"
+	companies, err := companyService.GetCompaniesByName(&nameToGet)
+	assert.NoError(t, err)
+	assert.NotNil(t, companies)
+	assert.Equal(t, 2, len(companies))
+
+	assert.Equal(t, id1, companies[1].ID)
+	assert.Equal(t, id3, companies[0].ID)
+}
+
+func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	// insert companies
+	id1 := uuid.New()
+	name1 := "Trickery AB"
+	companyToInsert1 := models.CreateCompany{
+		ID:          &id1,
+		Name:        name1,
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	_, err := companyService.CreateCompany(&companyToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Offshoring Inc."
+	companyToInsert2 := models.CreateCompany{
+		ID:          &id2,
+		Name:        name2,
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	_, err = companyService.CreateCompany(&companyToInsert2)
+	assert.NoError(t, err)
+
+	// GetByName
+	nameToGet := "Bee"
+	companies, err := companyService.GetCompaniesByName(&nameToGet)
+	assert.Nil(t, companies)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Name: '"+nameToGet+"'", err.Error())
+}

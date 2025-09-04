@@ -80,3 +80,30 @@ func (companyService *CompanyService) GetCompanyById(companyId *uuid.UUID) (*mod
 	slog.Info("CompanyService.GetCompanyById: Retrieved company.", "company.ID", company.ID.String())
 	return company, nil
 }
+
+// GetCompaniesByName can return InternalServiceError, NotFoundError, ValidationError
+func (companyService *CompanyService) GetCompaniesByName(companyName *string) ([]*models.Company, error) {
+	if companyName == nil {
+		err := internalErrors.NewValidationError(nil, "companyName is required")
+		slog.Info("companyService.GetCompanyByName: Failed to get company", "error", err)
+		return nil, err
+	}
+	if *companyName == "" {
+		err := internalErrors.NewValidationError(nil, "companyName is required")
+		slog.Info("companyService.GetCompanyByName: Failed to get company", "error", err)
+		return nil, err
+	}
+
+	companies, err := companyService.companyRepository.GetAllByName(companyName)
+	if err != nil {
+		return nil, err
+	}
+
+	if companies == nil {
+		slog.Info("CompanyService.GetAllCompanies: Retrieved zero companies")
+	} else {
+		slog.Info("CompanyService.GetAllCompanies: Retrieved " + string(rune(len(companies))) + " companies")
+	}
+
+	return companies, nil
+}

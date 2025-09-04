@@ -128,3 +128,25 @@ func TestGetCompanyById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 	responseBodyString := responseRecorder.Body.String()
 	assert.Equal(t, "company ID is not a valid UUID\n", responseBodyString, "CreateCompany returned wrong error message in body")
 }
+
+// -------- GetCompaniesByName tests: --------
+
+func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
+	companyHandler := v1.NewCompanyHandler(nil)
+
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/company/get/name", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	companyHandler.GetCompaniesByName(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "company Name is empty\n", responseBodyString)
+}

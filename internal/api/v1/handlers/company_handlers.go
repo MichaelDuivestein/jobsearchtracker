@@ -163,3 +163,62 @@ func (companyHandler *CompanyHandler) GetCompanyById(writer http.ResponseWriter,
 
 	return
 }
+
+func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	companyName := vars["name"]
+
+	if companyName == "" {
+		slog.Info("v1.CompanyHandler.GetCompanyByName: company Name is empty")
+		http.Error(writer, "company Name is empty", http.StatusBadRequest)
+		return
+	}
+
+	companies, err := companyHandler.companyService.GetCompaniesByName(&companyName)
+	if err != nil {
+		var internalServiceError *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while retrieving companies"
+			status = http.StatusInternalServerError
+			slog.Error("v1.CompanyHandler.GetCompaniesByName: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "No people [partially] matching this name found"
+			status = http.StatusNotFound
+			slog.Info("v1.CompanyHandler.GetCompaniesByName: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.CompanyHandler.GetCompaniesByName: Validation error", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	// can return InternalServiceError
+	companiesResponse, err := responses.NewCompaniesResponse(companies)
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetCompaniesByName: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(companiesResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.CompanyHandler.GetCompaniesByName: Unable to write response", "error", err)
+		http.Error(writer, "Company found but unable to build response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.CompanyHandler.GetCompaniesByName: retrieved companies successfully", "name", companyName)
+
+	return
+}

@@ -145,3 +145,26 @@ func TestGetCompanyById_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T
 	assert.Equal(t, "validation error on field 'company ID': companyId is required", err.Error())
 	assert.Nil(t, company, "company should be nil")
 }
+
+// -------- GetCompaniesByName tests: --------
+func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *testing.T) {
+	companyService := NewCompanyService(nil)
+
+	nilCompany, err := companyService.GetCompaniesByName(nil)
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: companyName is required", err.Error())
+}
+func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsEmpty(t *testing.T) {
+	companyService := NewCompanyService(nil)
+
+	emptyName := ""
+	nilCompany, err := companyService.GetCompaniesByName(&emptyName)
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: companyName is required", err.Error())
+}
