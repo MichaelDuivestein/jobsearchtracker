@@ -2,6 +2,7 @@ package dependencyinjection
 
 import (
 	"database/sql"
+	apiV1 "jobsearchtracker/internal/api/v1/handlers"
 	configPackage "jobsearchtracker/internal/config"
 	databasePackage "jobsearchtracker/internal/database"
 	"jobsearchtracker/internal/repositories"
@@ -80,6 +81,19 @@ func SetupCompanyServiceTestContainer(t *testing.T, config configPackage.Config)
 	})
 	if err != nil {
 		log.Fatal("Failed to provide companyService", err)
+	}
+
+	return container
+}
+
+func SetupCompanyHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyServiceTestContainer(t, config)
+
+	err := container.Provide(func(companyService *services.CompanyService) *apiV1.CompanyHandler {
+		return apiV1.NewCompanyHandler(companyService)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyHandler", err)
 	}
 
 	return container
