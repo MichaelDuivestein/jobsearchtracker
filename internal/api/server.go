@@ -27,6 +27,8 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 
 	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/company/get/id/{id}", companyHandler.GetCompanyById).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company/get/name/{name}", companyHandler.GetCompaniesByName).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company/get/all", companyHandler.GetAllCompanies).Methods(http.MethodGet)
 
 	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}

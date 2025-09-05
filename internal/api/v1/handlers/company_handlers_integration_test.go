@@ -323,6 +323,83 @@ func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *tes
 	assert.Equal(t, "No people [partially] matching this name found\n", responseBodyString)
 }
 
+// -------- GetAllCompanies tests: --------
+
+func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// create 2 companies
+
+	company1Id := uuid.New()
+	company1Notes := "First Company Notes"
+	company1LastContact := time.Now().AddDate(-1, 0, 0)
+	request1Body := requests.CreateCompanyRequest{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company1Notes,
+		LastContact: &company1LastContact,
+	}
+	insertCompany(t, companyHandler, request1Body)
+
+	company2Id := uuid.New()
+	company2Notes := "Second Company notes"
+	company2LastContact := time.Now().AddDate(-1, 0, 0)
+	request2Body := requests.CreateCompanyRequest{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company2Notes,
+		LastContact: &company2LastContact,
+	}
+	insertCompany(t, companyHandler, request2Body)
+
+	// GetAllCompanies:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, 2, len(response))
+
+	assert.Equal(t, company2Id, response[0].ID)
+	assert.Equal(t, company1Id, response[1].ID)
+}
+
+func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, 0, len(response))
+}
+
 // -------- Test helpers: --------
 
 func insertCompany(
