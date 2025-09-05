@@ -222,3 +222,37 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 
 	return
 }
+
+func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter, _ *http.Request) {
+	// can return InternalServiceError
+	companies, err := companyHandler.companyService.GetAllCompanies()
+	if err != nil {
+		errorMessage := "Internal service error while getting all companies"
+		status := http.StatusInternalServerError
+		slog.Error("v1.CompanyHandler.CreateCompany: "+errorMessage, "error", err)
+
+		http.Error(writer, errorMessage, status)
+		return
+	}
+
+	// can return InternalServiceError
+	companiesResponse, err := responses.NewCompaniesResponse(companies)
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(companiesResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Unable to write response", "error", err)
+		http.Error(writer, "Companies retrieved but unable to create response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.CompanyHandler.GetAllCompanies: retrieved all companies successfully")
+
+	return
+}

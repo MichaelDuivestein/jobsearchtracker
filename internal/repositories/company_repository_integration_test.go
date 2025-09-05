@@ -355,3 +355,66 @@ func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameNamePart(t *testing.T
 	foundCompany3 := retrievedCompanies[2]
 	assert.Equal(t, insertedCompany1.ID, foundCompany3.ID)
 }
+
+// -------- GetAll tests: --------
+
+func TestGetAll_ShouldReturnAllCompanies(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	company1Id := uuid.New()
+	company1Notes := "some notes"
+	company1LastContact := time.Now().AddDate(-1, 0, 0)
+	company1CreatedDate := time.Now().AddDate(0, -5, 0)
+	company1UpdatedDate := time.Now().AddDate(0, 0, -3)
+
+	company1ToInsert := models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company1Notes,
+		LastContact: &company1LastContact,
+		CreatedDate: &company1CreatedDate,
+		UpdatedDate: &company1UpdatedDate,
+	}
+
+	insertedCompany1, err := companyRepository.Create(&company1ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2Id := uuid.New()
+	company2Notes := "some notes"
+	company2LastContact := time.Now().AddDate(-1, 0, 0)
+	company2CreatedDate := time.Now().AddDate(0, -4, 22)
+	company2UpdatedDate := time.Now().AddDate(0, 0, -3)
+
+	company2ToInsert := models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company2Notes,
+		LastContact: &company2LastContact,
+		CreatedDate: &company2CreatedDate,
+		UpdatedDate: &company2UpdatedDate,
+	}
+
+	insertedCompany2, err := companyRepository.Create(&company2ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	results, err := companyRepository.GetAll()
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 2, len(results))
+
+	assert.Equal(t, company2Id, results[0].ID)
+	assert.Equal(t, company1Id, results[1].ID)
+}
+
+func TestGetAll_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	companies, err := companyRepository.GetAll()
+	assert.NoError(t, err)
+	assert.Nil(t, companies)
+}

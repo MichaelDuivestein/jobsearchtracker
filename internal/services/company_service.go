@@ -107,3 +107,20 @@ func (companyService *CompanyService) GetCompaniesByName(companyName *string) ([
 
 	return companies, nil
 }
+
+// GetAllCompanies can return InternalServiceError
+func (companyService *CompanyService) GetAllCompanies() ([]*models.Company, error) {
+
+	// can return InternalServiceError
+	companies, err := companyService.companyRepository.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	if companies == nil {
+		slog.Info("CompanyService.GetAllCompanies: Retrieved zero companies")
+	} else {
+		slog.Info("CompanyService.GetAllCompanies: Retrieved " + string(rune(len(companies))) + " companies")
+	}
+
+	return companies, nil
+}

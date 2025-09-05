@@ -148,6 +148,43 @@ func (repository *CompanyRepository) GetAllByName(name *string) ([]*models.Compa
 	return results, nil
 }
 
+// GetAll can return InternalServiceError
+func (repository *CompanyRepository) GetAll() ([]*models.Company, error) {
+	sqlSelect :=
+		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date " +
+			"FROM company " +
+			"ORDER BY created_date DESC"
+
+	rows, err := repository.database.Query(sqlSelect)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var results []*models.Company
+	for rows.Next() {
+		// can return ConflictError, InternalServiceError
+		result, err := repository.mapRow(rows, "GetAll", nil)
+		if err != nil {
+			slog.Error("company_repository.GetAll: Error mapping row", "error", err)
+			return nil, internalErrors.NewInternalServiceError("Error processing company data: " + err.Error())
+		}
+
+		if result != nil {
+			results = append(results, result)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("company_repository.GetAll: Error iterating rows", "error", err)
+		return nil, internalErrors.NewInternalServiceError("Error reading companies from database: " + err.Error())
+	}
+
+	return results, nil
+}
+
 // mapRow can return ConflictError, InternalServiceError
 func (repository *CompanyRepository) mapRow(scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Company, error) {
 	var result models.Company
