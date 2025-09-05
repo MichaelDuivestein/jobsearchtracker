@@ -211,3 +211,147 @@ func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
 	assert.NotNil(t, err, err.Error(), "Wrong error returned")
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error(), "Wrong error returned")
 }
+
+// -------- GetAllByName tests: --------
+
+func TestGetAllByName_ShouldReturnCompany(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	companyToInsert := models.CreateCompany{
+		Name:        "Company Bee",
+		CompanyType: models.CompanyTypeRecruiter,
+	}
+	insertedCompany, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	retrievedCompanies, err := companyRepository.GetAllByName(&insertedCompany.Name)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompanies)
+	assert.Equal(t, 1, len(retrievedCompanies))
+
+	assert.Equal(t, "Company Bee", retrievedCompanies[0].Name)
+}
+
+func TestGetAllByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	retrievedCompanies, err := companyRepository.GetAllByName(nil)
+	assert.Nil(t, retrievedCompanies)
+	assert.NotNil(t, err)
+	assert.Equal(t, "validation error: name is nil", err.Error())
+}
+
+func TestGetAllByName_ShouldReturnNotFoundErrorIfCompanyNameDoesNotExist(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	name := "Doesnt Exist"
+
+	company, err := companyRepository.GetAllByName(&name)
+	assert.Nil(t, company)
+	assert.NotNil(t, err)
+	assert.Equal(t, "error: object not found: Name: '"+name+"'", err.Error())
+}
+
+func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameName(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	// insert some companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Some Name AB",
+		CompanyType: models.CompanyTypeRecruiter,
+	}
+	insertedCompany1, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Brand AB",
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	insertedCompany2, err := companyRepository.Create(&company2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	company3ID := uuid.New()
+	company3 := models.CreateCompany{
+		ID:          &company3ID,
+		Name:        "Another Company",
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	insertedCompany3, err := companyRepository.Create(&company3)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// get humans with name Frank John
+	ab := "ab"
+
+	retrievedCompanies, err := companyRepository.GetAllByName(&ab)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompanies)
+	assert.Equal(t, 2, len(retrievedCompanies))
+
+	foundCompany1 := retrievedCompanies[0]
+	assert.Equal(t, insertedCompany2.ID, foundCompany1.ID)
+
+	foundCompany2 := retrievedCompanies[1]
+	assert.Equal(t, insertedCompany1.ID, foundCompany2.ID)
+}
+
+func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameNamePart(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	// insert some companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Some AB",
+		CompanyType: models.CompanyTypeRecruiter,
+	}
+	insertedCompany1, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Absolutely not a company name",
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	insertedCompany2, err := companyRepository.Create(&company2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	company3ID := uuid.New()
+	company3 := models.CreateCompany{
+		ID:          &company3ID,
+		Name:        "Different AB",
+		CompanyType: models.CompanyTypeEmployer,
+	}
+	insertedCompany3, err := companyRepository.Create(&company3)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// get companies containing "ab"
+	ab := "ab"
+
+	retrievedCompanies, err := companyRepository.GetAllByName(&ab)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompanies)
+	assert.Equal(t, 3, len(retrievedCompanies))
+
+	foundCompany1 := retrievedCompanies[0]
+	assert.Equal(t, insertedCompany2.ID, foundCompany1.ID)
+
+	foundCompany2 := retrievedCompanies[1]
+	assert.Equal(t, insertedCompany3.ID, foundCompany2.ID)
+
+	foundCompany3 := retrievedCompanies[2]
+	assert.Equal(t, insertedCompany1.ID, foundCompany3.ID)
+}
