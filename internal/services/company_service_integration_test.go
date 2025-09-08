@@ -361,3 +361,65 @@ func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: Name: '"+nameToGet+"'", err.Error())
 }
+
+// -------- GetAllCompanies tests: --------
+
+func TestGetAllCompanies_ShouldWork(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	company1Id := uuid.New()
+	company1Notes := "some notes"
+	company1LastContact := time.Now().AddDate(-1, 0, 0)
+	company1CreatedDate := time.Now().AddDate(0, -5, 0)
+	company1UpdatedDate := time.Now().AddDate(0, 0, -3)
+
+	company1ToInsert := models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company1Notes,
+		LastContact: &company1LastContact,
+		CreatedDate: &company1CreatedDate,
+		UpdatedDate: &company1UpdatedDate,
+	}
+
+	insertedCompany1, err := companyService.CreateCompany(&company1ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2Id := uuid.New()
+	company2Notes := "some notes"
+	company2LastContact := time.Now().AddDate(-1, 0, 0)
+	company2CreatedDate := time.Now().AddDate(0, -4, 22)
+	company2UpdatedDate := time.Now().AddDate(0, 0, -3)
+
+	company2ToInsert := models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &company2Notes,
+		LastContact: &company2LastContact,
+		CreatedDate: &company2CreatedDate,
+		UpdatedDate: &company2UpdatedDate,
+	}
+	insertedCompany2, err := companyService.CreateCompany(&company2ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	results, err := companyService.GetAllCompanies()
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 2, len(results))
+
+	assert.Equal(t, company2Id, results[0].ID)
+	assert.Equal(t, company1Id, results[1].ID)
+}
+
+func TestGetAllCompanies_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	results, err := companyService.GetAllCompanies()
+	assert.NoError(t, err)
+	assert.Nil(t, results)
+}
