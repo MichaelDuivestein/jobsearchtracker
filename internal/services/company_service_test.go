@@ -157,6 +157,7 @@ func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *tes
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error: companyName is required", err.Error())
 }
+
 func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsEmpty(t *testing.T) {
 	companyService := NewCompanyService(nil)
 
@@ -167,4 +168,32 @@ func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsEmpty(t *t
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error: companyName is required", err.Error())
+}
+
+// -------- UpdateCompany tests: --------
+
+func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyIsNil(t *testing.T) {
+	companyService := NewCompanyService(nil)
+
+	err := companyService.UpdateCompany(nil)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: UpdateCompany model is nil", err.Error())
+}
+
+func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyContainsNothingToUpdate(t *testing.T) {
+	companyService := NewCompanyService(nil)
+
+	companyToUpdate := &models.UpdateCompany{
+		ID: uuid.New(),
+	}
+
+	err := companyService.UpdateCompany(companyToUpdate)
+	assert.NotNil(t, err)
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", err.Error())
 }

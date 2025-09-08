@@ -124,3 +124,26 @@ func (companyService *CompanyService) GetAllCompanies() ([]*models.Company, erro
 
 	return companies, nil
 }
+
+// UpdateCompany can return InternalServiceError, ValidationError
+func (companyService *CompanyService) UpdateCompany(company *models.UpdateCompany) error {
+	if company == nil {
+		slog.Error("CompanyService.UpdateCompany: company is nil")
+		return internalErrors.NewValidationError(nil, "UpdateCompany model is nil")
+	}
+
+	// can return ValidationError
+	err := company.Validate()
+	if err != nil {
+		slog.Info("CompanyService.UpdateCompany: UpdateCompany model is invalid. ", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = companyService.companyRepository.Update(company)
+	if err != nil {
+		slog.Error("CompanyService.Update: Error updating company", "error", err)
+	}
+
+	return err
+}

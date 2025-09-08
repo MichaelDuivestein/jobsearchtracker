@@ -41,10 +41,26 @@ func (company *CreateCompany) Validate() error {
 	if company.UpdatedDate != nil && company.UpdatedDate.IsZero() {
 		updatedDate := "UpdatedDate"
 		return errors.NewValidationError(
-		&updatedDate, 
-		"updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil")
+			&updatedDate,
+			"updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil")
 	}
 
+	return nil
+}
+
+type UpdateCompany struct {
+	ID          uuid.UUID
+	Name        *string
+	CompanyType *CompanyType
+	Notes       *string
+	LastContact *time.Time
+}
+
+// Validate can return ValidationError
+func (updateCompany *UpdateCompany) Validate() error {
+	if updateCompany.Name == nil && updateCompany.CompanyType == nil && updateCompany.Notes == nil && updateCompany.LastContact == nil {
+		return errors.NewValidationError(nil, "nothing to update")
+	}
 	return nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -131,6 +132,198 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testin
 	assert.Nil(t, model.LastContact, "model.LastContact should be nil, but got '%s'", model.LastContact)
 	assert.Nil(t, model.CreatedDate, "model.CreatedDate should be nil, but got '%s'", model.CreatedDate)
 	assert.Nil(t, model.UpdatedDate, "model.UpdatedDate should be nil, but got '%s'", model.UpdatedDate)
+}
+
+// -------- UpdateCompanyRequest tests: --------
+
+func TestUpdateCompanyRequestValidate_ShouldValidateRequest(t *testing.T) {
+	id := uuid.New()
+	name := "Some big corp"
+	var companyType CompanyType = CompanyTypeConsultancy
+	notes := "The quick brown fox"
+	lastContact := time.Now().AddDate(0, 0, -3)
+
+	request := UpdateCompanyRequest{
+		ID:          id,
+		Name:        &name,
+		CompanyType: &companyType,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+
+	err := request.Validate()
+	assert.NoError(t, err)
+}
+
+func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
+	id := uuid.New()
+
+	request := UpdateCompanyRequest{
+		ID: id,
+	}
+
+	err := request.Validate()
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+}
+
+func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfCompanyTypeIsInvalid(t *testing.T) {
+	id := uuid.New()
+	var fakeCompanyType CompanyType = "something that should never happen"
+
+	request := UpdateCompanyRequest{
+		ID:          id,
+		CompanyType: &fakeCompanyType,
+	}
+
+	err := request.Validate()
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error on field 'CompanyType': CompanyType is invalid", validationErr.Error())
+}
+
+func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) {
+	tests := []struct {
+		testName      string
+		updateRequest *UpdateCompanyRequest
+	}{
+		{
+			testName: "only Name",
+			updateRequest: &UpdateCompanyRequest{
+				ID:   uuid.New(),
+				Name: testutil.StringPtr("SmallCorp"),
+			},
+		},
+		{
+			testName: "only CompanyType",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				CompanyType: CompanyType(CompanyTypeConsultancy).ToPointer(),
+			},
+		},
+		{
+			testName: "only Notes",
+			updateRequest: &UpdateCompanyRequest{
+				ID:    uuid.New(),
+				Notes: testutil.StringPtr("Variable Notes"),
+			},
+		},
+		{
+			testName: "only LastContact",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				LastContact: testutil.TimePtr(time.Now().AddDate(0, 0, 2)),
+			},
+		},
+		{
+			testName: "Name and CompanyType",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				Name:        testutil.StringPtr("MediumCorp"),
+				CompanyType: CompanyType(CompanyTypeEmployer).ToPointer(),
+			},
+		},
+		{
+			testName: "Notes and LastContact",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				Notes:       testutil.StringPtr("Variable Notes"),
+				LastContact: testutil.TimePtr(time.Now()),
+			},
+		},
+		{
+			testName: "Name and CompanyType and LastContact",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				Name:        testutil.StringPtr("MediumCorp"),
+				CompanyType: CompanyType(CompanyTypeRecruiter).ToPointer(),
+				LastContact: testutil.TimePtr(time.Now().AddDate(0, -1, 0)),
+			},
+		},
+		{
+			testName: "CompanyType and LastContact and Notes",
+			updateRequest: &UpdateCompanyRequest{
+				ID:          uuid.New(),
+				Name:        testutil.StringPtr("Small business"),
+				CompanyType: CompanyType(CompanyTypeEmployer).ToPointer(),
+				LastContact: testutil.TimePtr(time.Now().AddDate(0, 0, 3)),
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			err := test.updateRequest.Validate()
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestUpdateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
+	name := "Nameless"
+	var companyType CompanyType = CompanyTypeRecruiter
+
+	notes := "Something unimportant"
+	lastContact := time.Now().AddDate(-1, 0, 0)
+
+	updateRequest := UpdateCompanyRequest{
+		ID:          uuid.New(),
+		Name:        &name,
+		CompanyType: &companyType,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+
+	model, err := updateRequest.ToModel()
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+
+	assert.Equal(t, updateRequest.ID, model.ID)
+	assert.Equal(t, *updateRequest.Name, *model.Name)
+	assert.Equal(t, updateRequest.CompanyType.String(), model.CompanyType.String())
+	assert.Equal(t, *updateRequest.Notes, *model.Notes)
+	assert.Equal(t, *updateRequest.LastContact, *model.LastContact)
+}
+
+func TestUpdateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
+	lastContact := time.Now().AddDate(0, -2, 0)
+
+	updateRequest := UpdateCompanyRequest{
+		ID:          uuid.New(),
+		LastContact: &lastContact,
+	}
+
+	model, err := updateRequest.ToModel()
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+
+	assert.Equal(t, updateRequest.ID, model.ID)
+	assert.Nil(t, model.Name)
+	assert.Nil(t, model.CompanyType)
+	assert.Nil(t, model.Notes)
+	assert.Equal(t, *updateRequest.LastContact, *model.LastContact)
+}
+
+func TestUpdateCompanyRequestToModel_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
+	updateRequest := UpdateCompanyRequest{
+		ID: uuid.New(),
+	}
+
+	model, err := updateRequest.ToModel()
+	assert.Nil(t, model)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error: nothing to update", err.Error())
 }
 
 // -------- CompanyType tests: --------
