@@ -147,3 +147,21 @@ func (companyService *CompanyService) UpdateCompany(company *models.UpdateCompan
 
 	return err
 }
+
+// DeleteCompany can return InternalServiceError, NotFoundError, ValidationError
+func (companyService *CompanyService) DeleteCompany(companyId *uuid.UUID) error {
+	if companyId == nil {
+		companyIdString := "company ID"
+		err := internalErrors.NewValidationError(&companyIdString, "companyId is required")
+		slog.Info("CompanyService.DeleteCompany: Error: companyID is nil", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err := companyService.companyRepository.Delete(companyId)
+	if err != nil {
+		slog.Error("CompanyService.DeleteCompany: Error deleting company", "error", err)
+	}
+
+	return err
+}

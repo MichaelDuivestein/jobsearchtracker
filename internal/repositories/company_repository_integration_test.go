@@ -418,3 +418,61 @@ func TestGetAll_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, companies)
 }
+
+// -------- Delete tests: --------
+
+func TestDelete_ShouldDeleteCompany(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	id := uuid.New()
+	notes := "some notes"
+	lastContact := time.Now().AddDate(0, 0, 0)
+	createdDate := time.Now().AddDate(0, 0, 0)
+	updatedDate := time.Now().AddDate(0, 0, 0)
+
+	companyToInsert := models.CreateCompany{
+		ID:          &id,
+		Name:        "companyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       &notes,
+		LastContact: &lastContact,
+		CreatedDate: &createdDate,
+		UpdatedDate: &updatedDate,
+	}
+
+	insertedCompany, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	err = companyRepository.Delete(&id)
+	assert.Nil(t, err, "error on companyRepository.Delete(): '%s'.", err)
+
+	deletedCompany, err := companyRepository.GetById(&id)
+	assert.NotNil(t, err)
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+	assert.Nil(t, deletedCompany)
+}
+
+func TestDelete_ShouldReturnErrorIfCompanyIdIsNil(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	err := companyRepository.Delete(nil)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
+}
+
+func TestDelete_ShouldReturnNotFoundErrorIfCompanyIdDoesNotExist(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	id := uuid.New()
+
+	err := companyRepository.Delete(&id)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Company does not exist. ID: "+id.String(), err.Error())
+}

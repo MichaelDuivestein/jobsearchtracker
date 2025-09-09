@@ -310,3 +310,58 @@ func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, 
 	writer.WriteHeader(http.StatusOK)
 	return
 }
+
+func (companyHandler *CompanyHandler) DeleteCompany(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	companyIDStr := vars["id"]
+
+	if companyIDStr == "" {
+		errorMessage := "company ID is empty"
+		slog.Info(errorMessage)
+		http.Error(writer, errorMessage, http.StatusBadRequest)
+		return
+	}
+
+	companyID, err := uuid.Parse(companyIDStr)
+	if err != nil {
+		errorMessage := "company ID is not a valid UUID"
+		slog.Info(errorMessage)
+		http.Error(writer, errorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// can return InternalServiceError, NotFoundError, ValidationError
+	err = companyHandler.companyService.DeleteCompany(&companyID)
+	if err != nil {
+		var internalServiceErr *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceErr) {
+			errorMessage = "Internal service error while deleting company"
+			status = http.StatusInternalServerError
+			slog.Error("v1.CompanyHandler.DeleteCompany: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "Company not found"
+			status = http.StatusNotFound
+			slog.Info("v1.CompanyHandler.DeleteCompany: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.CompanyHandler.DeleteCompany: ValidationError while deleting company", "error", err)
+		} else {
+			errorMessage = "Unknown internal error while creating company"
+			status = http.StatusInternalServerError
+			slog.Error("v1.CompanyHandler.DeleteCompany: Error while deleting company", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}

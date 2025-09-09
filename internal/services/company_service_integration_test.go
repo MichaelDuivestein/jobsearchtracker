@@ -508,3 +508,60 @@ func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T
 	err := companyService.UpdateCompany(&updateModel)
 	assert.NoError(t, err)
 }
+
+// -------- DeleteCompany tests: --------
+
+func TestDeleteCompany_ShouldWork(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	// create a company:
+
+	id := uuid.New()
+	notes := "some notes"
+	lastContact := time.Now()
+	createdDate := time.Now().AddDate(0, 0, 0)
+	updatedDate := time.Now().AddDate(0, 0, 0)
+
+	companyToInsert := models.CreateCompany{
+		ID:          &id,
+		Name:        "companyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       &notes,
+		LastContact: &lastContact,
+		CreatedDate: &createdDate,
+		UpdatedDate: &updatedDate,
+	}
+
+	_, err := companyService.CreateCompany(&companyToInsert)
+	assert.NoError(t, err)
+
+	// delete the company:
+
+	err = companyService.DeleteCompany(&id)
+	assert.NoError(t, err)
+
+	// try to get the company:
+	// this should return an error as the company no longer exists.
+
+	deletedCompany, err := companyService.GetCompanyById(&id)
+	assert.NotNil(t, err)
+	assert.Nil(t, deletedCompany)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+}
+
+func TestDeleteCompany_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	id := uuid.New()
+
+	err := companyService.DeleteCompany(&id)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Company does not exist. ID: "+id.String(), err.Error())
+
+}
