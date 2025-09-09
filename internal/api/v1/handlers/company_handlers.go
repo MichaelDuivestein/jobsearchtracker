@@ -256,3 +256,57 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 
 	return
 }
+
+func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, request *http.Request) {
+	var updateCompanyRequest requests.UpdateCompanyRequest
+	if err := json.NewDecoder(request.Body).Decode(&updateCompanyRequest); err != nil {
+		slog.Info("v1.CompanyHandler.UpdateCompany: invalid request body", "error", err)
+		http.Error(writer, "invalid request body: Unable to parse JSON", http.StatusBadRequest)
+		return
+	}
+
+	// can return ValidationError
+	updateCompanyModel, err := updateCompanyRequest.ToModel()
+	if err != nil {
+		slog.Info("v1.CompanyHandler.UpdateCompany: Unable to convert UpdateCompanyRequest to model", "error", err)
+		http.Error(writer, "Unable to convert request to internal model: "+err.Error(), http.StatusBadRequest)
+
+		return
+	}
+	if updateCompanyModel == nil {
+		slog.Error(
+			"v1.CompanyHandler.UpdateCompany: updateCompanyModel is nil after attempting to convert request to internal model")
+		http.Error(writer, "Unable to convert request to model", http.StatusBadRequest)
+		return
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = companyHandler.companyService.UpdateCompany(updateCompanyModel)
+	if err != nil {
+		var internalServiceErr *internalErrors.InternalServiceError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceErr) {
+			errorMessage = "Internal service error while updating company"
+			status = http.StatusInternalServerError
+			slog.Error("v1.CompanyHandler.UpdateCompany: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.CompanyHandler.UpdateCompany: ValidationError while updating company", "error", err)
+		} else {
+			errorMessage = "Unknown internal error while updating company"
+			status = http.StatusInternalServerError
+			slog.Error("v1.CompanyHandler.UpdateCompany: Error while updating company", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}

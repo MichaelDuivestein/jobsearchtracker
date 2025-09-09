@@ -400,6 +400,129 @@ func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *tes
 	assert.Equal(t, 0, len(response))
 }
 
+// -------- Update tests: --------
+
+func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// create a company
+
+	id := uuid.New()
+	notes := "Notes here"
+	lastContact := time.Now().AddDate(0, 2, 0)
+	createRequest := requests.CreateCompanyRequest{
+		ID:          &id,
+		Name:        "companyName",
+		CompanyType: models.CompanyTypeEmployer,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+	_, createdDateApproximation := insertCompany(t, companyHandler, createRequest)
+
+	// update the company
+
+	updatedName := "Updated Name"
+	var updatedCompanyType requests.CompanyType = models.CompanyTypeConsultancy
+	updatedNotes := "Updated Notes"
+	updatedLastContact := time.Now().AddDate(0, 0, -4)
+	updateBody := requests.UpdateCompanyRequest{
+		ID:          id,
+		Name:        &updatedName,
+		CompanyType: &updatedCompanyType,
+		Notes:       &updatedNotes,
+		LastContact: &updatedLastContact,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/company/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	companyHandler.UpdateCompany(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	// get the company by ID
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
+	assert.NoError(t, err)
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	companyHandler.GetCompanyById(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var getCompanyResponse responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, getCompanyResponse.ID)
+	assert.Equal(t, updatedName, getCompanyResponse.Name)
+	assert.Equal(t, updatedCompanyType, getCompanyResponse.CompanyType)
+	assert.Equal(t, updatedNotes, *getCompanyResponse.Notes)
+
+	companyResponseLastContact := getCompanyResponse.LastContact.Format(time.RFC3339)
+	updatedLastContactString := updatedLastContact.Format(time.RFC3339)
+	assert.Equal(t, updatedLastContactString, companyResponseLastContact)
+
+	companyResponseCreatedDate := getCompanyResponse.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, *createdDateApproximation, companyResponseCreatedDate)
+
+	companyResponseUpdatedDate := getCompanyResponse.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, companyResponseUpdatedDate)
+}
+
+func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// create a company
+
+	id := uuid.New()
+	notes := "Notes"
+	lastContact := time.Now().AddDate(0, 0, -1)
+	createRequest := requests.CreateCompanyRequest{
+		ID:          &id,
+		Name:        "Nameless Company",
+		CompanyType: models.CompanyTypeConsultancy,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+	insertCompany(t, companyHandler, createRequest)
+
+	// update the company
+
+	updateBody := requests.UpdateCompanyRequest{
+		ID: id,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/company/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.UpdateCompany(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+	assert.Equal(
+		t,
+		"Unable to convert request to internal model: validation error: nothing to update\n",
+		responseBodyString)
+}
+
 // -------- Test helpers: --------
 
 func insertCompany(

@@ -423,3 +423,88 @@ func TestGetAllCompanies_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, results)
 }
+
+// -------- UpdateCompany tests: --------
+func TestUpdateCompany_ShouldWork(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	// insert a company:
+	id := uuid.New()
+	notes := "Notes about an AB"
+	lastContact := time.Now().AddDate(0, 0, -3)
+	createdDate := time.Now().AddDate(0, 0, -2)
+	updatedDate := time.Now().AddDate(0, 0, -1)
+
+	companyToInsert := models.CreateCompany{
+		ID:          &id,
+		Name:        "Some Stockholm-based AB",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       &notes,
+		LastContact: &lastContact,
+		CreatedDate: &createdDate,
+		UpdatedDate: &updatedDate,
+	}
+
+	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
+	assert.Nil(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	// update a company:
+
+	nameToUpdate := "Updated Name"
+	var companyTypeToUpdate models.CompanyType = models.CompanyTypeConsultancy
+	notesToUpdate := "Updated Notes"
+	lastContactToUpdate := time.Now().AddDate(0, 1, 0)
+
+	updateModel := models.UpdateCompany{
+		ID:          id,
+		Name:        &nameToUpdate,
+		CompanyType: &companyTypeToUpdate,
+		Notes:       &notesToUpdate,
+		LastContact: &lastContactToUpdate,
+	}
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = companyService.UpdateCompany(&updateModel)
+	assert.NoError(t, err)
+
+	// get the company to ensure that the changes have been applied.
+	retrievedCompany, err := companyService.GetCompanyById(&id)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, retrievedCompany)
+	assert.Equal(t, id, retrievedCompany.ID)
+	assert.Equal(t, nameToUpdate, retrievedCompany.Name)
+	assert.Equal(t, companyTypeToUpdate, retrievedCompany.CompanyType)
+
+	updatedLastContact := lastContactToUpdate.Format(time.RFC3339)
+	retrievedLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
+	assert.Equal(t, updatedLastContact, retrievedLastContact)
+
+	insertedCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
+	retrievedCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, insertedCreatedDate, retrievedCreatedDate)
+
+	retrievedUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, retrievedUpdatedDate)
+}
+
+func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
+	companyService := setupCompanyService(t)
+
+	nameToUpdate := "Updated Name"
+	var companyTypeToUpdate models.CompanyType = models.CompanyTypeConsultancy
+	notesToUpdate := "Updated Notes"
+	lastContactToUpdate := time.Now().AddDate(0, 1, 0)
+
+	updateModel := models.UpdateCompany{
+		ID:          uuid.New(),
+		Name:        &nameToUpdate,
+		CompanyType: &companyTypeToUpdate,
+		Notes:       &notesToUpdate,
+		LastContact: &lastContactToUpdate,
+	}
+
+	err := companyService.UpdateCompany(&updateModel)
+	assert.NoError(t, err)
+}

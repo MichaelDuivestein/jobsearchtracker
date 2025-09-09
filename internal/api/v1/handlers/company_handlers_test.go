@@ -150,3 +150,87 @@ func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 	responseBodyString := responseRecorder.Body.String()
 	assert.Equal(t, "company Name is empty\n", responseBodyString)
 }
+
+// -------- UpdateCompany tests: --------
+
+func TestUpdateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {
+	tests := []struct {
+		testName             string
+		inputRequest         *string
+		expectedResponseCode int
+		expectedErrorMessage string
+	}{
+		{
+			testName:             "body is nil",
+			inputRequest:         nil,
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body is empty",
+			inputRequest:         testutil.StringPtr(""),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body does not match UpdateCompanyRequest",
+			inputRequest:         testutil.StringPtr(`{"company_id": "8abb5944-761b-447c-8a77-11ba1108ff68", "notes": "Notes"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
+		},
+		{
+			testName:             "body ID is missing",
+			inputRequest:         testutil.StringPtr(`{"company_type":"recruiter"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
+		},
+		{
+			testName:             "body CompanyType is invalid",
+			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "name":"random company name","company_type":"other"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error on field 'CompanyType': CompanyType is invalid\n",
+		},
+		{
+			testName:             "body is invalid",
+			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "recruiter_name":"Mark Droog"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
+		},
+		{
+			testName:             "malformed json",
+			inputRequest:         testutil.StringPtr(`"name":"random company name","company_type":"consultancy"`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body contains no fields to update",
+			inputRequest:         testutil.StringPtr(`{"id":"8abb5944-761b-447c-8a77-11ba1108ff68"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
+		},
+	}
+
+	companyHandler := v1.NewCompanyHandler(nil)
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+
+			var requestBody []byte
+			if test.inputRequest != nil {
+				requestBody = []byte(*test.inputRequest)
+			} else {
+				requestBody = nil
+			}
+
+			request, err := http.NewRequest(http.MethodPost, "/api/v1/company/update", bytes.NewBuffer(requestBody))
+			assert.NoError(t, err)
+
+			responseRecorder := httptest.NewRecorder()
+
+			companyHandler.UpdateCompany(responseRecorder, request)
+			assert.Equal(t, test.expectedResponseCode, responseRecorder.Code)
+
+			responseBodyString := responseRecorder.Body.String()
+			assert.Equal(t, test.expectedErrorMessage, responseBodyString)
+		})
+	}
+}

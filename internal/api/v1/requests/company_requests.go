@@ -71,6 +71,82 @@ func (request *CreateCompanyRequest) ToModel() (*models.CreateCompany, error) {
 	return &companyModel, nil
 }
 
+type UpdateCompanyRequest struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        *string      `json:"name,omitempty"`
+	CompanyType *CompanyType `json:"company_type,omitempty"`
+	Notes       *string      `json:"notes,omitempty"`
+	LastContact *time.Time   `json:"last_contact,omitempty"`
+}
+
+// Validate can return ValidationError
+func (request *UpdateCompanyRequest) Validate() error {
+	err := uuid.Validate(request.ID.String())
+	if err != nil {
+		message := "ID is invalid"
+		slog.Info("UpdateCompanyRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+	if request.ID == uuid.Nil {
+		message := "ID is empty"
+		slog.Info("UpdateCompanyRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.Name == nil && request.CompanyType == nil && request.Notes == nil && request.LastContact == nil {
+		message := "nothing to update"
+		slog.Info("UpdateCompanyRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.Name != nil && *request.Name == "" {
+		message := "Name is invalid"
+		slog.Info("UpdateCompanyRequest.Validate: "+message, "ID", request.ID)
+
+		companyType := "Name"
+		return internalErrors.NewValidationError(&companyType, message)
+	}
+
+	if request.CompanyType != nil && !request.CompanyType.IsValid() {
+		message := "CompanyType is invalid"
+		slog.Info("UpdateCompanyRequest.Validate: "+message, "ID", request.ID)
+
+		companyType := "CompanyType"
+		return internalErrors.NewValidationError(&companyType, message)
+	}
+
+	return nil
+}
+
+// ToModel can return ValidationError
+func (request *UpdateCompanyRequest) ToModel() (*models.UpdateCompany, error) {
+	// can return ValidationError
+	err := request.Validate()
+	if err != nil {
+		slog.Info("validate updateCompanyRequest failed", "error", err)
+		return nil, err
+	}
+
+	var companyType *models.CompanyType
+	if request.CompanyType != nil {
+		// can return ValidationError
+		tempCompanyType, _ := request.CompanyType.ToModel()
+		companyType = &tempCompanyType
+	} else {
+		companyType = nil
+	}
+
+	updateModel := models.UpdateCompany{
+		ID:          request.ID,
+		Name:        request.Name,
+		CompanyType: companyType,
+		Notes:       request.Notes,
+		LastContact: request.LastContact,
+	}
+
+	return &updateModel, nil
+}
+
 type CompanyType string
 
 const (

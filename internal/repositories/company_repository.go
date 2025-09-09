@@ -5,7 +5,9 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/utils"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -183,6 +185,72 @@ func (repository *CompanyRepository) GetAll() ([]*models.Company, error) {
 	}
 
 	return results, nil
+}
+
+// Update can return InternalServiceError, ValidationError
+func (repository *CompanyRepository) Update(company *models.UpdateCompany) error {
+	var sqlParts []string
+	var sqlVars []interface{}
+
+	var sqlString strings.Builder
+	sqlString.WriteString("UPDATE company SET ")
+	sqlString.WriteString("updated_date = ?, ")
+	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+
+	updateItemCount := 0
+
+	if company.Name != nil {
+		sqlParts = append(sqlParts, "name = ?")
+		sqlVars = append(sqlVars, *company.Name)
+		updateItemCount++
+	}
+
+	if company.CompanyType != nil {
+		sqlParts = append(sqlParts, "company_type = ?")
+		sqlVars = append(sqlVars, *company.CompanyType)
+		updateItemCount++
+	}
+
+	if company.Notes != nil {
+		sqlParts = append(sqlParts, "notes = ?")
+		sqlVars = append(sqlVars, *company.Notes)
+		updateItemCount++
+	}
+
+	if company.LastContact != nil {
+		sqlParts = append(sqlParts, "last_contact = ?")
+		sqlVars = append(sqlVars, company.LastContact.Format(time.RFC3339))
+		updateItemCount++
+	}
+
+	if updateItemCount == 0 {
+		slog.Info("company_repository.Update: nothing to update", "id", company.ID)
+		return internalErrors.NewValidationError(nil, "nothing to update")
+	}
+
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	if err != nil {
+		var message = "unable to join SQL statement string"
+		slog.Error("company_repository.Update: unable to join SQL statement string", "error", err)
+		return internalErrors.NewInternalServiceError(message)
+	}
+
+	sqlString.WriteString(sqlPayload)
+
+	sqlString.WriteString(" WHERE id = ?")
+	sqlVars = append(sqlVars, company.ID)
+
+	_, err = repository.database.Exec(
+		sqlString.String(),
+		sqlVars...,
+	)
+
+	if err != nil {
+		slog.Error("company_repository.Update: unable to update company", "id", company.ID, "error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+
+	return err
 }
 
 // mapRow can return ConflictError, InternalServiceError
