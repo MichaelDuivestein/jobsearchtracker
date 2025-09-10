@@ -327,3 +327,48 @@ func TestGetAllByName_ShouldReturnMultiplePersonsWithSameNamePart(t *testing.T) 
 	foundPerson3 := retrievedPersons[2]
 	assert.Equal(t, insertedPerson3.ID, foundPerson3.ID)
 }
+
+// -------- GetAll tests: --------
+
+func TestGetAll_ShouldReturnAllPersons(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	// add some humans
+
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:         &person1ID,
+		Name:       "Frank Jones",
+		PersonType: models.PersonTypeDeveloper,
+	}
+	insertedPerson1, err := personRepository.Create(&person1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson1)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:         &person2ID,
+		Name:       "Anne Gale",
+		PersonType: models.PersonTypeCTO,
+	}
+	insertedPerson2, err := personRepository.Create(&person2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson2)
+
+	// get all humans
+	persons, err := personRepository.GetAll()
+	assert.NoError(t, err)
+	assert.NotNil(t, persons)
+	assert.Equal(t, 2, len(persons))
+
+	assert.Equal(t, person2ID, persons[0].ID)
+	assert.Equal(t, person1ID, persons[1].ID)
+}
+
+func TestGetAll_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	persons, err := personRepository.GetAll()
+	assert.NoError(t, err)
+	assert.Nil(t, persons)
+}

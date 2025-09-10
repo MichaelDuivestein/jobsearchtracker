@@ -98,3 +98,20 @@ func (personService *PersonService) GetPersonsByName(personName *string) ([]*mod
 
 	return persons, nil
 }
+
+// GetAllPersons can return InternalServiceError
+func (personService *PersonService) GetAllPersons() ([]*models.Person, error) {
+	// can return InternalServiceError
+	persons, err := personService.personRepository.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if persons == nil {
+		slog.Info("PersonService.GetAllPersons: Retrieved zero persons")
+	} else {
+		slog.Info("PersonService.GetAllPersons: Retrieved " + string(rune(len(persons))) + " persons")
+	}
+
+	return persons, nil
+}

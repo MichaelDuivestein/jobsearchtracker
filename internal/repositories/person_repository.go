@@ -144,6 +144,43 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 	return results, nil
 }
 
+// GetAll can return InternalServiceError
+func (repository *PersonRepository) GetAll() ([]*models.Person, error) {
+	sqlSelect :=
+		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date " +
+			"FROM person " +
+			"ORDER BY name ASC"
+
+	rows, err := repository.database.Query(sqlSelect)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var results []*models.Person
+
+	for rows.Next() {
+		result, err := repository.mapRow(rows, "GetAll", nil)
+		if err != nil {
+			slog.Error("person_repository.GetAll: Error mapping row", "error", err)
+			return nil, internalErrors.NewInternalServiceError("Error processing person data: " + err.Error())
+		}
+
+		if result != nil {
+			results = append(results, result)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("person_repository.GetAll: Error iterating rows", "error", err)
+		return nil, internalErrors.NewInternalServiceError("Error reading persons from database: " + err.Error())
+	}
+
+	return results, nil
+}
+
 // mapRow can return InternalServiceError
 func (repository *PersonRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error },
