@@ -163,3 +163,62 @@ func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, re
 
 	return
 }
+
+func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	personName := vars["name"]
+
+	if personName == "" {
+		slog.Info("v1.PersonHandler.GetPersonByName: person Name is empty")
+		http.Error(writer, "person Name is empty", http.StatusBadRequest)
+		return
+	}
+
+	var internalServiceError *internalErrors.InternalServiceError
+	var notFoundError *internalErrors.NotFoundError
+	var validationErr *internalErrors.ValidationError
+
+	persons, err := personHandler.personService.GetPersonsByName(&personName)
+	if err != nil {
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while retrieving persons"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.GetPersonsByName: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "No people [partially] matching this name found"
+			status = http.StatusNotFound
+			slog.Info("v1.PersonHandler.GetPersonsByName: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.PersonHandler.GetPersonsByName: Validation error", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	// can return InternalServiceError
+	personsResponse, err := responses.NewPersonsResponse(persons)
+	if err != nil {
+		slog.Error("v1.PersonHandler.GetPersonsByName: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(personsResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.PersonHandler.GetPersonsByName: Unable to write response", "error", err)
+		http.Error(writer, "Person found but unable to build response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.PersonHandler.GetPersonsByName: retrieved persons successfully", "name", personName)
+
+	return
+}

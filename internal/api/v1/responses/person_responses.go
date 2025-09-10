@@ -46,3 +46,19 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 
 	return &personResponse, nil
 }
+
+func NewPersonsResponse(persons []*models.Person) ([]*PersonResponse, error) {
+	if persons == nil || len(persons) == 0 {
+		return []*PersonResponse{}, nil
+	}
+
+	var personResponses = make([]*PersonResponse, len(persons))
+	for index := range persons {
+		personResponse, err := NewPersonResponse(persons[index])
+		if err != nil {
+			return nil, err
+		}
+		personResponses[index] = personResponse
+	}
+	return personResponses, nil
+}
