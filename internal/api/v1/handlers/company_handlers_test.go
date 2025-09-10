@@ -234,3 +234,45 @@ func TestUpdateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {
 		})
 	}
 }
+
+// -------- DeleteCompany tests: --------
+
+func TestDeleteCompany_ShouldReturnErrorIfIdIsEmpty(t *testing.T) {
+	companyHandler := v1.NewCompanyHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/company/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	companyHandler.DeleteCompany(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "company ID is empty\n", responseBodyString)
+}
+
+func TestDeleteCompany_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
+	companyHandler := v1.NewCompanyHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/company/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "Some text",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	companyHandler.DeleteCompany(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "company ID is not a valid UUID\n", responseBodyString)
+}

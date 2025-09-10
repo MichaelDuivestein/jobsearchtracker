@@ -197,3 +197,15 @@ func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyContainsNothingToUpda
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error: nothing to update", err.Error())
 }
+
+// -------- DeleteCompany tests: --------
+
+func TestDeleteCompany_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T) {
+	companyService := NewCompanyService(nil)
+
+	err := companyService.DeleteCompany(nil)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'company ID': companyId is required", err.Error())
+}

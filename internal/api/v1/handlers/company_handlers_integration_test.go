@@ -523,6 +523,71 @@ func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 		responseBodyString)
 }
 
+// -------- DeleteCompany tests: --------
+
+func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// insert the company
+
+	id := uuid.New()
+	notes := "Noting things"
+	lastContact := time.Now().AddDate(0, 0, 0)
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &id,
+		Name:        "Keeping company",
+		CompanyType: requests.CompanyTypeConsultancy,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+	insertCompany(t, companyHandler, requestBody)
+
+	// delete the company
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/company/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	companyHandler.DeleteCompany(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusOK, deleteResponseRecorder.Code)
+
+	// try to get the company
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
+	assert.NoError(t, err)
+
+	getResponseRecorder := httptest.NewRecorder()
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	companyHandler.GetCompanyById(getResponseRecorder, getRequest)
+	assert.Equal(t, http.StatusNotFound, getResponseRecorder.Code)
+}
+
+func TestDeleteCompany_ShouldReturnStatusNotFoundIfCompanyDoesNotExist(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	id := uuid.New()
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/company/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	companyHandler.DeleteCompany(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusNotFound, deleteResponseRecorder.Code)
+}
+
 // -------- Test helpers: --------
 
 func insertCompany(
