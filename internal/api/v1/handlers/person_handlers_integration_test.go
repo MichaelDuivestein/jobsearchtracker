@@ -210,6 +210,159 @@ func TestGetPersonById_ShouldReturnNotFoundIfPersonDoesNotExist(t *testing.T) {
 	assert.NotEmpty(t, firstResponseBodyString, "Person not found\n")
 }
 
+// -------- GetPersonByName tests: --------
+
+func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	// Insert a person:
+
+	id := uuid.New()
+	email := "Email here"
+	phone := "456908"
+	notes := "Notes appeared here"
+	requestBody := requests.CreatePersonRequest{
+		ID:         &id,
+		Name:       "PersonName",
+		PersonType: requests.PersonTypeDeveloper,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+	insertPerson(t, personHandler, requestBody)
+
+	// Get the person by full name:
+
+	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "PersonName",
+	}
+	firstGetRequest = mux.SetURLVars(firstGetRequest, vars)
+
+	personHandler.GetPersonsByName(responseRecorder, firstGetRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var firstResponse []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, len(firstResponse), 1)
+
+	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
+	assert.Equal(t, requestBody.Name, firstResponse[0].Name)
+
+	// Get the person by partial name:
+
+	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	responseRecorder = httptest.NewRecorder()
+
+	vars = map[string]string{
+		"name": "son",
+	}
+	secondGetRequest = mux.SetURLVars(secondGetRequest, vars)
+
+	personHandler.GetPersonsByName(responseRecorder, secondGetRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString = responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var secondResponse []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, len(secondResponse), 1)
+
+	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
+	assert.Equal(t, requestBody.Name, secondResponse[0].Name)
+}
+
+func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	// Insert two persons:
+
+	firstID := uuid.New()
+	email := "Jane email"
+	phone := "345345"
+	notes := "Jane Notes"
+	firstRequestBody := requests.CreatePersonRequest{
+		ID:         &firstID,
+		Name:       "Jane Smith",
+		PersonType: requests.PersonTypeJobAdvertiser,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+	insertPerson(t, personHandler, firstRequestBody)
+
+	secondID := uuid.New()
+	email = "Sarah email"
+	phone = "4567856654"
+	notes = "Sara Notes"
+	secondRequestBody := requests.CreatePersonRequest{
+		ID:         &secondID,
+		Name:       "Sarah Janesson",
+		PersonType: requests.PersonTypeCEO,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+	insertPerson(t, personHandler, secondRequestBody)
+
+	// Get persons by name:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "Jane",
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	personHandler.GetPersonsByName(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, len(response), 2)
+
+	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
+	assert.Equal(t, firstRequestBody.Name, response[0].Name)
+
+	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
+	assert.Equal(t, secondRequestBody.Name, response[1].Name)
+
+}
+
+func TestGetPersonsByName_ShouldReturnNotFoundIfNoPersonsMatchingName(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "Steve",
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	personHandler.GetPersonsByName(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+	assert.Equal(t, "No people [partially] matching this name found\n", responseBodyString)
+}
+
 // -------- Test helpers: --------
 
 func insertPerson(

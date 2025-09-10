@@ -75,3 +75,26 @@ func (personService *PersonService) GetPersonById(personId *uuid.UUID) (*models.
 
 	return person, nil
 }
+
+// GetPersonsByName can return InternalServiceError, NotFoundError, ValidationError
+func (personService *PersonService) GetPersonsByName(personName *string) ([]*models.Person, error) {
+	if personName == nil {
+		personNameString := "personName"
+		err := internalErrors.NewValidationError(&personNameString, "personName is required")
+		slog.Info("personService.GetPersonByName: Failed to get person", "error", err)
+		return nil, err
+	}
+
+	persons, err := personService.personRepository.GetAllByName(personName)
+	if err != nil {
+		return nil, err
+	}
+
+	if persons == nil {
+		slog.Info("PersonService.GetAllPersons: Retrieved zero persons")
+	} else {
+		slog.Info("PersonService.GetAllPersons: Retrieved " + string(rune(len(persons))) + " persons")
+	}
+
+	return persons, nil
+}

@@ -136,3 +136,25 @@ func TestGetPersonById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 	responseBodyString := responseRecorder.Body.String()
 	assert.Equal(t, "person ID is not a valid UUID\n", responseBodyString)
 }
+
+// -------- GetPersonsByName tests: --------
+
+func TestGetPersonsByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/person/get/name", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	personHandler.GetPersonsByName(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "person Name is empty\n", responseBodyString)
+}

@@ -96,6 +96,54 @@ func (repository *PersonRepository) GetById(id *uuid.UUID) (*models.Person, erro
 	return result, err
 }
 
+// GetAllByName can return InternalServiceError, NotFoundError, ValidationError
+func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person, error) {
+	if name == nil {
+		slog.Info("person_repository.name: Name is nil")
+		var id = "Name"
+		return nil, internalErrors.NewValidationError(&id, "Name is nil")
+	}
+
+	wildcardName := "%" + *name + "%"
+
+	sqlSelect :=
+		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date " +
+			"FROM person " +
+			"WHERE name LIKE ?" +
+			"ORDER BY name ASC"
+
+	rows, err := repository.database.Query(sqlSelect, wildcardName)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*models.Person
+
+	for rows.Next() {
+		result, err := repository.mapRow(rows, "GetAllByName", nil)
+		if err != nil {
+			slog.Error("person_repository.GetAllByName: Error mapping row", "error", err)
+			return nil, internalErrors.NewInternalServiceError("Error processing person data: " + err.Error())
+		}
+
+		if result != nil {
+			results = append(results, result)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("person_repository.GetAllByName: Error iterating rows", "error", err)
+		return nil, internalErrors.NewInternalServiceError("Error reading persons from database: " + err.Error())
+	}
+
+	if len(results) == 0 {
+		slog.Info("person_repository.GetByName: No result found for Name", "Name", name)
+		return nil, internalErrors.NewNotFoundError("Name: '" + *name + "'")
+	}
+
+	return results, nil
+}
+
 // mapRow can return InternalServiceError
 func (repository *PersonRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error },

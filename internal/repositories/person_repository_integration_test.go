@@ -175,3 +175,155 @@ func TestGetById_ShouldReturnNotFoundErrorIfPersonIDDoesNotExist(t *testing.T) {
 		err.Error(),
 		"Wrong error returned")
 }
+
+// -------- GetAllByName tests: --------
+
+func TestGetAllByName_ShouldReturnPerson(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	id := uuid.New()
+	personToInsert := models.CreatePerson{
+		ID:         &id,
+		Name:       "John Smith",
+		PersonType: models.PersonTypeDeveloper,
+	}
+	insertedPerson, err := personRepository.Create(&personToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson)
+
+	retrievedPersons, err := personRepository.GetAllByName(&insertedPerson.Name)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedPersons)
+	assert.Equal(t, 1, len(retrievedPersons))
+
+	person := retrievedPersons[0]
+	assert.Equal(t, id, person.ID)
+	assert.Equal(t, "John Smith", person.Name)
+
+}
+
+func TestGetAllByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	retrievedPersons, err := personRepository.GetAllByName(nil)
+	assert.Nil(t, retrievedPersons)
+	assert.NotNil(t, err)
+	assert.Equal(t, "validation error on field 'Name': Name is nil", err.Error())
+}
+
+func TestGetAllByName_ShouldReturnNotFoundErrorIfPersonNameDoesNotExist(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	name := "Doesnt Exist"
+
+	person, err := personRepository.GetAllByName(&name)
+	assert.Nil(t, person)
+	assert.NotNil(t, err)
+	assert.Equal(t,
+		"error: object not found: Name: '"+name+"'",
+		err.Error(),
+		"Wrong error returned")
+}
+
+func TestGetAllByName_ShouldReturnMultiplePersonsWithSameName(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	// insert some humans
+
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:         &person1ID,
+		Name:       "frank john",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson1, err := personRepository.Create(&person1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson1)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:         &person2ID,
+		Name:       "Frank Jones",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson2, err := personRepository.Create(&person2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson2)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:         &person3ID,
+		Name:       "Frank John",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson3, err := personRepository.Create(&person3)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson3)
+
+	// get humans with name Frank John
+	frankJohn := "Frank John"
+
+	retrievedPersons, err := personRepository.GetAllByName(&frankJohn)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedPersons)
+	assert.Equal(t, 2, len(retrievedPersons))
+
+	foundPerson1 := retrievedPersons[0]
+	assert.Equal(t, insertedPerson3.ID, foundPerson1.ID)
+
+	foundPerson2 := retrievedPersons[1]
+	assert.Equal(t, insertedPerson1.ID, foundPerson2.ID)
+}
+
+func TestGetAllByName_ShouldReturnMultiplePersonsWithSameNamePart(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	// insert some humans
+
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:         &person1ID,
+		Name:       "Anne Gale",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson1, err := personRepository.Create(&person1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson1)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:         &person2ID,
+		Name:       "Anna Davies",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson2, err := personRepository.Create(&person2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson2)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:         &person3ID,
+		Name:       "Steven Annerson",
+		PersonType: models.PersonTypeCEO,
+	}
+	insertedPerson3, err := personRepository.Create(&person3)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson3)
+
+	// get humans containing "ann"
+	ann := "ann"
+
+	retrievedPersons, err := personRepository.GetAllByName(&ann)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedPersons)
+	assert.Equal(t, 3, len(retrievedPersons))
+
+	foundPerson1 := retrievedPersons[0]
+	assert.Equal(t, insertedPerson2.ID, foundPerson1.ID)
+
+	foundPerson2 := retrievedPersons[1]
+	assert.Equal(t, insertedPerson1.ID, foundPerson2.ID)
+
+	foundPerson3 := retrievedPersons[2]
+	assert.Equal(t, insertedPerson3.ID, foundPerson3.ID)
+}

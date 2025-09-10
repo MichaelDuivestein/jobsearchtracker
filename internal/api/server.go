@@ -38,6 +38,7 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 
 	router.HandleFunc("/api/v1/person/new", personHandler.CreatePerson).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/person/get/id/{id}", personHandler.GetPersonByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/person/get/name/{name}", personHandler.GetPersonsByName).Methods(http.MethodGet)
 
 	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}
