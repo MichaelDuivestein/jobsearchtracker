@@ -65,6 +65,23 @@ func (person *CreatePerson) Validate() error {
 	return nil
 }
 
+type UpdatePerson struct {
+	ID         uuid.UUID
+	Name       *string
+	PersonType *PersonType
+	Email      *string
+	Phone      *string
+	Notes      *string
+}
+
+// Validate can return ValidationError
+func (updatePerson *UpdatePerson) Validate() error {
+	if updatePerson.Name == nil && updatePerson.PersonType == nil && updatePerson.Email == nil && updatePerson.Phone == nil && updatePerson.Notes == nil {
+		return errors.NewValidationError(nil, "nothing to update")
+	}
+	return nil
+}
+
 type PersonType string
 
 const (

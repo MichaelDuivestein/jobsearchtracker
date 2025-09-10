@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,4 +87,43 @@ func TestGetPersonById_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error on field 'person ID': personId is required", err.Error())
+}
+
+// -------- GetPersonsByName tests: --------
+func TestGetPersonsByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testing.T) {
+	personService := NewPersonService(nil)
+
+	nilPerson, err := personService.GetPersonsByName(nil)
+	assert.Nil(t, nilPerson)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'personName': personName is required", err.Error())
+}
+
+// -------- UpdatePerson tests: --------
+func TestUpdatePerson_ShouldReturnValidationErrorIfPersonIsNil(t *testing.T) {
+	personService := NewPersonService(nil)
+
+	err := personService.UpdatePerson(nil)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: UpdatePerson model is nil", err.Error())
+}
+
+func TestUpdatePerson_ShouldReturnValidationErrorIfPersonContainsNothingToUpdate(t *testing.T) {
+	personService := NewPersonService(nil)
+
+	id := uuid.New()
+	person := models.UpdatePerson{
+		ID: id,
+	}
+
+	err := personService.UpdatePerson(&person)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: nothing to update", err.Error())
 }

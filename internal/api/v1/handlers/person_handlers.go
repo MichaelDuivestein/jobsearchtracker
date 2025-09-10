@@ -256,3 +256,58 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 
 	return
 }
+
+func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, request *http.Request) {
+	var updatePersonRequest requests.UpdatePersonRequest
+	if err := json.NewDecoder(request.Body).Decode(&updatePersonRequest); err != nil {
+		slog.Info("v1.PersonHandler.UpdatePerson: invalid request body", "error", err)
+		http.Error(writer, "invalid request body: Unable to parse JSON", http.StatusBadRequest)
+		return
+	}
+
+	// can return ValidationError
+	updatePersonModel, err := updatePersonRequest.ToModel()
+	if err != nil {
+		slog.Info("v1.PersonHandler.UpdatePerson: Unable to convert UpdatePersonRequest to model", "error", err)
+		http.Error(writer, "Unable to convert request to internal model: "+err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	if updatePersonModel == nil {
+		slog.Error(
+			"v1.PersonHandler.UpdatePerson: updatePersonModel is nil after attempting to convert request to internal model")
+		http.Error(writer, "Unable to convert request to model: Internal model is nil.", http.StatusBadRequest)
+		return
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = personHandler.personService.UpdatePerson(updatePersonModel)
+	if err != nil {
+		var internalServiceErr *internalErrors.InternalServiceError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceErr) {
+			errorMessage = "Internal service error while updating person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.UpdatePerson: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.PersonHandler.UpdatePerson: ValidationError while updating person", "error", err)
+		} else {
+			errorMessage = "Unknown internal error while updating person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.UpdatePerson: Error while updating person", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}

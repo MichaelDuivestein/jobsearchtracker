@@ -147,3 +147,161 @@ func TestGetPersonById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testi
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 }
+
+// -------- GetPersonsByName tests: --------
+
+func TestGetPersonsByName_ShouldReturnASinglePerson(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert persons
+	id1 := uuid.New()
+	name1 := "Dane Joe"
+	personToInsert1 := models.CreatePerson{
+		ID:         &id1,
+		Name:       name1,
+		PersonType: models.PersonTypeCTO,
+	}
+	_, err := personService.CreatePerson(&personToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Bruce Pritt"
+	personToInsert2 := models.CreatePerson{
+		ID:         &id2,
+		Name:       name2,
+		PersonType: models.PersonTypeHR,
+	}
+	_, err = personService.CreatePerson(&personToInsert2)
+	assert.NoError(t, err)
+
+	// GetByName
+	nameToGet := "Joe"
+	persons, err := personService.GetPersonsByName(&nameToGet)
+	assert.NoError(t, err)
+	assert.NotNil(t, persons)
+	assert.Equal(t, 1, len(persons))
+
+	assert.Equal(t, id1, persons[0].ID)
+}
+
+func TestGetPersonsByName_ShouldReturnMultiplePersons(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert persons
+
+	id1 := uuid.New()
+	name1 := "Sonny Brak"
+	personToInsert1 := models.CreatePerson{
+		ID:         &id1,
+		Name:       name1,
+		PersonType: models.PersonTypeDeveloper,
+	}
+	_, err := personService.CreatePerson(&personToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Mary Sparks"
+	personToInsert2 := models.CreatePerson{
+		ID:         &id2,
+		Name:       name2,
+		PersonType: models.PersonTypeOther,
+	}
+	_, err = personService.CreatePerson(&personToInsert2)
+	assert.NoError(t, err)
+
+	id3 := uuid.New()
+	name3 := "David Jonesson"
+	personToInsert3 := models.CreatePerson{
+		ID:         &id3,
+		Name:       name3,
+		PersonType: models.PersonTypeExternalRecruiter,
+	}
+	_, err = personService.CreatePerson(&personToInsert3)
+	assert.NoError(t, err)
+
+	// GetByName
+
+	nameToGet := "son"
+	persons, err := personService.GetPersonsByName(&nameToGet)
+	assert.NoError(t, err)
+	assert.NotNil(t, persons)
+	assert.Equal(t, 2, len(persons))
+
+	assert.Equal(t, id3, persons[0].ID)
+	assert.Equal(t, id1, persons[1].ID)
+}
+
+func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert persons
+	id1 := uuid.New()
+	name1 := "Debbie Star"
+	personToInsert1 := models.CreatePerson{
+		ID:         &id1,
+		Name:       name1,
+		PersonType: models.PersonTypeUnknown,
+	}
+	_, err := personService.CreatePerson(&personToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	name2 := "Manny Dee"
+	personToInsert2 := models.CreatePerson{
+		ID:         &id2,
+		Name:       name2,
+		PersonType: models.PersonTypeJobAdvertiser,
+	}
+	_, err = personService.CreatePerson(&personToInsert2)
+	assert.NoError(t, err)
+
+	// GetByName
+	nameToGet := "Bee"
+	persons, err := personService.GetPersonsByName(&nameToGet)
+	assert.Nil(t, persons)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Name: '"+nameToGet+"'", err.Error())
+}
+
+// -------- GetAllPersons tests: --------
+func TestGetAlLPersons_ShouldWork(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert persons
+
+	name1 := "abc def"
+	personToInsert1 := models.CreatePerson{
+		Name:       name1,
+		PersonType: models.PersonTypeHR,
+	}
+	_, err := personService.CreatePerson(&personToInsert1)
+	assert.NoError(t, err)
+
+	name2 := "ghi jkl"
+	personToInsert2 := models.CreatePerson{
+		Name:       name2,
+		PersonType: models.PersonTypeHR,
+	}
+	_, err = personService.CreatePerson(&personToInsert2)
+	assert.NoError(t, err)
+
+	// getAll
+	persons, err := personService.GetAllPersons()
+	assert.NoError(t, err)
+	assert.NotNil(t, persons)
+	assert.Equal(t, 2, len(persons))
+
+	assert.Equal(t, name1, persons[0].Name)
+	assert.Equal(t, name2, persons[1].Name)
+}
+
+func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
+	personService := setupPersonService(t)
+
+	persons, err := personService.GetAllPersons()
+	assert.NoError(t, err)
+	assert.Nil(t, persons)
+}

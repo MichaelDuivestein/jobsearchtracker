@@ -372,3 +372,84 @@ func TestGetAll_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, persons)
 }
+
+// -------- Update tests: --------
+
+func TestUpdate_ShouldUpdatePerson(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	// create a person
+	id := uuid.New()
+	personToInsert := models.CreatePerson{
+		ID:         &id,
+		Name:       "Arr Grr",
+		PersonType: models.PersonTypeOther,
+	}
+	insertedPerson, err := personRepository.Create(&personToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedPerson)
+
+	name := "Another Name"
+	personType := models.PersonType(models.PersonTypeHR)
+	email := "a@b.c"
+	phone := "312765"
+	notes := "Something noteworthy"
+
+	personToUpdate := models.UpdatePerson{
+		ID:         id,
+		Name:       &name,
+		PersonType: &personType,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+
+	// update the person
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = personRepository.Update(&personToUpdate)
+	assert.NoError(t, err)
+
+	// get the company and verify that it's updated
+	retrievedPerson, err := personRepository.GetById(&id)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedPerson)
+
+	assert.Equal(t, id, retrievedPerson.ID)
+	assert.Equal(t, name, retrievedPerson.Name)
+	assert.Equal(t, personType, retrievedPerson.PersonType)
+	assert.Equal(t, email, *retrievedPerson.Email)
+	assert.Equal(t, phone, *retrievedPerson.Phone)
+	assert.Equal(t, notes, *retrievedPerson.Notes)
+
+	retrievedUpdatedDate := retrievedPerson.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, retrievedUpdatedDate)
+}
+
+func TestUpdate_ShouldReturnValidationErrorIfNoPersonFieldsToUpdate(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	id := uuid.New()
+	personToUpdate := models.UpdatePerson{
+		ID: id,
+	}
+
+	err := personRepository.Update(&personToUpdate)
+	assert.Error(t, err)
+	assert.Equal(t, "validation error: nothing to update", err.Error())
+}
+
+func TestUpdate_ShouldNotReturnErrorIfPersonDoesNotExist(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	id := uuid.New()
+	name := "Another Name"
+
+	personToUpdate := models.UpdatePerson{
+		ID:   id,
+		Name: &name,
+	}
+
+	err := personRepository.Update(&personToUpdate)
+	assert.NoError(t, err)
+}
