@@ -60,6 +60,8 @@ func SetupDatabaseTestContainer(t *testing.T, config configPackage.Config) *dig.
 	return container
 }
 
+// -------- Company containers: --------
+
 func SetupCompanyRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
 	container := SetupDatabaseTestContainer(t, config)
 
@@ -94,6 +96,48 @@ func SetupCompanyHandlerTestContainer(t *testing.T, config configPackage.Config)
 	})
 	if err != nil {
 		log.Fatal("Failed to provide companyHandler", err)
+	}
+
+	return container
+}
+
+// -------- Person containers: --------
+
+func SetupPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+
+	if err != nil {
+		log.Fatal("Failed to provide personRepository", err)
+	}
+
+	return container
+}
+
+func SetupPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupPersonRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(personRepository *repositories.PersonRepository) *services.PersonService {
+		return services.NewPersonService(personRepository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personService", err)
+	}
+
+	return container
+}
+
+func SetupPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupPersonServiceTestContainer(t, config)
+
+	err := container.Provide(func(personService *services.PersonService) *apiV1.PersonHandler {
+		return apiV1.NewPersonHandler(personService)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personHandler", err)
 	}
 
 	return container
