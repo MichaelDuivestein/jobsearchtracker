@@ -222,3 +222,37 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 
 	return
 }
+
+func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, request *http.Request) {
+	// can return InternalServiceError
+	persons, err := personHandler.personService.GetAllPersons()
+	if err != nil {
+		errorMessage := "Internal service error while getting all persons"
+		status := http.StatusInternalServerError
+		slog.Error("v1.PersonHandler.getAllPersons: "+errorMessage, "error", err)
+
+		http.Error(writer, errorMessage, status)
+		return
+	}
+
+	//  can return InternalServiceError
+	personsResponse, err := responses.NewPersonsResponse(persons)
+	if err != nil {
+		slog.Error("v1.PersonHandler.GetAllPersons: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(personsResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.PersonHandler.GetAllPersons: Unable to write response", "error", err)
+		http.Error(writer, "Persons retrieved but unable to create response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.PersonHandler.GetAllPersons: retrieved all persons successfully")
+
+	return
+}
