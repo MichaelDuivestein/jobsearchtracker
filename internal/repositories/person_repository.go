@@ -7,6 +7,7 @@ import (
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -253,6 +254,37 @@ func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
 	}
 
 	return err
+}
+
+// Delete can return InternalServiceError, NotFoundError, ValidationError
+func (repository *PersonRepository) Delete(id *uuid.UUID) error {
+	if id == nil {
+		slog.Error("person_repository.Delete: ID is nil")
+		id := "ID"
+		return internalErrors.NewValidationError(&id, "ID is nil")
+	}
+
+	sqlDelete := "DELETE FROM person WHERE id = ?"
+
+	result, err := repository.database.Exec(sqlDelete, id)
+	if err != nil {
+		slog.Error("person_repository.Delete: Error trying to delete person", "id", id, "error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		slog.Error("person_repository.Delete: Error trying to delete person", "id", id, "error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+	if rowsAffected == 0 {
+		return internalErrors.NewNotFoundError("Person does not exist. ID: " + id.String())
+	} else if rowsAffected > 1 {
+		return internalErrors.NewInternalServiceError(
+			"Unexpected number of rows affected: " + strconv.FormatInt(rowsAffected, 10))
+	}
+
+	return nil
 }
 
 // mapRow can return InternalServiceError

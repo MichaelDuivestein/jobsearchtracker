@@ -488,6 +488,67 @@ func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 		responseBodyString)
 }
 
+// -------- DeletePerson tests: --------
+
+func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	// insert a person
+
+	id := uuid.New()
+	requestBody := requests.CreatePersonRequest{
+		ID:         &id,
+		Name:       "Person Name",
+		PersonType: requests.PersonTypeDeveloper,
+	}
+
+	insertPerson(t, personHandler, requestBody)
+
+	// delete the person
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	personHandler.DeletePerson(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusOK, deleteResponseRecorder.Code)
+
+	// try to get the person
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/id", nil)
+	assert.NoError(t, err)
+
+	getResponseRecorder := httptest.NewRecorder()
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	personHandler.GetPersonByID(getResponseRecorder, getRequest)
+	assert.Equal(t, http.StatusNotFound, getResponseRecorder.Code, "GetPersonByID returned wrong status code")
+}
+
+func TestDeletePerson_ShouldReturnStatusNotFoundIfPersonDoesNotExist(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	id := uuid.New()
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	personHandler.DeletePerson(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusNotFound, deleteResponseRecorder.Code)
+}
+
 // -------- Test helpers: --------
 
 func insertPerson(

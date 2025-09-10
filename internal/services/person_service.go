@@ -138,3 +138,21 @@ func (personService *PersonService) UpdatePerson(person *models.UpdatePerson) er
 
 	return err
 }
+
+// DeletePerson can return InternalServiceError, NotFoundError, ValidationError
+func (personService *PersonService) DeletePerson(personId *uuid.UUID) error {
+	if personId == nil {
+		personIdString := "person ID"
+		err := internalErrors.NewValidationError(&personIdString, "personId is required")
+		slog.Info("PersonService.DeletePerson: Error deleting person", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err := personService.personRepository.Delete(personId)
+	if err != nil {
+		slog.Error("PersonService.DeletePerson: Error deleting person", "error", err)
+	}
+
+	return err
+}

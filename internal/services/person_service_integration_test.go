@@ -305,3 +305,122 @@ func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, persons)
 }
+
+// -------- UpdatePerson tests: --------
+func TestUpdatePerson_ShouldWork(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert person
+
+	id := uuid.New()
+	originalName := "Bolt"
+	originalEmail := "some email"
+	originalPhone := "48908"
+	originalNotes := "Some Notes"
+	originalCreatedDate := time.Now().AddDate(1, 0, 0)
+	originalUpdatedDate := time.Now().AddDate(0, -2, 0)
+
+	personToInsert := models.CreatePerson{
+		ID:          &id,
+		Name:        originalName,
+		PersonType:  models.PersonTypeCEO,
+		Email:       &originalEmail,
+		Phone:       &originalPhone,
+		Notes:       &originalNotes,
+		CreatedDate: &originalCreatedDate,
+		UpdatedDate: &originalUpdatedDate,
+	}
+	_, err := personService.CreatePerson(&personToInsert)
+	assert.NoError(t, err)
+
+	// update person
+
+	newName := "Another Name"
+	newEmail := "Another Email"
+	newPhone := "5940358"
+	newNotes := "Another notes"
+	personToUpdate := models.UpdatePerson{
+		ID:    id,
+		Name:  &newName,
+		Email: &newEmail,
+		Phone: &newPhone,
+		Notes: &newNotes,
+	}
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = personService.UpdatePerson(&personToUpdate)
+	assert.NoError(t, err)
+
+	// get ById
+	retrievedPerson, err := personService.GetPersonById(&id)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedPerson)
+
+	assert.Equal(t, id, retrievedPerson.ID)
+	assert.Equal(t, newName, retrievedPerson.Name)
+	assert.Equal(t, newEmail, *retrievedPerson.Email)
+	assert.Equal(t, newPhone, *retrievedPerson.Phone)
+	assert.Equal(t, newNotes, *retrievedPerson.Notes)
+
+	updatedDate := retrievedPerson.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, updatedDate)
+}
+
+func TestUpdatePerson_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
+	personService := setupPersonService(t)
+
+	id := uuid.New()
+	notes := "Random Notes"
+	personToUpdate := models.UpdatePerson{
+		ID:    id,
+		Notes: &notes,
+	}
+
+	err := personService.UpdatePerson(&personToUpdate)
+	assert.NoError(t, err)
+}
+
+// -------- DeletePerson tests: --------
+
+func TestDeletePerson_ShouldWork(t *testing.T) {
+	personService := setupPersonService(t)
+
+	// insert person
+
+	id := uuid.New()
+	name := "Dave Davesson"
+	personToInsert := models.CreatePerson{
+		ID:         &id,
+		Name:       name,
+		PersonType: models.PersonTypeDeveloper,
+	}
+	_, err := personService.CreatePerson(&personToInsert)
+	assert.NoError(t, err)
+
+	// delete person
+
+	err = personService.DeletePerson(&id)
+	assert.NoError(t, err)
+
+	//ensure that person is deleted
+
+	retrievedPerson, err := personService.GetPersonById(&id)
+	assert.Nil(t, retrievedPerson)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+}
+
+func TestDeletePerson_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
+	personService := setupPersonService(t)
+
+	id := uuid.New()
+	err := personService.DeletePerson(&id)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Person does not exist. ID: "+id.String(), err.Error())
+}
