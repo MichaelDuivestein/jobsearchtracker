@@ -1,0 +1,165 @@
+package handlers
+
+import (
+	"encoding/json"
+	"errors"
+	"jobsearchtracker/internal/api/v1/requests"
+	"jobsearchtracker/internal/api/v1/responses"
+	internalErrors "jobsearchtracker/internal/errors"
+	"jobsearchtracker/internal/services"
+	"log/slog"
+	"net/http"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+)
+
+type PersonHandler struct {
+	personService *services.PersonService
+}
+
+func NewPersonHandler(personService *services.PersonService) *PersonHandler {
+	return &PersonHandler{personService: personService}
+}
+
+func (personHandler *PersonHandler) CreatePerson(writer http.ResponseWriter, request *http.Request) {
+	var createPersonRequest requests.CreatePersonRequest
+	if err := json.NewDecoder(request.Body).Decode(&createPersonRequest); err != nil {
+		slog.Info("v1.PersonHandler.CreatePerson: invalid request body", "error", err)
+		http.Error(writer, "invalid request body: Unable to parse JSON", http.StatusBadRequest)
+		return
+	}
+
+	// can return ValidationError
+	createPersonModel, err := createPersonRequest.ToModel()
+	if err != nil {
+		slog.Info("v1.PersonHandler.CreatePerson: Unable to convert CreatePersonRequest to model", "error", err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if createPersonModel == nil {
+		slog.Info("v1.PersonHandler.CreatePerson: CreatePersonModel is nil", "error", err)
+		http.Error(writer,
+			"Unable to convert request to internal model: Internal model is nil",
+			http.StatusInternalServerError)
+		return
+	}
+
+	// can return ConflictError, InternalServiceError, ValidationError
+	createdPerson, err := personHandler.personService.CreatePerson(createPersonModel)
+	if err != nil {
+		var conflictErr *internalErrors.ConflictError
+		var internalServiceErr *internalErrors.InternalServiceError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &conflictErr) {
+			errorMessage = "Conflict error on insert: ID already exists"
+			status = http.StatusConflict
+			slog.Info("v1.PersonHandler.CreatePerson: ConflictError creating person", "error", err)
+		} else if errors.As(err, &internalServiceErr) {
+			errorMessage = "Internal service error while creating person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.CreatePerson: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.PersonHandler.CreatePerson: ValidationError while creating person", "error", err)
+		} else {
+			errorMessage = "Unknown internal error while creating person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.CreatePerson: Error while creating person", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	// can return InternalServiceError
+	personResponse, err := responses.NewPersonResponse(createdPerson)
+	if err != nil {
+		slog.Error("v1.PersonHandler.CreatePerson: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(writer).Encode(personResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.PersonHandler.CreatePerson: Unable to write response", "error", err)
+		http.Error(writer, "Person created but unable to create response", http.StatusInternalServerError)
+
+		return
+	}
+}
+
+func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	personIDStr := vars["id"]
+
+	if personIDStr == "" {
+		slog.Info("v1.PersonHandler.GetPersonById: person ID is empty")
+		http.Error(writer, "person ID is empty", http.StatusBadRequest)
+		return
+	}
+
+	personID, err := uuid.Parse(personIDStr)
+	if err != nil {
+		slog.Info("v1.PersonHandler.GetPersonById: person ID is not a valid UUID")
+		http.Error(writer, "person ID is not a valid UUID", http.StatusBadRequest)
+		return
+	}
+
+	var internalServiceError *internalErrors.InternalServiceError
+	var notFoundError *internalErrors.NotFoundError
+	var validationErr *internalErrors.ValidationError
+
+	// can return InternalServiceError, NotFoundError, ValidationError
+	person, err := personHandler.personService.GetPersonById(&personID)
+	if err != nil {
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while retrieving person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.GetPersonByID: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "person not found"
+			status = http.StatusNotFound
+			slog.Info("v1.PersonHandler.GetPersonByID: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.PersonHandler.GetPersonByID: Validation error", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	// can return InternalServiceError
+	personResponse, err := responses.NewPersonResponse(person)
+	if err != nil {
+		slog.Error("v1.PersonHandler.GetPersonByID: Unable to convert internal model to response", "error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(personResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.PersonHandler.GetPersonByID: Unable to write response", "error", err)
+		http.Error(writer, "Person found but unable to build response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.PersonHandler.GetPersonByID: retrieved person successfully", "person.ID", person.ID.String())
+
+	return
+}
