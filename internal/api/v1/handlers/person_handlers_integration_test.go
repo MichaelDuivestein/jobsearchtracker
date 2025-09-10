@@ -363,6 +363,131 @@ func TestGetPersonsByName_ShouldReturnNotFoundIfNoPersonsMatchingName(t *testing
 	assert.Equal(t, "No people [partially] matching this name found\n", responseBodyString)
 }
 
+// -------- UpdatePerson tests: --------
+
+func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	// create a person
+	id := uuid.New()
+	email := "Person Email"
+	phone := "2345345"
+	notes := "Notes"
+	createRequest := requests.CreatePersonRequest{
+		ID:         &id,
+		Name:       "Person Name",
+		PersonType: requests.PersonTypeUnknown,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+	_, createdDateApproximation := insertPerson(t, personHandler, createRequest)
+
+	// update the person
+
+	updatedName := "updated person name"
+	var updatedPersonType requests.PersonType = requests.PersonTypeJobContact
+	updatedEmail := "updated email"
+	updatedPhone := "46584566745"
+	updatedNotes := "updated notes"
+
+	updateBody := requests.UpdatePersonRequest{
+		ID:         id,
+		Name:       &updatedName,
+		PersonType: &updatedPersonType,
+		Email:      &updatedEmail,
+		Phone:      &updatedPhone,
+		Notes:      &updatedNotes,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/person/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	personHandler.UpdatePerson(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	// get the person by ID
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/id", nil)
+	assert.NoError(t, err)
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	personHandler.GetPersonByID(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var getPersonResponse responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&getPersonResponse)
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, getPersonResponse.ID)
+	assert.Equal(t, updatedName, getPersonResponse.Name)
+	assert.Equal(t, updatedPersonType, getPersonResponse.PersonType)
+	assert.Equal(t, updatedEmail, *getPersonResponse.Email)
+	assert.Equal(t, updatedPhone, *getPersonResponse.Phone)
+	assert.Equal(t, updatedNotes, *getPersonResponse.Notes)
+
+	personResponseCreatedDate := getPersonResponse.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, *createdDateApproximation, personResponseCreatedDate)
+
+	personResponseUpdatedDate := getPersonResponse.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, personResponseUpdatedDate)
+}
+
+func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
+	personHandler := setupPersonHandler(t)
+
+	// create a person
+	id := uuid.New()
+	email := "Person Email"
+	phone := "2345345"
+	notes := "Notes"
+	createRequest := requests.CreatePersonRequest{
+		ID:         &id,
+		Name:       "Person Name",
+		PersonType: requests.PersonTypeUnknown,
+		Email:      &email,
+		Phone:      &phone,
+		Notes:      &notes,
+	}
+	insertPerson(t, personHandler, createRequest)
+
+	// update the person
+	updateBody := requests.UpdatePersonRequest{
+		ID: id,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/person/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.UpdatePerson(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+	assert.Equal(
+		t,
+		"Unable to convert request to internal model: validation error: nothing to update\n",
+		responseBodyString)
+}
+
 // -------- Test helpers: --------
 
 func insertPerson(

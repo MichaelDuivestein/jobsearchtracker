@@ -5,7 +5,9 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/utils"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -179,6 +181,78 @@ func (repository *PersonRepository) GetAll() ([]*models.Person, error) {
 	}
 
 	return results, nil
+}
+
+// Update can return InternalServiceError, ValidationError
+func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
+	var sqlParts []string
+	var sqlVars []interface{}
+
+	var sqlString strings.Builder
+	sqlString.WriteString("UPDATE person SET ")
+	sqlString.WriteString("updated_date = ?, ")
+	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+
+	updateItemCount := 0
+
+	if person.Name != nil {
+		sqlParts = append(sqlParts, "name = ?")
+		sqlVars = append(sqlVars, *person.Name)
+		updateItemCount++
+	}
+
+	if person.PersonType != nil {
+		sqlParts = append(sqlParts, "person_type = ?")
+		sqlVars = append(sqlVars, *person.PersonType)
+		updateItemCount++
+	}
+
+	if person.Email != nil {
+		sqlParts = append(sqlParts, "email = ?")
+		sqlVars = append(sqlVars, *person.Email)
+		updateItemCount++
+	}
+
+	if person.Phone != nil {
+		sqlParts = append(sqlParts, "phone = ?")
+		sqlVars = append(sqlVars, *person.Phone)
+		updateItemCount++
+	}
+
+	if person.Notes != nil {
+		sqlParts = append(sqlParts, "notes = ?")
+		sqlVars = append(sqlVars, *person.Notes)
+		updateItemCount++
+	}
+
+	if updateItemCount == 0 {
+		slog.Info("person_repository.Update: nothing to update", "id", person.ID)
+		return internalErrors.NewValidationError(nil, "nothing to update")
+	}
+
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	if err != nil {
+		var message = "unable to join SQL statement string"
+		slog.Error("person_repository.Update: unable to join SQL statement string", "error", err)
+		return internalErrors.NewInternalServiceError(message)
+	}
+
+	sqlString.WriteString(sqlPayload)
+
+	sqlString.WriteString(" WHERE id = ?")
+	sqlVars = append(sqlVars, person.ID)
+
+	_, err = repository.database.Exec(
+		sqlString.String(),
+		sqlVars...,
+	)
+
+	if err != nil {
+		slog.Error("person_repository.Update: unable to update person", "id", person.ID, "error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+
+	return err
 }
 
 // mapRow can return InternalServiceError

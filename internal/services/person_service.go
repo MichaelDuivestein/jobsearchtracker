@@ -115,3 +115,26 @@ func (personService *PersonService) GetAllPersons() ([]*models.Person, error) {
 
 	return persons, nil
 }
+
+// UpdatePerson can return InternalServiceError, ValidationError
+func (personService *PersonService) UpdatePerson(person *models.UpdatePerson) error {
+	if person == nil {
+		slog.Error("PersonService.UpdatePerson: UpdatePerson is nil")
+		return internalErrors.NewValidationError(nil, "UpdatePerson model is nil")
+	}
+
+	// can return ValidationError
+	err := person.Validate()
+	if err != nil {
+		slog.Info("PersonService.UpdatePerson: UpdatePerson model is invalid. ", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = personService.personRepository.Update(person)
+	if err != nil {
+		slog.Error("PersonService.UpdatePerson: Error updating person", "error", err)
+	}
+
+	return err
+}

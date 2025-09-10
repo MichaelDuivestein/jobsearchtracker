@@ -70,6 +70,86 @@ func (request *CreatePersonRequest) ToModel() (*models.CreatePerson, error) {
 	return &personModel, nil
 }
 
+type UpdatePersonRequest struct {
+	ID         uuid.UUID   `json:"id"`
+	Name       *string     `json:"name"`
+	PersonType *PersonType `json:"person_type"`
+	Email      *string     `json:"email,omitempty"`
+	Phone      *string     `json:"phone,omitempty"`
+	Notes      *string     `json:"notes,omitempty"`
+}
+
+// Validate can return ValidationError
+func (request *UpdatePersonRequest) validate() error {
+	err := uuid.Validate(request.ID.String())
+	if err != nil {
+		message := "ID is invalid"
+		slog.Info("UpdatePersonRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+	if request.ID == uuid.Nil {
+		message := "ID is empty"
+		slog.Info("UpdatePersonRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.Name == nil && request.PersonType == nil && request.Email == nil && request.Phone == nil &&
+		request.Notes == nil {
+		message := "nothing to update"
+		slog.Info("UpdatePersonRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.Name != nil && *request.Name == "" {
+		message := "Name is invalid"
+		slog.Info("UpdatePersonRequest.Validate: "+message, "ID", request.ID)
+
+		companyType := "Name"
+		return internalErrors.NewValidationError(&companyType, message)
+	}
+
+	if request.PersonType != nil && !request.PersonType.IsValid() {
+		message := "PersonType is invalid"
+
+		slog.Info("UpdatePersonRequest.Validate: "+message, "ID", request.ID)
+
+		personType := "PersonType"
+		return internalErrors.NewValidationError(&personType, message)
+	}
+
+	return nil
+}
+
+// ToModel can return ValidationError
+func (request *UpdatePersonRequest) ToModel() (*models.UpdatePerson, error) {
+	// can return ValidationError
+	err := request.validate()
+	if err != nil {
+		slog.Info("validate updatePersonRequest failed", "error", err)
+		return nil, err
+	}
+
+	var personType *models.PersonType
+	if request.PersonType != nil {
+		// can return ValidationError
+		tempPersonType, _ := request.PersonType.ToModel()
+		personType = &tempPersonType
+	} else {
+		personType = nil
+	}
+
+	updateModel := models.UpdatePerson{
+		ID:         request.ID,
+		Name:       request.Name,
+		PersonType: personType,
+		Email:      request.Email,
+		Phone:      request.Phone,
+		Notes:      request.Notes,
+	}
+
+	return &updateModel, nil
+}
+
 type PersonType string
 
 const (
