@@ -453,3 +453,42 @@ func TestUpdate_ShouldNotReturnErrorIfPersonDoesNotExist(t *testing.T) {
 	err := personRepository.Update(&personToUpdate)
 	assert.NoError(t, err)
 }
+
+// -------- Delete tests: --------
+
+func TestDelete_ShouldDeletePerson(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	id := uuid.New()
+	personToAdd := models.CreatePerson{
+		ID:         &id,
+		Name:       "Some Name",
+		PersonType: models.PersonTypeUnknown,
+	}
+	_, err := personRepository.Create(&personToAdd)
+	assert.NoError(t, err)
+
+	err = personRepository.Delete(&id)
+	assert.NoError(t, err)
+
+	retrievedPerson, err := personRepository.GetById(&id)
+	assert.Nil(t, retrievedPerson)
+	assert.Error(t, err)
+}
+
+func TestDelete_ShouldReturnValidationErrorIfPersonIDIsNil(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	err := personRepository.Delete(nil)
+	assert.Error(t, err)
+	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
+}
+
+func TestDelete_ShouldReturnNotFoundErrorIfPersonIdDoesNotExist(t *testing.T) {
+	personRepository := setupPersonRepository(t)
+
+	id := uuid.New()
+	err := personRepository.Delete(&id)
+	assert.Error(t, err)
+	assert.Equal(t, "error: object not found: Person does not exist. ID: "+id.String(), err.Error())
+}

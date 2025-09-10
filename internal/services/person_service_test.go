@@ -78,6 +78,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T
 }
 
 // -------- GetPersonById tests: --------
+
 func TestGetPersonById_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) {
 	personService := NewPersonService(nil)
 
@@ -90,6 +91,7 @@ func TestGetPersonById_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) 
 }
 
 // -------- GetPersonsByName tests: --------
+
 func TestGetPersonsByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testing.T) {
 	personService := NewPersonService(nil)
 
@@ -102,6 +104,7 @@ func TestGetPersonsByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testin
 }
 
 // -------- UpdatePerson tests: --------
+
 func TestUpdatePerson_ShouldReturnValidationErrorIfPersonIsNil(t *testing.T) {
 	personService := NewPersonService(nil)
 
@@ -126,4 +129,16 @@ func TestUpdatePerson_ShouldReturnValidationErrorIfPersonContainsNothingToUpdate
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error: nothing to update", err.Error())
+}
+
+// -------- DeletePerson tests: --------
+
+func TestDeletePerson_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) {
+	personService := NewPersonService(nil)
+
+	err := personService.DeletePerson(nil)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'person ID': personId is required", err.Error())
 }

@@ -311,3 +311,56 @@ func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, req
 	writer.WriteHeader(http.StatusOK)
 	return
 }
+
+func (personHandler *PersonHandler) DeletePerson(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	personIDStr := vars["id"]
+
+	if personIDStr == "" {
+		slog.Info("v1.PersonHandler.DeletePerson: person ID is empty")
+		http.Error(writer, "person ID is empty", http.StatusBadRequest)
+		return
+	}
+
+	personID, err := uuid.Parse(personIDStr)
+	if err != nil {
+		slog.Info("v1.PersonHandler.DeletePerson: person ID is not a valid UUID")
+		http.Error(writer, "person ID is not a valid UUID", http.StatusBadRequest)
+		return
+	}
+
+	// can return InternalServiceError, NotFoundError, ValidationError
+	err = personHandler.personService.DeletePerson(&personID)
+	if err != nil {
+		var internalServiceError *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while deleting person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.DeletePerson: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "Person not found"
+			status = http.StatusNotFound
+			slog.Info("v1.PersonHandler.DeletePerson: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.PersonHandler.DeletePerson: ValidationError while deleting person", "error", err)
+		} else {
+			errorMessage = "Unknown internal error while creating person"
+			status = http.StatusInternalServerError
+			slog.Error("v1.PersonHandler.DeletePerson: Error while deleting person", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}

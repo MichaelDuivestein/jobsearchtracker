@@ -340,3 +340,45 @@ func TestUpdatePerson_ShouldRespondWithBadRequestStatus(t *testing.T) {
 		})
 	}
 }
+
+// -------- DeletePerson tests: --------
+
+func TestDeletePerson_ShouldReturnErrorIfIdIsEmpty(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	personHandler.DeletePerson(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "person ID is empty\n", responseBodyString)
+}
+
+func TestDeletePerson_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "Some text",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	personHandler.DeletePerson(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "person ID is not a valid UUID\n", responseBodyString)
+}
