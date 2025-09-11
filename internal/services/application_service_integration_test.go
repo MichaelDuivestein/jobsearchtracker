@@ -239,6 +239,115 @@ func TestGetApplicationById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 }
 
+// -------- GetApplicationsByJobTitle tests: --------
+
+func TestGetAllByJobTitle_ShouldReturnApplication(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert applications
+	companyID := createCompany(t, companyRepository)
+	jobTitle := "Some Job Title"
+
+	applicationToInsert := models.CreateApplication{
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// GetByName
+	applications, err := applicationService.GetApplicationsByJobTitle(insertedApplication.JobTitle)
+	assert.NoError(t, err)
+	assert.NotNil(t, applications)
+	assert.Equal(t, 1, len(applications))
+
+	assert.Equal(t, jobTitle, *applications[0].JobTitle)
+}
+
+func TestGetApplicationsByJobTitle_ShouldReturnMultipleApplications(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert applications
+
+	companyID := createCompany(t, companyRepository)
+
+	id1 := uuid.New()
+	jobTitle1 := "developer"
+	applicationToInsert1 := models.CreateApplication{
+		ID:               &id1,
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle1,
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	_, err := applicationService.CreateApplication(&applicationToInsert1)
+	assert.NoError(t, err)
+
+	id2 := uuid.New()
+	jobTitle2 := "Backend Developer"
+	applicationToInsert2 := models.CreateApplication{
+		ID:               &id2,
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle2,
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+	_, err = applicationService.CreateApplication(&applicationToInsert2)
+	assert.NoError(t, err)
+
+	id3 := uuid.New()
+	jobTitle3 := "utvecklare till en företag"
+	applicationToInsert3 := models.CreateApplication{
+		ID:               &id3,
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle3,
+		RemoteStatusType: models.RemoteStatusTypeRemote,
+	}
+	_, err = applicationService.CreateApplication(&applicationToInsert3)
+	assert.NoError(t, err)
+
+	// GetByJobTitle
+
+	jobTitleToGet := "developer"
+	applications, err := applicationService.GetApplicationsByJobTitle(&jobTitleToGet)
+	assert.NoError(t, err)
+	assert.NotNil(t, applications)
+	assert.Equal(t, 2, len(applications))
+
+	assert.Equal(t, id2, applications[1].ID)
+	assert.Equal(t, id1, applications[0].ID)
+}
+
+func TestGetApplicationsByJobTitle_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert applications
+
+	recruiterID := createCompany(t, companyRepository)
+
+	id := uuid.New()
+	jobTitle := "Backend Engineer"
+	applicationToInsert := models.CreateApplication{
+		ID:               &id,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	_, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+
+	// GetByJobTitle
+
+	jobTitleToGet := "Developer"
+	applications, err := applicationService.GetApplicationsByJobTitle(&jobTitleToGet)
+	assert.Nil(t, applications)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: JobTitle: '"+jobTitleToGet+"'", err.Error())
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

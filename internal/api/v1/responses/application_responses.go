@@ -58,3 +58,19 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 
 	return &applicationResponse, nil
 }
+
+func NewApplicationsResponse(applications []*models.Application) ([]*ApplicationResponse, error) {
+	if applications == nil || len(applications) == 0 {
+		return []*ApplicationResponse{}, nil
+	}
+
+	var applicationResponses = make([]*ApplicationResponse, len(applications))
+	for index := range applications {
+		applicationResponse, err := NewApplicationResponse(applications[index])
+		if err != nil {
+			return nil, err
+		}
+		applicationResponses[index] = applicationResponse
+	}
+	return applicationResponses, nil
+}

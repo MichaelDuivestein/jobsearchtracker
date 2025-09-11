@@ -148,6 +148,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *test
 }
 
 // -------- GetApplicationById tests: --------
+
 func TestGetApplicationById_ShouldReturnValidationErrorIfApplicationIdIsNil(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
@@ -157,4 +158,29 @@ func TestGetApplicationById_ShouldReturnValidationErrorIfApplicationIdIsNil(t *t
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error on field 'application ID': applicationId is required", err.Error())
+}
+
+// -------- GetApplicationsByJobTitle tests: --------
+
+func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsNil(t *testing.T) {
+	applicationService := NewApplicationService(nil)
+
+	nilApplication, err := applicationService.GetApplicationsByJobTitle(nil)
+	assert.Nil(t, nilApplication)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'applicationJobTitle': applicationJobTitle is required", err.Error())
+}
+
+func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsEmpty(t *testing.T) {
+	applicationService := NewApplicationService(nil)
+
+	jobTitle := ""
+	nilApplication, err := applicationService.GetApplicationsByJobTitle(&jobTitle)
+	assert.Nil(t, nilApplication)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'applicationJobTitle': applicationJobTitle is required", err.Error())
 }

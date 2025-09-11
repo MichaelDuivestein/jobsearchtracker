@@ -122,6 +122,54 @@ func (repository *ApplicationRepository) GetById(id *uuid.UUID) (*models.Applica
 	return result, nil
 }
 
+// GetAllByJobTitle can return InternalServiceError, NotFoundError, ValidationError
+func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*models.Application, error) {
+	if jobTitle == nil {
+		slog.Info("application_repository.GetAllByJobTitle: JobTitle is nil")
+		return nil, internalErrors.NewValidationError(nil, "JobTitle is nil")
+	}
+
+	sqlSelect := "SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
+		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
+		"updated_date " +
+		"FROM application " +
+		"WHERE job_title LIKE ? " +
+		"ORDER BY updated_Date DESC"
+
+	wildcardJobTitle := "%" + *jobTitle + "%"
+	rows, err := repository.database.Query(sqlSelect, wildcardJobTitle)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*models.Application
+
+	for rows.Next() {
+		// can return ConflictError, InternalServiceError
+		result, err := repository.mapRow(rows, "GetAllByJobTitle", nil)
+		if err != nil {
+			slog.Error("application_repository.GetAllByJobTitle: Error mapping row", "error", err)
+			return nil, internalErrors.NewInternalServiceError("Error processing application data: " + err.Error())
+		}
+
+		if result != nil {
+			results = append(results, result)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("application_repository.GetAllByJobTitle: Error iterating rows", "error", err)
+		return nil, internalErrors.NewInternalServiceError("Error reading applications from database: " + err.Error())
+	}
+
+	if len(results) == 0 {
+		slog.Info("application_repository.GetAllByJobTitle: No result found for JobTitle", "JobTitle", jobTitle)
+		return nil, internalErrors.NewNotFoundError("JobTitle: '" + *jobTitle + "'")
+	}
+
+	return results, nil
+}
+
 func (repository *ApplicationRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Application, error) {
 

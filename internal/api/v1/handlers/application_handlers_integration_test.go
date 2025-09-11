@@ -337,6 +337,152 @@ func TestGetApplicationById_ShouldReturnNotFoundIfApplicationDoesNotExist(t *tes
 	assert.NotEmpty(t, firstResponseBodyString, "Application not found\n")
 }
 
+// -------- GetApplicationByJobTitle tests: --------
+
+func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// Insert an application:
+
+	id := uuid.New()
+	recruiterID := createCompany(t, companyRepository)
+	jobTitle := "Software Engineer"
+
+	requestBody := requests.CreateApplicationRequest{
+		ID:               &id,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, requestBody)
+
+	// get the application by full job title:
+
+	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"title": "Software Engineer",
+	}
+	firstGetRequest = mux.SetURLVars(firstGetRequest, vars)
+
+	applicationHandler.GetApplicationsByJobTitle(responseRecorder, firstGetRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var firstResponse []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, len(firstResponse), 1)
+
+	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
+	assert.Equal(t, requestBody.JobTitle, firstResponse[0].JobTitle)
+
+	// get the application by partial name:
+
+	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	responseRecorder = httptest.NewRecorder()
+
+	vars = map[string]string{
+		"title": "eng",
+	}
+	secondGetRequest = mux.SetURLVars(secondGetRequest, vars)
+
+	applicationHandler.GetApplicationsByJobTitle(responseRecorder, secondGetRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString = responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var secondResponse []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, len(secondResponse), 1)
+
+	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
+	assert.Equal(t, requestBody.JobTitle, secondResponse[0].JobTitle)
+}
+
+func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert two applications:
+
+	firstID := uuid.New()
+	firstCompanyID := createCompany(t, companyRepository)
+	firstJobTitle := "GoLang Software Engineer"
+
+	firstRequestBody := requests.CreateApplicationRequest{
+		ID:               &firstID,
+		CompanyID:        firstCompanyID,
+		JobTitle:         &firstJobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeHybrid,
+	}
+	insertApplication(t, applicationHandler, firstRequestBody)
+
+	secondID := uuid.New()
+	secondRecruiterID := createCompany(t, companyRepository)
+	secondJobTitle := "Backend Developer (golang)"
+	secondRequestBody := requests.CreateApplicationRequest{
+		ID:               &secondID,
+		RecruiterID:      secondRecruiterID,
+		JobTitle:         &secondJobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeUnknown,
+	}
+	insertApplication(t, applicationHandler, secondRequestBody)
+
+	// Get applications by name:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"title": "go",
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	applicationHandler.GetApplicationsByJobTitle(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(response))
+
+	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
+	assert.Equal(t, firstRequestBody.JobTitle, response[0].JobTitle)
+
+	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
+	assert.Equal(t, secondRequestBody.JobTitle, response[1].JobTitle)
+
+}
+
+func TestGetApplicationsByJobTitle_ShouldReturnNotFoundIfNoApplicationsMatchingJobTitle(t *testing.T) {
+	applicationHandler, _ := setupApplicationHandler(t)
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"title": "Developer",
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	applicationHandler.GetApplicationsByJobTitle(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+	assert.Equal(t, "No applications [partially] matching this job title found\n", responseBodyString)
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {
