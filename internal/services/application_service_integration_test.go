@@ -394,6 +394,165 @@ func TestGetAlLApplications_ShouldReturnNilIfNoApplicationsInDatabase(t *testing
 	assert.Nil(t, applications)
 }
 
+// -------- UpdateApplication tests: --------
+
+func TestUpdateApplication_ShouldWork(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert application
+
+	id := uuid.New()
+	originalCompanyID := createCompany(t, companyRepository)
+	originalRecruiterID := createCompany(t, companyRepository)
+	originalJobTitle := "OriginalJobTitle"
+	originalJobAdURL := "OriginalJobAdURL"
+	originalCountry := "OriginalCountry"
+	originalArea := "OriginalArea"
+	originalWeekdaysInOffice := 1
+	originalEstimatedCycleTime := 2
+	originalEstimatedCommuteTime := 3
+	originalApplicationDate := time.Now().AddDate(1, 0, 0)
+	originalCreatedDate := time.Now().AddDate(2, 0, 0)
+	originalUpdatedDate := time.Now().AddDate(3, 0, 0)
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   &id,
+		CompanyID:            originalCompanyID,
+		RecruiterID:          originalRecruiterID,
+		JobTitle:             &originalJobTitle,
+		JobAdURL:             &originalJobAdURL,
+		Country:              &originalCountry,
+		Area:                 &originalArea,
+		RemoteStatusType:     models.RemoteStatusTypeOffice,
+		WeekdaysInOffice:     &originalWeekdaysInOffice,
+		EstimatedCycleTime:   &originalEstimatedCycleTime,
+		EstimatedCommuteTime: &originalEstimatedCommuteTime,
+		ApplicationDate:      &originalApplicationDate,
+		CreatedDate:          &originalCreatedDate,
+		UpdatedDate:          &originalUpdatedDate,
+	}
+	_, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+
+	// update application
+
+	newCompanyID := createCompany(t, companyRepository)
+	newRecruiterID := createCompany(t, companyRepository)
+	newJobTitle := "NewJobTitle"
+	newJobAdURL := "NewJobAdURL"
+	newCountry := "NewCountry"
+	newArea := "NewArea"
+	var newRemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeOffice
+	newWeekdaysInOffice := 4
+	newEstimatedCycleTime := 5
+	newEstimatedCommuteTime := 6
+	newApplicationDate := time.Now().AddDate(0, 1, 0)
+	applicationToUpdate := models.UpdateApplication{
+		ID:                   id,
+		CompanyID:            newCompanyID,
+		RecruiterID:          newRecruiterID,
+		JobTitle:             &newJobTitle,
+		JobAdURL:             &newJobAdURL,
+		Country:              &newCountry,
+		Area:                 &newArea,
+		RemoteStatusType:     &newRemoteStatusType,
+		WeekdaysInOffice:     &newWeekdaysInOffice,
+		EstimatedCycleTime:   &newEstimatedCycleTime,
+		EstimatedCommuteTime: &newEstimatedCommuteTime,
+		ApplicationDate:      &newApplicationDate,
+	}
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = applicationService.UpdateApplication(&applicationToUpdate)
+	assert.NoError(t, err)
+
+	// get ById
+
+	retrievedApplication, err := applicationService.GetApplicationById(&id)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedApplication)
+
+	assert.Equal(t, id, retrievedApplication.ID)
+	assert.Equal(t, newCompanyID, retrievedApplication.CompanyID)
+	assert.Equal(t, newRecruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, newJobTitle, *retrievedApplication.JobTitle)
+	assert.Equal(t, newJobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, newCountry, *retrievedApplication.Country)
+	assert.Equal(t, newArea, *retrievedApplication.Area)
+	assert.Equal(t, newRemoteStatusType, retrievedApplication.RemoteStatusType)
+	assert.Equal(t, newWeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, newEstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, newEstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+
+	applicationDate := retrievedApplication.ApplicationDate.Format(time.RFC3339)
+	retrievedApplicationDate := retrievedApplication.ApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, applicationDate, retrievedApplicationDate)
+
+	updatedDate := retrievedApplication.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, updatedDate)
+}
+
+func TestUpdateApplication_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
+	applicationService, _ := setupApplicationService(t)
+
+	id := uuid.New()
+	jobTitle := "JobTitle"
+	applicationToUpdate := models.UpdateApplication{
+		ID:       id,
+		JobTitle: &jobTitle,
+	}
+
+	err := applicationService.UpdateApplication(&applicationToUpdate)
+	assert.NoError(t, err)
+}
+
+// -------- DeleteApplication tests: --------
+
+func TestDeleteApplication_ShouldWork(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert application
+
+	id := uuid.New()
+	recruiterID := createCompany(t, companyRepository)
+	jobAdURL := "JobAdURL"
+	applicationToInsert := models.CreateApplication{
+		ID:               &id,
+		RecruiterID:      recruiterID,
+		JobAdURL:         &jobAdURL,
+		RemoteStatusType: models.PersonTypeUnknown,
+	}
+	_, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+
+	// delete application
+
+	err = applicationService.DeleteApplication(&id)
+	assert.NoError(t, err)
+
+	//ensure that application is deleted
+
+	retrievedApplication, err := applicationService.GetApplicationById(&id)
+	assert.Nil(t, retrievedApplication)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+}
+
+func TestDeleteApplication_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
+	applicationService, _ := setupApplicationService(t)
+
+	id := uuid.New()
+	err := applicationService.DeleteApplication(&id)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Application does not exist. ID: "+id.String(), err.Error())
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

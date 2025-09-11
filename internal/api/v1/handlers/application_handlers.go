@@ -274,3 +274,117 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 
 	return
 }
+
+func (applicationHandler *ApplicationHandler) UpdateApplication(writer http.ResponseWriter, request *http.Request) {
+	var updateApplicationRequest requests.UpdateApplicationRequest
+	if err := json.NewDecoder(request.Body).Decode(&updateApplicationRequest); err != nil {
+		slog.Info("v1.ApplicationHandler.UpdateApplication: invalid request body", "error", err)
+		http.Error(writer, "invalid request body: Unable to parse JSON", http.StatusBadRequest)
+		return
+	}
+
+	// can return ValidationError
+	updateApplicationModel, err := updateApplicationRequest.ToModel()
+	if err != nil {
+		slog.Info(
+			"v1.ApplicationHandler.UpdateApplication: Unable to convert UpdateApplicationRequest to model",
+			"error", err)
+		http.Error(writer, "Unable to convert request to internal model: "+err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	if updateApplicationModel == nil {
+		slog.Error(
+			"v1.ApplicationHandler.UpdateApplication: updateApplicationModel is nil after attempting to convert request to internal model")
+		http.Error(writer, "Unable to convert request to model: Model is nil ", http.StatusInternalServerError)
+		return
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = applicationHandler.applicationService.UpdateApplication(updateApplicationModel)
+	if err != nil {
+		var internalServiceErr *internalErrors.InternalServiceError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceErr) {
+			errorMessage = "Internal service error while updating application"
+			status = http.StatusInternalServerError
+			slog.Error("v1.ApplicationHandler.UpdateApplication: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info(
+				"v1.ApplicationHandler.UpdateApplication: ValidationError while updating application",
+				"error", err)
+		} else {
+			errorMessage = "Unknown internal error while updating application"
+			status = http.StatusInternalServerError
+			slog.Error("v1.ApplicationHandler.UpdateApplication: Error while updating application", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}
+
+func (applicationHandler *ApplicationHandler) DeleteApplication(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	applicationIDStr := vars["id"]
+
+	if applicationIDStr == "" {
+		slog.Info("v1.ApplicationHandler.DeleteApplication: application ID is empty")
+		http.Error(writer, "application ID is empty", http.StatusBadRequest)
+		return
+	}
+
+	applicationID, err := uuid.Parse(applicationIDStr)
+	if err != nil {
+		slog.Info("v1.ApplicationHandler.DeleteApplication: application ID is not a valid UUID")
+		http.Error(writer, "application ID is not a valid UUID", http.StatusBadRequest)
+		return
+	}
+
+	// can return InternalServiceError, NotFoundError, ValidationError
+	err = applicationHandler.applicationService.DeleteApplication(&applicationID)
+	if err != nil {
+		var internalServiceError *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while deleting application"
+			status = http.StatusInternalServerError
+			slog.Error("v1.ApplicationHandler.DeleteApplication: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "Application not found"
+			status = http.StatusNotFound
+			slog.Info("v1.ApplicationHandler.DeleteApplication: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info(
+				"v1.ApplicationHandler.DeleteApplication: ValidationError while deleting application",
+				"error", err)
+		} else {
+			errorMessage = "Unknown internal error while deleting application"
+			status = http.StatusInternalServerError
+			slog.Error("v1.ApplicationHandler.DeleteApplication: Error while deleting application", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	return
+}

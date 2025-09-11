@@ -95,6 +95,34 @@ func (application *CreateApplication) Validate() error {
 	return nil
 }
 
+type UpdateApplication struct {
+	ID                   uuid.UUID
+	CompanyID            *uuid.UUID
+	RecruiterID          *uuid.UUID
+	JobTitle             *string
+	JobAdURL             *string
+	Country              *string
+	Area                 *string
+	RemoteStatusType     *RemoteStatusType
+	WeekdaysInOffice     *int
+	EstimatedCycleTime   *int
+	EstimatedCommuteTime *int
+	ApplicationDate      *time.Time
+}
+
+func (application *UpdateApplication) Validate() error {
+	if (application.CompanyID == nil || *application.CompanyID == uuid.Nil) &&
+		(application.RecruiterID == nil || *application.RecruiterID == uuid.Nil) &&
+		application.JobTitle == nil && application.JobAdURL == nil && application.Country == nil &&
+		application.Area == nil && application.RemoteStatusType == nil && application.WeekdaysInOffice == nil &&
+		application.EstimatedCycleTime == nil && application.EstimatedCommuteTime == nil &&
+		application.ApplicationDate == nil {
+		return errors.NewValidationError(nil, "nothing to update")
+	}
+
+	return nil
+}
+
 type RemoteStatusType string
 
 const (

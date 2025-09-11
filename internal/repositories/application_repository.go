@@ -5,7 +5,10 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/utils"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -207,6 +210,153 @@ func (repository *ApplicationRepository) GetAll() ([]*models.Application, error)
 	}
 
 	return results, nil
+}
+
+// Update can return InternalServiceError, ValidationError
+func (repository *ApplicationRepository) Update(application *models.UpdateApplication) error {
+	var sqlParts []string
+	var sqlVars []interface{}
+
+	var sqlString strings.Builder
+	sqlString.WriteString("UPDATE application SET ")
+	sqlString.WriteString("updated_date = ?, ")
+	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+
+	updateItemCount := 0
+
+	if application.CompanyID != nil {
+		sqlParts = append(sqlParts, "company_id = ?")
+		sqlVars = append(sqlVars, *application.CompanyID)
+		updateItemCount++
+	}
+
+	if application.RecruiterID != nil {
+		sqlParts = append(sqlParts, "recruiter_id = ?")
+		sqlVars = append(sqlVars, *application.RecruiterID)
+		updateItemCount++
+	}
+
+	if application.JobTitle != nil {
+		sqlParts = append(sqlParts, "job_title = ?")
+		sqlVars = append(sqlVars, *application.JobTitle)
+		updateItemCount++
+	}
+
+	if application.JobAdURL != nil {
+		sqlParts = append(sqlParts, "job_ad_url = ?")
+		sqlVars = append(sqlVars, *application.JobAdURL)
+		updateItemCount++
+	}
+
+	if application.Country != nil {
+		sqlParts = append(sqlParts, "country = ?")
+		sqlVars = append(sqlVars, *application.Country)
+		updateItemCount++
+	}
+
+	if application.Area != nil {
+		sqlParts = append(sqlParts, "area = ?")
+		sqlVars = append(sqlVars, *application.Area)
+		updateItemCount++
+	}
+
+	if application.RemoteStatusType != nil {
+		sqlParts = append(sqlParts, "remote_status_type = ?")
+		sqlVars = append(sqlVars, *application.RemoteStatusType)
+		updateItemCount++
+	}
+
+	if application.WeekdaysInOffice != nil {
+		sqlParts = append(sqlParts, "weekdays_in_office = ?")
+		sqlVars = append(sqlVars, *application.WeekdaysInOffice)
+		updateItemCount++
+	}
+
+	if application.EstimatedCycleTime != nil {
+		sqlParts = append(sqlParts, "estimated_cycle_time = ?")
+		sqlVars = append(sqlVars, *application.EstimatedCycleTime)
+		updateItemCount++
+	}
+
+	if application.EstimatedCommuteTime != nil {
+		sqlParts = append(sqlParts, "estimated_commute_time = ?")
+		sqlVars = append(sqlVars, *application.EstimatedCommuteTime)
+		updateItemCount++
+	}
+
+	if application.ApplicationDate != nil {
+		sqlParts = append(sqlParts, "application_date = ?")
+		sqlVars = append(sqlVars, application.ApplicationDate.Format(time.RFC3339))
+		updateItemCount++
+	}
+
+	if updateItemCount == 0 {
+		slog.Info("application_repository.Update: nothing to update", "id", application.ID)
+		return internalErrors.NewValidationError(nil, "nothing to update")
+	}
+
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	if err != nil {
+		var message = "unable to join SQL statement string"
+		slog.Error("application_repository.Update: unable to join SQL statement string", "error", err)
+		return internalErrors.NewInternalServiceError(message)
+	}
+
+	sqlString.WriteString(sqlPayload)
+
+	sqlString.WriteString(" WHERE id = ?")
+	sqlVars = append(sqlVars, application.ID)
+
+	_, err = repository.database.Exec(
+		sqlString.String(),
+		sqlVars...,
+	)
+
+	if err != nil {
+		slog.Error(
+			"application_repository.Update: unable to update application",
+			"id", application.ID,
+			"error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+
+	return err
+}
+
+// Delete can return InternalServiceError, NotFoundError, ValidationError
+func (repository *ApplicationRepository) Delete(id *uuid.UUID) error {
+	if id == nil {
+		slog.Error("application_repository.Delete: ID is nil")
+		return internalErrors.NewValidationError(nil, "ID is nil")
+	}
+
+	sqlDelete := "DELETE FROM application WHERE id = ?"
+
+	result, err := repository.database.Exec(sqlDelete, id)
+	if err != nil {
+		slog.Error(
+			"application_repository.Delete: Error trying to delete application",
+			"id", id,
+			"error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		slog.Error(
+			"application_repository.Delete: Error trying to delete application",
+			"id", id,
+			"error", err.Error())
+		return internalErrors.NewInternalServiceError(err.Error())
+	}
+	if rowsAffected == 0 {
+		return internalErrors.NewNotFoundError("Application does not exist. ID: " + id.String())
+	} else if rowsAffected > 1 {
+		return internalErrors.NewInternalServiceError(
+			"Unexpected number of rows affected: " + strconv.FormatInt(rowsAffected, 10))
+	}
+
+	return nil
 }
 
 func (repository *ApplicationRepository) mapRow(

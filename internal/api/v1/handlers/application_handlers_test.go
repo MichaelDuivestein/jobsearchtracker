@@ -158,3 +158,128 @@ func TestGetApplicationsByJobTitle_ShouldReturnErrorIfNameIsEmpty(t *testing.T) 
 	responseBodyString := responseRecorder.Body.String()
 	assert.Equal(t, "job title is empty\n", responseBodyString)
 }
+
+// -------- UpdateApplication tests: --------
+
+func TestUpdateApplication_ShouldRespondWithBadRequestStatus(t *testing.T) {
+	tests := []struct {
+		testName             string
+		inputRequest         *string
+		expectedResponseCode int
+		expectedErrorMessage string
+	}{
+		{
+			testName:             "body is nil",
+			inputRequest:         nil,
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body is empty",
+			inputRequest:         testutil.StringPtr(""),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body does not match UpdateApplicationRequest",
+			inputRequest:         testutil.StringPtr(`{"application_id": "8abb5944-761b-447c-8a77-11ba1108ff68", "job_title": "title"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
+		},
+		{
+			testName:             "body ID is missing",
+			inputRequest:         testutil.StringPtr(`{"application_type":"Other"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
+		},
+		{
+			testName:             "body RemoteStatusType is invalid",
+			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "company_id": "8abb5944-761b-447c-8a77-11ba1108ff68", "job_title": "Job Title", "remote_status_type": "Blah"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error on field 'RemoteStatusType': RemoteStatusType is invalid\n",
+		},
+		{
+			testName:             "body is invalid",
+			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "companyID":"8abb5944-761b-447c-8a77-11ba1108ff68"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
+		},
+		{
+			testName:             "malformed json",
+			inputRequest:         testutil.StringPtr(`"JobTitle":"Entitled","application_type":"developer"`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
+		},
+		{
+			testName:             "body contains no fields to update",
+			inputRequest:         testutil.StringPtr(`{"id":"8abb5944-761b-447c-8a77-11ba1108ff68"}`),
+			expectedResponseCode: http.StatusBadRequest,
+			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
+		},
+	}
+
+	applicationHandler := v1.NewApplicationHandler(nil)
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			var requestBody []byte
+			if test.inputRequest != nil {
+				requestBody = []byte(*test.inputRequest)
+			} else {
+				requestBody = nil
+			}
+
+			request, err := http.NewRequest(http.MethodPost, "/api/v1/application/update", bytes.NewBuffer(requestBody))
+			assert.NoError(t, err)
+
+			responseRecorder := httptest.NewRecorder()
+
+			applicationHandler.UpdateApplication(responseRecorder, request)
+			assert.Equal(t, test.expectedResponseCode, responseRecorder.Code)
+
+			responseBodyString := responseRecorder.Body.String()
+			assert.Equal(t, test.expectedErrorMessage, responseBodyString)
+		})
+	}
+}
+
+// -------- DeleteApplication tests: --------
+
+func TestDeleteApplication_ShouldReturnErrorIfIdIsEmpty(t *testing.T) {
+	applicationHandler := v1.NewApplicationHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/application/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	applicationHandler.DeleteApplication(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "application ID is empty\n", responseBodyString)
+}
+
+func TestDeleteApplication_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
+	applicationHandler := v1.NewApplicationHandler(nil)
+
+	request, err := http.NewRequest(http.MethodDelete, "/api/v1/application/delete", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": "Some text",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	applicationHandler.DeleteApplication(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "application ID is not a valid UUID\n", responseBodyString)
+}

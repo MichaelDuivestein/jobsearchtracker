@@ -566,6 +566,231 @@ func TestGetAllApplications_ShouldReturnEmptyResponseIfNoApplicationsInDatabase(
 	assert.Equal(t, 0, len(response))
 }
 
+// -------- UpdateApplication tests: --------
+
+func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// create an application
+
+	companyID := createCompany(t, companyRepository)
+	recruiterID := createCompany(t, companyRepository)
+
+	id := uuid.New()
+	jobTitle := "Job Title"
+	jobAdURL := "Job Ad URL"
+	country := "Some Country"
+	area := "Some Area"
+	weekdaysInOffice := 9
+	estimatedCycleTime := 8
+	estimatedCommuteTime := 7
+	applicationDate := time.Now().AddDate(0, 0, 6)
+	createRequest := requests.CreateApplicationRequest{
+		ID:                   &id,
+		CompanyID:            companyID,
+		RecruiterID:          recruiterID,
+		JobTitle:             &jobTitle,
+		JobAdURL:             &jobAdURL,
+		Country:              &country,
+		Area:                 &area,
+		RemoteStatusType:     requests.RemoteStatusTypeHybrid,
+		WeekdaysInOffice:     &weekdaysInOffice,
+		EstimatedCycleTime:   &estimatedCycleTime,
+		EstimatedCommuteTime: &estimatedCommuteTime,
+		ApplicationDate:      &applicationDate,
+	}
+	_, createdDateApproximation := insertApplication(t, applicationHandler, createRequest)
+
+	// update the application
+
+	newCompanyID := createCompany(t, companyRepository)
+	newRecruiterID := createCompany(t, companyRepository)
+
+	newJobTitle := "New Job Title"
+	newJobAdURL := "New Job Ad URL"
+	newCountry := "New Country"
+	newArea := "New Area"
+	var newRemoteStatusType requests.RemoteStatusType = requests.RemoteStatusTypeOffice
+	newWeekdaysInOffice := 1
+	newEstimatedCycleTime := 2
+	newEstimatedCommuteTime := 3
+	newApplicationDate := time.Now().AddDate(0, 0, 40)
+
+	updateBody := requests.UpdateApplicationRequest{
+		ID:                   id,
+		CompanyID:            newCompanyID,
+		RecruiterID:          newRecruiterID,
+		JobTitle:             &newJobTitle,
+		JobAdURL:             &newJobAdURL,
+		Country:              &newCountry,
+		Area:                 &newArea,
+		RemoteStatusType:     &newRemoteStatusType,
+		WeekdaysInOffice:     &newWeekdaysInOffice,
+		EstimatedCycleTime:   &newEstimatedCycleTime,
+		EstimatedCommuteTime: &newEstimatedCommuteTime,
+		ApplicationDate:      &newApplicationDate,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/application/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	applicationHandler.UpdateApplication(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	// get the application by ID
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/id", nil)
+	assert.NoError(t, err)
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	applicationHandler.GetApplicationByID(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var getApplicationResponse responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&getApplicationResponse)
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, getApplicationResponse.ID)
+	assert.Equal(t, newCompanyID.String(), getApplicationResponse.CompanyID.String())
+	assert.Equal(t, newRecruiterID.String(), getApplicationResponse.RecruiterID.String())
+	assert.Equal(t, newJobTitle, *getApplicationResponse.JobTitle)
+	assert.Equal(t, newJobAdURL, *getApplicationResponse.JobAdURL)
+	assert.Equal(t, newCountry, *getApplicationResponse.Country)
+	assert.Equal(t, newArea, *getApplicationResponse.Area)
+	assert.Equal(t, newRemoteStatusType, getApplicationResponse.RemoteStatusType)
+	assert.Equal(t, newWeekdaysInOffice, *getApplicationResponse.WeekdaysInOffice)
+	assert.Equal(t, newEstimatedCycleTime, *getApplicationResponse.EstimatedCycleTime)
+	assert.Equal(t, newEstimatedCommuteTime, *getApplicationResponse.EstimatedCommuteTime)
+
+	retrievedApplicationDate := getApplicationResponse.ApplicationDate.Format(time.RFC3339)
+	expectedApplicationDate := newApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, expectedApplicationDate, retrievedApplicationDate)
+
+	applicationResponseCreatedDate := getApplicationResponse.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, *createdDateApproximation, applicationResponseCreatedDate)
+
+	applicationResponseUpdatedDate := getApplicationResponse.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, applicationResponseUpdatedDate)
+}
+
+func TestUpdateApplication_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// create an application
+	id := uuid.New()
+	recruiterID := createCompany(t, companyRepository)
+	jobAdURL := "Job Ad URL"
+
+	createRequest := requests.CreateApplicationRequest{
+		ID:               &id,
+		RecruiterID:      recruiterID,
+		JobAdURL:         &jobAdURL,
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, createRequest)
+
+	// update the application
+
+	updateBody := requests.UpdateApplicationRequest{
+		ID: id,
+	}
+
+	requestBytes, err := json.Marshal(updateBody)
+	assert.NoError(t, err)
+
+	updateRequest, err := http.NewRequest(http.MethodPost, "/api/v1/application/update", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.UpdateApplication(responseRecorder, updateRequest)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+	assert.Equal(
+		t,
+		"Unable to convert request to internal model: validation error: nothing to update\n",
+		responseBodyString)
+}
+
+// -------- DeleteApplication tests: --------
+
+func TestDeleteApplication_ShouldDeleteApplication(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert an application
+
+	id := uuid.New()
+	companyID := createCompany(t, companyRepository)
+	jobTitle := "JobTitle"
+	requestBody := requests.CreateApplicationRequest{
+		ID:               &id,
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeHybrid,
+	}
+
+	insertApplication(t, applicationHandler, requestBody)
+
+	// delete the application
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/application/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	applicationHandler.DeleteApplication(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusOK, deleteResponseRecorder.Code)
+
+	// try to get the application
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/id", nil)
+	assert.NoError(t, err)
+
+	getResponseRecorder := httptest.NewRecorder()
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	applicationHandler.GetApplicationByID(getResponseRecorder, getRequest)
+	assert.Equal(t, http.StatusNotFound, getResponseRecorder.Code, "GetApplicationByID returned wrong status code")
+}
+
+func TestDeleteApplication_ShouldReturnStatusNotFoundIfApplicationDoesNotExist(t *testing.T) {
+	applicationHandler, _ := setupApplicationHandler(t)
+
+	id := uuid.New()
+
+	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/application/delete/", nil)
+	assert.NoError(t, err)
+
+	deleteResponseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	deleteRequest = mux.SetURLVars(deleteRequest, vars)
+
+	applicationHandler.DeleteApplication(deleteResponseRecorder, deleteRequest)
+	assert.Equal(t, http.StatusNotFound, deleteResponseRecorder.Code)
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

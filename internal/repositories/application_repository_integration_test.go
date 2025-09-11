@@ -507,6 +507,179 @@ func TestGetAll_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
 	assert.Nil(t, applications, "applications should be nil")
 }
 
+// -------- Update tests: --------
+
+func TestUpdate_ShouldUpdateApplication(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	companyID := createCompany(t, companyRepository)
+	recruiterID := createCompany(t, companyRepository)
+
+	// create an application
+	id := uuid.New()
+	jobTitle := "Old Job Title"
+	jobAdURL := "Old Job Ad URL"
+	country := "Old Country"
+	area := "Old Area"
+	weekdaysInOffice := 1
+	estimatedCycleTime := 2
+	estimatedCommuteTime := 3
+	applicationDate := time.Now().AddDate(0, 0, 10)
+	createdDate := time.Now().AddDate(0, 0, 20)
+	updatedDate := time.Now().AddDate(0, 0, 30)
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   &id,
+		CompanyID:            companyID,
+		RecruiterID:          recruiterID,
+		JobTitle:             &jobTitle,
+		JobAdURL:             &jobAdURL,
+		Country:              &country,
+		Area:                 &area,
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     &weekdaysInOffice,
+		EstimatedCycleTime:   &estimatedCycleTime,
+		EstimatedCommuteTime: &estimatedCommuteTime,
+		ApplicationDate:      &applicationDate,
+		CreatedDate:          &createdDate,
+		UpdatedDate:          &updatedDate,
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	newCompanyID := createCompany(t, companyRepository)
+	newRecruiterID := createCompany(t, companyRepository)
+
+	newJobTitle := "New Job Title"
+	newJobAdURL := "New Job Ad URL"
+	newCountry := "New Country"
+	newArea := "New Area"
+	var newRemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeOffice
+	newWeekdaysInOffice := 1
+	newEstimatedCycleTime := 2
+	newEstimatedCommuteTime := 3
+	newApplicationDate := time.Now().AddDate(0, 0, 40)
+
+	applicationToUpdate := models.UpdateApplication{
+		ID:                   id,
+		CompanyID:            newCompanyID,
+		RecruiterID:          newRecruiterID,
+		JobTitle:             &newJobTitle,
+		JobAdURL:             &newJobAdURL,
+		Country:              &newCountry,
+		Area:                 &newArea,
+		RemoteStatusType:     &newRemoteStatusType,
+		WeekdaysInOffice:     &newWeekdaysInOffice,
+		EstimatedCycleTime:   &newEstimatedCycleTime,
+		EstimatedCommuteTime: &newEstimatedCommuteTime,
+		ApplicationDate:      &newApplicationDate,
+	}
+
+	// update the application
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = applicationRepository.Update(&applicationToUpdate)
+	assert.NoError(t, err)
+
+	// get the company and verify that it's updated
+
+	retrievedApplication, err := applicationRepository.GetById(&id)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedApplication)
+
+	assert.Equal(t, id, retrievedApplication.ID)
+	assert.Equal(t, newCompanyID.String(), retrievedApplication.CompanyID.String())
+	assert.Equal(t, newRecruiterID.String(), retrievedApplication.RecruiterID.String())
+	assert.Equal(t, newJobTitle, *retrievedApplication.JobTitle)
+	assert.Equal(t, newJobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, newCountry, *retrievedApplication.Country)
+	assert.Equal(t, newArea, *retrievedApplication.Area)
+	assert.Equal(t, newRemoteStatusType, retrievedApplication.RemoteStatusType)
+	assert.Equal(t, newWeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, newEstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, newEstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+
+	retrievedApplicationDate := retrievedApplication.ApplicationDate.Format(time.RFC3339)
+	expectedApplicationDate := newApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, expectedApplicationDate, retrievedApplicationDate)
+
+	retrievedUpdatedDate := retrievedApplication.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, retrievedUpdatedDate)
+}
+
+func TestUpdate_ShouldReturnValidationErrorIfNoApplicationFieldsToUpdate(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	id := uuid.New()
+	applicationToUpdate := models.UpdateApplication{
+		ID: id,
+	}
+
+	err := applicationRepository.Update(&applicationToUpdate)
+	assert.Error(t, err)
+	assert.Equal(t, "validation error: nothing to update", err.Error())
+}
+
+func TestUpdate_ShouldNotReturnErrorIfApplicationDoesNotExist(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	id := uuid.New()
+	jobTitle := "Another Job Title"
+
+	applicationToUpdate := models.UpdateApplication{
+		ID:       id,
+		JobTitle: &jobTitle,
+	}
+
+	err := applicationRepository.Update(&applicationToUpdate)
+	assert.NoError(t, err)
+}
+
+// -------- Delete tests: --------
+
+func TestDelete_ShouldDeleteApplication(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	recruiterID := createCompany(t, companyRepository)
+
+	id := uuid.New()
+	jobTitle := "JobTitle"
+
+	applicationToAdd := models.CreateApplication{
+		ID:               &id,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+	_, err := applicationRepository.Create(&applicationToAdd)
+	assert.NoError(t, err)
+
+	err = applicationRepository.Delete(&id)
+	assert.NoError(t, err)
+
+	retrievedApplication, err := applicationRepository.GetById(&id)
+	assert.Nil(t, retrievedApplication)
+	assert.Error(t, err)
+}
+
+func TestDelete_ShouldReturnValidationErrorIfApplicationIDIsNil(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	err := applicationRepository.Delete(nil)
+	assert.Error(t, err)
+	assert.Equal(t, "validation error: ID is nil", err.Error())
+}
+
+func TestDelete_ShouldReturnNotFoundErrorIfApplicationIdDoesNotExist(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	id := uuid.New()
+	err := applicationRepository.Delete(&id)
+	assert.Error(t, err)
+	assert.Equal(t, "error: object not found: Application does not exist. ID: "+id.String(), err.Error())
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {
