@@ -184,3 +184,44 @@ func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameI
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error on field 'applicationJobTitle': applicationJobTitle is required", err.Error())
 }
+
+// -------- UpdateApplication tests: --------
+
+func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationIsNil(t *testing.T) {
+	applicationService := NewApplicationService(nil)
+
+	err := applicationService.UpdateApplication(nil)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: UpdateApplication model is nil", err.Error())
+}
+
+func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationContainsNothingToUpdate(t *testing.T) {
+	applicationService := NewApplicationService(nil)
+
+	id := uuid.New()
+	application := models.UpdateApplication{
+		ID: id,
+	}
+
+	err := applicationService.UpdateApplication(&application)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: nothing to update", err.Error())
+
+}
+
+// -------- DeleteApplication tests: --------
+
+func TestDeleteApplication_ShouldReturnValidationErrorIfApplicationIdIsNil(t *testing.T) {
+	applicationService := NewApplicationService(nil)
+
+	err := applicationService.DeleteApplication(nil)
+	assert.NotNil(t, err)
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'application ID': applicationId is required", err.Error())
+}

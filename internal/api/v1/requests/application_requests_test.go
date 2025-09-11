@@ -237,6 +237,169 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *te
 	assert.Nil(t, model.ApplicationDate)
 }
 
+// --------UpdateApplicationRequest tests: --------
+
+func TestUpdateApplicationRequestValidate_ShouldValidateRequest(t *testing.T) {
+	id := uuid.New()
+	companyID := uuid.New()
+	recruiterID := uuid.New()
+	jobTitle := "Job Title"
+	jobAdURL := "Job Ad URL"
+	country := "Some Country"
+	area := "Some Area"
+	var remoteStatusType RemoteStatusType = RemoteStatusTypeOffice
+	weekdaysInOffice := 1
+	estimatedCycleTime := 2
+	estimatedCommuteTime := 3
+	applicationDate := time.Now().AddDate(0, 0, -1)
+
+	request := UpdateApplicationRequest{
+		ID:                   id,
+		CompanyID:            &companyID,
+		RecruiterID:          &recruiterID,
+		JobTitle:             &jobTitle,
+		JobAdURL:             &jobAdURL,
+		Country:              &country,
+		Area:                 &area,
+		RemoteStatusType:     &remoteStatusType,
+		WeekdaysInOffice:     &weekdaysInOffice,
+		EstimatedCycleTime:   &estimatedCycleTime,
+		EstimatedCommuteTime: &estimatedCommuteTime,
+		ApplicationDate:      &applicationDate,
+	}
+
+	err := request.validate()
+	assert.NoError(t, err)
+}
+
+func TestUpdateApplicationRequestValidate_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
+	id := uuid.New()
+
+	request := UpdateApplicationRequest{
+		ID: id,
+	}
+
+	err := request.validate()
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+}
+
+func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfRemoteStatusTypeIsInvalid(t *testing.T) {
+	id := uuid.New()
+	var fakeRemoteStatusType RemoteStatusType = "something that should never happen"
+
+	request := UpdateApplicationRequest{
+		ID:               id,
+		RemoteStatusType: &fakeRemoteStatusType,
+	}
+
+	err := request.validate()
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error on field 'RemoteStatusType': RemoteStatusType is invalid", validationErr.Error())
+}
+
+func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
+	id := uuid.New()
+	companyID := uuid.New()
+	recruiterID := uuid.New()
+	jobTitle := "Job Title"
+	jobAdURL := "Job Ad URL"
+	country := "Some Country"
+	area := "Some Area"
+	var remoteStatusType RemoteStatusType = RemoteStatusTypeOffice
+	weekdaysInOffice := 1
+	estimatedCycleTime := 2
+	estimatedCommuteTime := 3
+	applicationDate := time.Now().AddDate(0, 0, -1)
+
+	request := UpdateApplicationRequest{
+		ID:                   id,
+		CompanyID:            &companyID,
+		RecruiterID:          &recruiterID,
+		JobTitle:             &jobTitle,
+		JobAdURL:             &jobAdURL,
+		Country:              &country,
+		Area:                 &area,
+		RemoteStatusType:     &remoteStatusType,
+		WeekdaysInOffice:     &weekdaysInOffice,
+		EstimatedCycleTime:   &estimatedCycleTime,
+		EstimatedCommuteTime: &estimatedCommuteTime,
+		ApplicationDate:      &applicationDate,
+	}
+
+	model, err := request.ToModel()
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+
+	assert.Equal(t, id.String(), model.ID.String())
+	assert.Equal(t, companyID.String(), model.CompanyID.String())
+	assert.Equal(t, recruiterID.String(), model.RecruiterID.String())
+	assert.Equal(t, jobTitle, *model.JobTitle)
+	assert.Equal(t, jobAdURL, *model.JobAdURL)
+	assert.Equal(t, country, *model.Country)
+	assert.Equal(t, area, *model.Area)
+	assert.Equal(t, request.RemoteStatusType.String(), model.RemoteStatusType.String())
+	assert.Equal(t, weekdaysInOffice, *model.WeekdaysInOffice)
+	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
+	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
+
+	requestApplicationDate := applicationDate.Format(time.RFC3339)
+	modelApplicationDate := model.ApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, requestApplicationDate, modelApplicationDate)
+}
+
+func TestUpdateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
+	id := uuid.New()
+	companyID := uuid.New()
+
+	request := UpdateApplicationRequest{
+		ID:        id,
+		CompanyID: &companyID,
+	}
+
+	model, err := request.ToModel()
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+
+	assert.Equal(t, id, model.ID)
+	assert.Equal(t, companyID, *model.CompanyID)
+	assert.Nil(t, model.RecruiterID)
+	assert.Nil(t, model.JobTitle)
+	assert.Nil(t, model.JobAdURL)
+	assert.Nil(t, model.Country)
+	assert.Nil(t, model.Area)
+	assert.Nil(t, model.RemoteStatusType)
+	assert.Nil(t, model.WeekdaysInOffice)
+	assert.Nil(t, model.EstimatedCycleTime)
+	assert.Nil(t, model.EstimatedCommuteTime)
+	assert.Nil(t, model.ApplicationDate)
+}
+
+func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
+	id := uuid.New()
+
+	request := UpdateApplicationRequest{
+		ID: id,
+	}
+
+	model, err := request.ToModel()
+	assert.Nil(t, model)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+
+	assert.Equal(t, "validation error: nothing to update", err.Error())
+}
+
 // -------- RemoteStatusType tests: --------
 
 func TestRemoteStatusTypeIsValid_ShouldReturnTrue(t *testing.T) {

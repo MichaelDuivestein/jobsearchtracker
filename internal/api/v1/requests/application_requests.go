@@ -112,6 +112,92 @@ func (request *CreateApplicationRequest) ToModel() (*models.CreateApplication, e
 	return &applicationModel, nil
 }
 
+type UpdateApplicationRequest struct {
+	ID                   uuid.UUID         `json:"id"`
+	CompanyID            *uuid.UUID        `json:"company_id,omitempty"`
+	RecruiterID          *uuid.UUID        `json:"recruiter_id,omitempty"`
+	JobTitle             *string           `json:"job_title,omitempty"`
+	JobAdURL             *string           `json:"job_ad_url,omitempty"`
+	Country              *string           `json:"country,omitempty"`
+	Area                 *string           `json:"area,omitempty"`
+	RemoteStatusType     *RemoteStatusType `json:"remote_status_type,omitempty"`
+	WeekdaysInOffice     *int              `json:"weekdays_in_office,omitempty"`
+	EstimatedCycleTime   *int              `json:"estimated_cycle_time,omitempty"`
+	EstimatedCommuteTime *int              `json:"estimated_commute_time,omitempty"`
+	ApplicationDate      *time.Time        `json:"application_date,omitempty"`
+}
+
+// Validate can return ValidationError
+func (request *UpdateApplicationRequest) validate() error {
+	err := uuid.Validate(request.ID.String())
+	if err != nil {
+		message := "ID is invalid"
+		slog.Info("UpdateApplicationRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+	if request.ID == uuid.Nil {
+		message := "ID is empty"
+		slog.Info("UpdateApplicationRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.CompanyID == nil && request.RecruiterID == nil && request.JobTitle == nil && request.JobAdURL == nil &&
+		request.Country == nil && request.Area == nil && request.RemoteStatusType == nil &&
+		request.WeekdaysInOffice == nil && request.EstimatedCycleTime == nil && request.EstimatedCommuteTime == nil &&
+		request.ApplicationDate == nil {
+		message := "nothing to update"
+		slog.Info("UpdateApplicationRequest.Validate: "+message, "ID", request.ID)
+		return internalErrors.NewValidationError(nil, message)
+	}
+
+	if request.RemoteStatusType != nil && !request.RemoteStatusType.IsValid() {
+		message := "RemoteStatusType is invalid"
+
+		slog.Info("UpdateApplicationRequest.Validate: "+message, "ID", request.ID)
+
+		remoteStatusType := "RemoteStatusType"
+		return internalErrors.NewValidationError(&remoteStatusType, message)
+	}
+
+	return nil
+}
+
+// ToModel can return ValidationError
+func (request *UpdateApplicationRequest) ToModel() (*models.UpdateApplication, error) {
+	// can return ValidationError
+	err := request.validate()
+	if err != nil {
+		slog.Info("validate updateApplicationRequest failed", "error", err)
+		return nil, err
+	}
+
+	var remoteStatusType *models.RemoteStatusType
+	if request.RemoteStatusType != nil {
+		// can return ValidationError
+		tempRemoteStatusType, _ := request.RemoteStatusType.ToModel()
+		remoteStatusType = &tempRemoteStatusType
+	} else {
+		remoteStatusType = nil
+	}
+
+	updateModel := models.UpdateApplication{
+		ID:                   request.ID,
+		CompanyID:            request.CompanyID,
+		RecruiterID:          request.RecruiterID,
+		JobTitle:             request.JobTitle,
+		JobAdURL:             request.JobAdURL,
+		Country:              request.Country,
+		Area:                 request.Area,
+		RemoteStatusType:     remoteStatusType,
+		WeekdaysInOffice:     request.WeekdaysInOffice,
+		EstimatedCycleTime:   request.EstimatedCycleTime,
+		EstimatedCommuteTime: request.EstimatedCommuteTime,
+		ApplicationDate:      request.ApplicationDate,
+	}
+
+	return &updateModel, nil
+}
+
 type RemoteStatusType string
 
 const (

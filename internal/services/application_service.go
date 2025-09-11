@@ -128,3 +128,44 @@ func (applicationService *ApplicationService) GetAllApplications() ([]*models.Ap
 
 	return applications, nil
 }
+
+// UpdateApplication can return InternalServiceError, ValidationError
+func (applicationService *ApplicationService) UpdateApplication(application *models.UpdateApplication) error {
+	if application == nil {
+		slog.Error("ApplicationService.UpdateApplication: UpdateApplication is nil")
+		return internalErrors.NewValidationError(nil, "UpdateApplication model is nil")
+	}
+
+	// can return ValidationError
+	err := application.Validate()
+	if err != nil {
+		slog.Info("ApplicationService.UpdateApplication: UpdateApplication model is invalid. ", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err = applicationService.applicationRepository.Update(application)
+	if err != nil {
+		slog.Error("ApplicationService.UpdateApplication: Error updating application", "error", err)
+	}
+
+	return err
+}
+
+// DeleteApplication can return InternalServiceError, NotFoundError, ValidationError
+func (applicationService *ApplicationService) DeleteApplication(applicationId *uuid.UUID) error {
+	if applicationId == nil {
+		applicationIdString := "application ID"
+		err := internalErrors.NewValidationError(&applicationIdString, "applicationId is required")
+		slog.Info("ApplicationService.DeleteApplication: Error deleting application", "error", err)
+		return err
+	}
+
+	// can return InternalServiceError, ValidationError
+	err := applicationService.applicationRepository.Delete(applicationId)
+	if err != nil {
+		slog.Error("ApplicationService.DeleteApplication: Error deleting application", "error", err)
+	}
+
+	return err
+}
