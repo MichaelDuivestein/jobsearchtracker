@@ -56,7 +56,7 @@ func (database *FileDatabase) buildAndEnsureFilePath(config *config.Config) stri
 		}
 	}
 
-	dbFilePath += config.DatabaseFileName
+	dbFilePath += config.DatabaseFileName + "?_pragma=foreign_keys(1)"
 	return dbFilePath
 }
 
@@ -67,7 +67,7 @@ func NewInMemoryDatabase() Database {
 }
 
 func (database *InMemoryDatabase) Connect(_ *config.Config) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:?_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, err
 	}

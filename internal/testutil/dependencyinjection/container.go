@@ -142,3 +142,52 @@ func SetupPersonHandlerTestContainer(t *testing.T, config configPackage.Config) 
 
 	return container
 }
+
+// -------- Application containers: --------
+
+func SetupApplicationRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationRepository", err)
+	}
+
+	// the CompanyRepository is also needed due to a FK dependency.
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personRepository in SetupApplicationRepositoryTestContainer", err)
+	}
+
+	return container
+}
+
+func SetupApplicationServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(applicationRepository *repositories.ApplicationRepository) *services.ApplicationService {
+		return services.NewApplicationService(applicationRepository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personService", err)
+	}
+
+	return container
+}
+
+func SetupApplicationHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationServiceTestContainer(t, config)
+
+	err := container.Provide(func(applicationService *services.ApplicationService) *apiV1.ApplicationHandler {
+		return apiV1.NewApplicationHandler(applicationService)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personHandler", err)
+	}
+
+	return container
+}

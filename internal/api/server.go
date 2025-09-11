@@ -27,6 +27,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	personService := services.NewPersonService(personRepository)
 	personHandler := apiV1.NewPersonHandler(personService)
 
+	applicationRepository := repositories.NewApplicationRepository(database)
+	applicationService := services.NewApplicationService(applicationRepository)
+	applicationHandler := apiV1.NewApplicationHandler(applicationService)
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
@@ -42,6 +46,9 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/person/get/all", personHandler.GetAllPersons).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/person/update", personHandler.UpdatePerson).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/person/delete/{id}", personHandler.DeletePerson).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/application/new", applicationHandler.CreateApplication).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/application/get/id/{id}", applicationHandler.GetApplicationByID).Methods(http.MethodGet)
 
 	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}
