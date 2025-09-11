@@ -136,3 +136,25 @@ func TestGetApplicationById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 	responseBodyString := responseRecorder.Body.String()
 	assert.Equal(t, "application ID is not a valid UUID\n", responseBodyString)
 }
+
+// -------- GetApplicationsByJobTitle tests: --------
+
+func TestGetApplicationsByJobTitle_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
+	applicationHandler := v1.NewApplicationHandler(nil)
+
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/application/get/title", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"name": "",
+	}
+	request = mux.SetURLVars(request, vars)
+
+	applicationHandler.GetApplicationsByJobTitle(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(t, "job title is empty\n", responseBodyString)
+}

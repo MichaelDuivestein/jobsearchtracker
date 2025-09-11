@@ -173,3 +173,68 @@ func (applicationHandler *ApplicationHandler) GetApplicationByID(writer http.Res
 
 	return
 }
+
+func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
+	writer http.ResponseWriter, request *http.Request) {
+
+	vars := mux.Vars(request)
+	jobTitle := vars["title"]
+
+	if jobTitle == "" {
+		slog.Info("v1.ApplicationHandler.GetApplicationByJobTitle: job title is empty")
+		http.Error(writer, "job title is empty", http.StatusBadRequest)
+		return
+	}
+
+	var internalServiceError *internalErrors.InternalServiceError
+	var notFoundError *internalErrors.NotFoundError
+	var validationErr *internalErrors.ValidationError
+
+	applications, err := applicationHandler.applicationService.GetApplicationsByJobTitle(&jobTitle)
+	if err != nil {
+		var errorMessage string
+		var status int
+
+		if errors.As(err, &internalServiceError) {
+			errorMessage = "Internal service error while retrieving applications"
+			status = http.StatusInternalServerError
+			slog.Error("v1.ApplicationHandler.GetApplicationsByJobTitle: "+errorMessage, "error", err)
+		} else if errors.As(err, &notFoundError) {
+			errorMessage = "No applications [partially] matching this job title found"
+			status = http.StatusNotFound
+			slog.Info("v1.ApplicationHandler.GetApplicationsByJobTitle: "+errorMessage, "error", err)
+		} else if errors.As(err, &validationErr) {
+			errorMessage = err.Error()
+			status = http.StatusBadRequest
+			slog.Info("v1.ApplicationHandler.GetApplicationsByJobTitle: Validation error", "error", err)
+		}
+		http.Error(writer, errorMessage, status)
+
+		return
+	}
+
+	// can return InternalServiceError
+	applicationsResponse, err := responses.NewApplicationsResponse(applications)
+	if err != nil {
+		slog.Error(
+			"v1.ApplicationHandler.GetApplicationsByJobTitle: Unable to convert internal model to response", "error",
+			err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(applicationsResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.ApplicationHandler.GetApplicationsByJobTitle: Unable to write response", "error", err)
+		http.Error(writer, "Application found but unable to build response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info(
+		"v1.ApplicationHandler.GetApplicationsByJobTitle: retrieved applications successfully",
+		"jobTitle", jobTitle)
+
+	return
+}

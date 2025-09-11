@@ -312,6 +312,110 @@ func TestGetById_ShouldReturnErrorIfApplicationIDDoesNotExist(t *testing.T) {
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 }
 
+// -------- GetByJobTitle tests: --------
+
+func TestGetAllByJobTitle_ShouldReturnApplication(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	recruiterID := createCompany(t, companyRepository)
+	jobTitle := "Some Job Title"
+
+	applicationToInsert := models.CreateApplication{
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	retrievedApplications, err := applicationRepository.GetAllByJobTitle(insertedApplication.JobTitle)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedApplications)
+	assert.Equal(t, 1, len(retrievedApplications))
+
+	assert.Equal(t, "Some Job Title", *retrievedApplications[0].JobTitle)
+
+}
+
+func TestGetAllByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsNil(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	retrievedApplications, err := applicationRepository.GetAllByJobTitle(nil)
+	assert.Nil(t, retrievedApplications)
+	assert.NotNil(t, err)
+	assert.Equal(t, "validation error: JobTitle is nil", err.Error())
+}
+
+func TestGetAllByJobTitle_ShouldReturnNotFoundErrorIfApplicationNameDoesNotExist(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	jobTitle := "Doesnt Exist"
+
+	application, err := applicationRepository.GetAllByJobTitle(&jobTitle)
+	assert.Nil(t, application)
+	assert.NotNil(t, err)
+	assert.Equal(t, "error: object not found: JobTitle: '"+jobTitle+"'", err.Error())
+}
+
+func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// insert some applications
+
+	application1ID := uuid.New()
+	application1CompanyID := createCompany(t, companyRepository)
+	application1JobTitle := "Developer"
+	application1 := models.CreateApplication{
+		ID:               &application1ID,
+		CompanyID:        application1CompanyID,
+		JobTitle:         &application1JobTitle,
+		RemoteStatusType: models.RemoteStatusTypeRemote,
+	}
+	insertedApplication1, err := applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication1)
+
+	application2ID := uuid.New()
+	application2RecruiterID := createCompany(t, companyRepository)
+	application2JobTitle := "Software Engineer"
+	application2 := models.CreateApplication{
+		ID:               &application2ID,
+		RecruiterID:      application2RecruiterID,
+		JobTitle:         &application2JobTitle,
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication2, err := applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication2)
+
+	application3ID := uuid.New()
+	application3CompanyID := createCompany(t, companyRepository)
+	application3JobTitle := "Backend Developer"
+	application3 := models.CreateApplication{
+		ID:               &application3ID,
+		CompanyID:        application3CompanyID,
+		JobTitle:         &application3JobTitle,
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+	insertedApplication3, err := applicationRepository.Create(&application3)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication3)
+
+	developer := "developer"
+
+	retrievedApplications, err := applicationRepository.GetAllByJobTitle(&developer)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedApplications)
+	assert.Equal(t, 2, len(retrievedApplications))
+
+	foundApplication1 := retrievedApplications[0]
+	assert.Equal(t, insertedApplication1.ID.String(), foundApplication1.ID.String())
+
+	foundApplication2 := retrievedApplications[1]
+	assert.Equal(t, insertedApplication3.ID.String(), foundApplication2.ID.String())
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

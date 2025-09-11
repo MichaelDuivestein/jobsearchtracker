@@ -4,6 +4,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -155,5 +156,77 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfRemoteStatusTy
 
 	assert.Equal(t,
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: 'Blah'",
+		err.Error())
+}
+
+// -------- NewApplicationsResponse tests: --------
+
+func TestNewApplicationsResponse_ShouldWork(t *testing.T) {
+	applicationModels := []*models.Application{
+		{
+			ID:               uuid.New(),
+			CompanyID:        testutil.UUIDPtr(uuid.New()),
+			JobAdURL:         testutil.StringPtr("Job Ad URL"),
+			RemoteStatusType: models.RemoteStatusTypeUnknown,
+			CreatedDate:      time.Now().AddDate(0, 0, 3),
+		},
+		{
+			ID:               uuid.New(),
+			RecruiterID:      testutil.UUIDPtr(uuid.New()),
+			JobTitle:         testutil.StringPtr("Job Title "),
+			RemoteStatusType: models.RemoteStatusTypeRemote,
+			CreatedDate:      time.Now().AddDate(0, 0, 1),
+		},
+	}
+
+	applications, err := NewApplicationsResponse(applicationModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, applications)
+	assert.Len(t, applications, 2)
+}
+
+func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsNil(t *testing.T) {
+	response, err := NewApplicationsResponse(nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, 0, len(response))
+}
+
+func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
+	var applicationModels []*models.Application
+	response, err := NewApplicationsResponse(applicationModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, 0, len(response))
+}
+
+func TestNewApplicationsResponse_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsInvalid(t *testing.T) {
+	applicationModels := []*models.Application{
+		{
+			ID:               uuid.New(),
+			RecruiterID:      testutil.UUIDPtr(uuid.New()),
+			JobTitle:         testutil.StringPtr("Job Title "),
+			RemoteStatusType: models.RemoteStatusTypeUnknown,
+			CreatedDate:      time.Now().AddDate(0, 0, 7),
+		},
+		{
+			ID:               uuid.New(),
+			RecruiterID:      testutil.UUIDPtr(uuid.New()),
+			JobTitle:         testutil.StringPtr("Job Title "),
+			RemoteStatusType: "",
+			CreatedDate:      time.Now().AddDate(0, 0, 0),
+		},
+	}
+
+	applications, err := NewApplicationsResponse(applicationModels)
+	assert.Nil(t, applications)
+	assert.NotNil(t, err)
+
+	var internalServiceErr *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: ''",
 		err.Error())
 }

@@ -83,3 +83,30 @@ func (applicationService *ApplicationService) GetApplicationById(
 
 	return application, nil
 }
+
+// GetApplicationsByJobTitle can return InternalServiceError, NotFoundError, ValidationError
+func (applicationService *ApplicationService) GetApplicationsByJobTitle(
+	applicationJobTitle *string) ([]*models.Application, error) {
+	if applicationJobTitle == nil || *applicationJobTitle == "" {
+		applicationJobTitleString := "applicationJobTitle"
+		err := internalErrors.NewValidationError(&applicationJobTitleString, "applicationJobTitle is required")
+		slog.Info("applicationService.GetApplicationByJobTitle: Failed to get applications", "error", err)
+		return nil, err
+	}
+
+	applications, err := applicationService.applicationRepository.GetAllByJobTitle(applicationJobTitle)
+	if err != nil {
+		return nil, err
+	}
+
+	if applications == nil {
+		slog.Info("ApplicationService.GetApplicationsByJobTitle: Retrieved zero applications")
+	} else {
+		slog.Info(
+			"ApplicationService.GetApplicationsByJobTitle: Retrieved " +
+				string(rune(len(applications))) +
+				" applications")
+	}
+
+	return applications, nil
+}
