@@ -348,6 +348,52 @@ func TestGetApplicationsByJobTitle_ShouldReturnNotFoundErrorIfNoNamesMatch(t *te
 	assert.Equal(t, "error: object not found: JobTitle: '"+jobTitleToGet+"'", err.Error())
 }
 
+// -------- GetAllApplications tests: --------
+
+func TestGetAlLApplications_ShouldWork(t *testing.T) {
+	applicationService, companyRepository := setupApplicationService(t)
+
+	// insert applications
+
+	companyID := createCompany(t, companyRepository)
+
+	jobTitle1 := "JobTitle1"
+	applicationToInsert1 := models.CreateApplication{
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle1,
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	_, err := applicationService.CreateApplication(&applicationToInsert1)
+	assert.NoError(t, err)
+
+	jobTitle2 := "JobTitle2"
+	applicationToInsert2 := models.CreateApplication{
+		CompanyID:        companyID,
+		JobTitle:         &jobTitle2,
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+	_, err = applicationService.CreateApplication(&applicationToInsert2)
+	assert.NoError(t, err)
+
+	// getAll
+
+	applications, err := applicationService.GetAllApplications()
+	assert.NoError(t, err)
+	assert.NotNil(t, applications)
+	assert.Equal(t, 2, len(applications))
+
+	assert.Equal(t, jobTitle1, *applications[0].JobTitle)
+	assert.Equal(t, jobTitle2, *applications[1].JobTitle)
+}
+
+func TestGetAlLApplications_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
+	applicationService, _ := setupApplicationService(t)
+
+	applications, err := applicationService.GetAllApplications()
+	assert.NoError(t, err)
+	assert.Nil(t, applications)
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

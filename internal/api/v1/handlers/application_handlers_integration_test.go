@@ -483,6 +483,89 @@ func TestGetApplicationsByJobTitle_ShouldReturnNotFoundIfNoApplicationsMatchingJ
 	assert.Equal(t, "No applications [partially] matching this job title found\n", responseBodyString)
 }
 
+// -------- GetAllApplications tests: --------
+
+func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert applications
+
+	recruiterID := createCompany(t, companyRepository)
+	jobTitle := "Software Engineer"
+
+	firstID := uuid.New()
+	firstRequestBody := requests.CreateApplicationRequest{
+		ID:               &firstID,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, firstRequestBody)
+
+	secondID := uuid.New()
+	secondRequestBody := requests.CreateApplicationRequest{
+		ID:               &secondID,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeRemote,
+	}
+	insertApplication(t, applicationHandler, secondRequestBody)
+
+	thirdID := uuid.New()
+	thirdRequestBody := requests.CreateApplicationRequest{
+		ID:               &thirdID,
+		RecruiterID:      recruiterID,
+		JobTitle:         &jobTitle,
+		RemoteStatusType: requests.RemoteStatusTypeHybrid,
+	}
+	insertApplication(t, applicationHandler, thirdRequestBody)
+
+	// GetAllApplications:
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, len(response), 3)
+
+	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
+	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
+	assert.Equal(t, *thirdRequestBody.ID, response[2].ID)
+}
+
+func TestGetAllApplications_ShouldReturnEmptyResponseIfNoApplicationsInDatabase(t *testing.T) {
+	applicationHandler, _ := setupApplicationHandler(t)
+
+	// GetAllApplications:
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 0, len(response))
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

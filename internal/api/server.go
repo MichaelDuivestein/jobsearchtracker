@@ -50,6 +50,7 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/application/new", applicationHandler.CreateApplication).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/application/get/id/{id}", applicationHandler.GetApplicationByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application/get/title/{title}", applicationHandler.GetApplicationsByJobTitle).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application/get/all", applicationHandler.GetAllApplications).Methods(http.MethodGet)
 
 	logger.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}

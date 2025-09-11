@@ -170,6 +170,45 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 	return results, nil
 }
 
+// GetAll can return InternalServiceError
+func (repository *ApplicationRepository) GetAll() ([]*models.Application, error) {
+	sqlSelect :=
+		"SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
+			"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
+			"updated_date " +
+			"FROM application " +
+			"ORDER BY created_date DESC"
+
+	rows, err := repository.database.Query(sqlSelect)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var results []*models.Application
+	for rows.Next() {
+		// can return ConflictError, InternalServiceError
+		result, err := repository.mapRow(rows, "GetAll", nil)
+		if err != nil {
+			slog.Error("application_repository.GetAll: Error mapping row", "error", err)
+			return nil, internalErrors.NewInternalServiceError("Error processing application data: " + err.Error())
+		}
+
+		if result != nil {
+			results = append(results, result)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("application_repository.GetAll: Error iterating rows", "error", err)
+		return nil, internalErrors.NewInternalServiceError("Error reading applications from database: " + err.Error())
+	}
+
+	return results, nil
+}
+
 func (repository *ApplicationRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Application, error) {
 

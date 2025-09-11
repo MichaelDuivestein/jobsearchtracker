@@ -110,3 +110,21 @@ func (applicationService *ApplicationService) GetApplicationsByJobTitle(
 
 	return applications, nil
 }
+
+// GetAllApplications can return InternalServiceError
+func (applicationService *ApplicationService) GetAllApplications() ([]*models.Application, error) {
+	// can return InternalServiceError
+	applications, err := applicationService.applicationRepository.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if applications == nil {
+		slog.Info("ApplicationService.GetAllApplications: Retrieved zero applications")
+	} else {
+		slog.Info(
+			"ApplicationService.GetAllApplications: Retrieved " + string(rune(len(applications))) + " applications")
+	}
+
+	return applications, nil
+}

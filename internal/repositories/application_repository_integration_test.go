@@ -416,6 +416,97 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 	assert.Equal(t, insertedApplication3.ID.String(), foundApplication2.ID.String())
 }
 
+// -------- GetAll tests: --------
+
+func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+	companyID := createCompany(t, companyRepository)
+	recruiterID := createCompany(t, companyRepository)
+
+	id1 := uuid.New()
+	jobTitle1 := "Job Title1"
+	jobAdURL1 := "Job Ad URL1"
+	country1 := "Some Country1"
+	area1 := "Some Area1"
+	weekdaysInOffice1 := 1
+	estimatedCycleTime1 := 2
+	estimatedCommuteTime1 := 3
+	applicationDate1 := time.Now().AddDate(0, 0, -1)
+	createdDate1 := time.Now().AddDate(0, 0, -2)
+	updatedDate1 := time.Now().AddDate(0, 0, -3)
+
+	application1ToInsert := models.CreateApplication{
+		ID:                   &id1,
+		CompanyID:            companyID,
+		RecruiterID:          recruiterID,
+		JobTitle:             &jobTitle1,
+		JobAdURL:             &jobAdURL1,
+		Country:              &country1,
+		Area:                 &area1,
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     &weekdaysInOffice1,
+		EstimatedCycleTime:   &estimatedCycleTime1,
+		EstimatedCommuteTime: &estimatedCommuteTime1,
+		ApplicationDate:      &applicationDate1,
+		CreatedDate:          &createdDate1,
+		UpdatedDate:          &updatedDate1,
+	}
+
+	insertedApplication1, err := applicationRepository.Create(&application1ToInsert)
+	assert.Nil(t, err, "Error on applicationRepository.Create(): '%s'.", err)
+	assert.NotNil(t, insertedApplication1, "inserted application 1 is nil")
+
+	id2 := uuid.New()
+	jobTitle2 := "Job Title2"
+	jobAdURL2 := "Job Ad URL2"
+	country2 := "Some Country2"
+	area2 := "Some Area2"
+	weekdaysInOffice2 := 1
+	estimatedCycleTime2 := 2
+	estimatedCommuteTime2 := 3
+	applicationDate2 := time.Now().AddDate(0, 0, -4)
+	createdDate2 := time.Now().AddDate(0, 0, -5)
+	updatedDate2 := time.Now().AddDate(0, 0, -6)
+
+	application2ToInsert := models.CreateApplication{
+		ID:                   &id2,
+		CompanyID:            companyID,
+		RecruiterID:          recruiterID,
+		JobTitle:             &jobTitle2,
+		JobAdURL:             &jobAdURL2,
+		Country:              &country2,
+		Area:                 &area2,
+		RemoteStatusType:     models.RemoteStatusTypeOffice,
+		WeekdaysInOffice:     &weekdaysInOffice2,
+		EstimatedCycleTime:   &estimatedCycleTime2,
+		EstimatedCommuteTime: &estimatedCommuteTime2,
+		ApplicationDate:      &applicationDate2,
+		CreatedDate:          &createdDate2,
+		UpdatedDate:          &updatedDate2,
+	}
+
+	insertedApplication2, err := applicationRepository.Create(&application2ToInsert)
+	assert.Nil(t, err, "Error on applicationRepository.Create(): '%s'.", err)
+	assert.NotNil(t, insertedApplication2, "inserted application 2 is nil")
+
+	results, err := applicationRepository.GetAll()
+	assert.Nil(t, err, "Error on applicationRepository.GetAll(): '%s'.", err)
+
+	assert.NotNil(t, results, "results should not be nil")
+	assert.Equal(t, 2, len(results), "number of results should be 2")
+
+	assert.Equal(t, id2.String(), results[1].ID.String())
+	assert.Equal(t, id1.String(), results[0].ID.String())
+}
+
+func TestGetAll_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
+	applicationRepository, _ := setupApplicationRepository(t)
+
+	applications, err := applicationRepository.GetAll()
+	assert.Nil(t, err, "Error on applicationRepository.GetAll(): '%s'.", err)
+	assert.Nil(t, applications, "applications should be nil")
+}
+
 // -------- Test helpers: --------
 
 func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {

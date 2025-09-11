@@ -238,3 +238,39 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 
 	return
 }
+
+func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, request *http.Request) {
+	// can return InternalServiceError
+	applications, err := applicationHandler.applicationService.GetAllApplications()
+	if err != nil {
+		errorMessage := "Internal service error while getting all applications"
+		status := http.StatusInternalServerError
+		slog.Error("v1.ApplicationHandler.getAllApplications: "+errorMessage, "error", err)
+
+		http.Error(writer, errorMessage, status)
+		return
+	}
+
+	//  can return InternalServiceError
+	applicationsResponse, err := responses.NewApplicationsResponse(applications)
+	if err != nil {
+		slog.Error(
+			"v1.ApplicationHandler.GetAllApplications: Unable to convert internal model to response",
+			"error", err)
+		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(applicationsResponse)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		slog.Error("v1.ApplicationHandler.GetAllApplications: Unable to write response", "error", err)
+		http.Error(writer, "Applications retrieved but unable to create response", http.StatusInternalServerError)
+
+		return
+	}
+
+	slog.Info("v1.ApplicationHandler.GetAllApplications: retrieved all applications successfully")
+
+	return
+}
