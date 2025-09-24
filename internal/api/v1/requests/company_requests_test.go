@@ -73,7 +73,7 @@ func TestCreateCompanyRequestValidate_ShouldReturnValidationError(t *testing.T) 
 			}
 
 			err := request.Validate()
-			assert.NotNil(t, err, "err should not be nil")
+			assert.NotNil(t, err)
 
 			var validationErr *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationErr))
@@ -97,20 +97,20 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
 	}
 
 	model, err := request.ToModel()
-	assert.Nil(t, err, "Error on CreateCompanyRequest.ToModel(): '%s'.", err)
-	assert.NotNil(t, model, "model is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
 
-	assert.Equal(t, *request.ID, *model.ID, "model.ID should be the same as request.ID")
-	assert.Equal(t, request.Name, model.Name, "model.Name should be the same as request.Name")
-	assert.Equal(t, request.CompanyType.String(), model.CompanyType.String(), "model.CompanyType should be the same value as request.CompanyType")
-	assert.Equal(t, request.Notes, model.Notes, "model.Notes should be the same as request.Notes")
+	assert.Equal(t, *request.ID, *model.ID)
+	assert.Equal(t, request.Name, model.Name)
+	assert.Equal(t, request.CompanyType.String(), model.CompanyType.String())
+	assert.Equal(t, request.Notes, model.Notes)
 
 	modelLastContact := model.LastContact.Format(time.RFC3339)
 	requestLastContact := request.LastContact.Format(time.RFC3339)
-	assert.Equal(t, requestLastContact, modelLastContact, "model.LastContact should be the same as request..LastContact")
+	assert.Equal(t, requestLastContact, modelLastContact)
 
-	assert.Nil(t, model.CreatedDate, "model.CreatedDate should be nil, but got '%s'", model.CreatedDate)
-	assert.Nil(t, model.UpdatedDate, "model.UpdatedDate should be nil, but got '%s'", model.UpdatedDate)
+	assert.Nil(t, model.CreatedDate)
+	assert.Nil(t, model.UpdatedDate)
 }
 
 func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
@@ -121,17 +121,17 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testin
 	}
 
 	model, err := request.ToModel()
-	assert.Nil(t, err, "Error on CreateCompanyRequest.ToModel(): '%s'.", err)
-	assert.NotNil(t, model, "model is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
 
-	assert.Nil(t, model.ID, "Expected ID to be nil")
-	assert.Equal(t, request.Name, model.Name, "model.Name should be the same as request.Name")
-	assert.Equal(t, request.CompanyType.String(), model.CompanyType.String(), "model.CompanyType should be the same as request.CompanyType")
-	assert.Nil(t, model.Notes, "Expected Notes to be nil")
-	assert.Nil(t, model.ID, "Expected ID to be nil")
-	assert.Nil(t, model.LastContact, "model.LastContact should be nil, but got '%s'", model.LastContact)
-	assert.Nil(t, model.CreatedDate, "model.CreatedDate should be nil, but got '%s'", model.CreatedDate)
-	assert.Nil(t, model.UpdatedDate, "model.UpdatedDate should be nil, but got '%s'", model.UpdatedDate)
+	assert.Nil(t, model.ID)
+	assert.Equal(t, request.Name, model.Name)
+	assert.Equal(t, request.CompanyType.String(), model.CompanyType.String())
+	assert.Nil(t, model.Notes)
+	assert.Nil(t, model.ID)
+	assert.Nil(t, model.LastContact)
+	assert.Nil(t, model.CreatedDate)
+	assert.Nil(t, model.UpdatedDate)
 }
 
 // -------- UpdateCompanyRequest tests: --------
@@ -198,7 +198,7 @@ func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) 
 			testName: "only Name",
 			updateRequest: &UpdateCompanyRequest{
 				ID:   uuid.New(),
-				Name: testutil.StringPtr("SmallCorp"),
+				Name: testutil.ToPtr("SmallCorp"),
 			},
 		},
 		{
@@ -212,21 +212,21 @@ func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) 
 			testName: "only Notes",
 			updateRequest: &UpdateCompanyRequest{
 				ID:    uuid.New(),
-				Notes: testutil.StringPtr("Variable Notes"),
+				Notes: testutil.ToPtr("Variable Notes"),
 			},
 		},
 		{
 			testName: "only LastContact",
 			updateRequest: &UpdateCompanyRequest{
 				ID:          uuid.New(),
-				LastContact: testutil.TimePtr(time.Now().AddDate(0, 0, 2)),
+				LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 			},
 		},
 		{
 			testName: "Name and CompanyType",
 			updateRequest: &UpdateCompanyRequest{
 				ID:          uuid.New(),
-				Name:        testutil.StringPtr("MediumCorp"),
+				Name:        testutil.ToPtr("MediumCorp"),
 				CompanyType: CompanyType(CompanyTypeEmployer).ToPointer(),
 			},
 		},
@@ -234,26 +234,26 @@ func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) 
 			testName: "Notes and LastContact",
 			updateRequest: &UpdateCompanyRequest{
 				ID:          uuid.New(),
-				Notes:       testutil.StringPtr("Variable Notes"),
-				LastContact: testutil.TimePtr(time.Now()),
+				Notes:       testutil.ToPtr("Variable Notes"),
+				LastContact: testutil.ToPtr(time.Now()),
 			},
 		},
 		{
 			testName: "Name and CompanyType and LastContact",
 			updateRequest: &UpdateCompanyRequest{
 				ID:          uuid.New(),
-				Name:        testutil.StringPtr("MediumCorp"),
+				Name:        testutil.ToPtr("MediumCorp"),
 				CompanyType: CompanyType(CompanyTypeRecruiter).ToPointer(),
-				LastContact: testutil.TimePtr(time.Now().AddDate(0, -1, 0)),
+				LastContact: testutil.ToPtr(time.Now().AddDate(0, -1, 0)),
 			},
 		},
 		{
 			testName: "CompanyType and LastContact and Notes",
 			updateRequest: &UpdateCompanyRequest{
 				ID:          uuid.New(),
-				Name:        testutil.StringPtr("Small business"),
+				Name:        testutil.ToPtr("Small business"),
 				CompanyType: CompanyType(CompanyTypeEmployer).ToPointer(),
-				LastContact: testutil.TimePtr(time.Now().AddDate(0, 0, 3)),
+				LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 			},
 		},
 	}
@@ -417,7 +417,10 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnNilCompanyType(t *test
 	assert.NotNil(t, err)
 
 	assert.Equal(t, "", companyType.String())
-	assert.Equal(t, "internal service error: Error trying to convert internal companyType to external CompanyType.", err.Error())
+	assert.Equal(
+		t,
+		"internal service error: Error trying to convert internal companyType to external CompanyType.",
+		err.Error())
 }
 
 func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *testing.T) {
@@ -429,7 +432,10 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
-	assert.Equal(t, "internal service error: Error converting internal CompanyType to external CompanyType: ''", err.Error())
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal CompanyType to external CompanyType: ''",
+		err.Error())
 
 	scammer := models.CompanyType("scammer")
 	scammerV1, err := NewCompanyType(&scammer)
@@ -438,5 +444,8 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 	assert.Equal(t, "", scammerV1.String())
 
 	assert.True(t, errors.As(err, &internalServiceError))
-	assert.Equal(t, "internal service error: Error converting internal CompanyType to external CompanyType: 'scammer'", err.Error())
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal CompanyType to external CompanyType: 'scammer'",
+		err.Error())
 }

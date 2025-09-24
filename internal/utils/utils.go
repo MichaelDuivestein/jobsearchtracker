@@ -20,12 +20,11 @@ func JoinToString(stringParts *[]string, prefix *string, separator string, postf
 	}
 
 	for index, substring := range *stringParts {
-		builder.WriteString(substring)
-
-		// don't write the separator after the last index
-		if index != len(*stringParts)-1 {
+		if index > 0 {
 			builder.WriteString(separator)
 		}
+
+		builder.WriteString(substring)
 	}
 
 	if postfix != nil {

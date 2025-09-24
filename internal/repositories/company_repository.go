@@ -286,7 +286,9 @@ func (repository *CompanyRepository) Delete(id *uuid.UUID) error {
 }
 
 // mapRow can return ConflictError, InternalServiceError
-func (repository *CompanyRepository) mapRow(scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Company, error) {
+func (repository *CompanyRepository) mapRow(
+	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Company, error) {
+
 	var result models.Company
 	var lastContact, createdDate, updatedDate sql.NullString
 

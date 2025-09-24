@@ -28,37 +28,37 @@ func TestCreateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {
 			expectedErrorMessage: "invalid request body: Unable to parse JSON\n"},
 		{
 			testName:             "body is empty",
-			inputRequest:         testutil.StringPtr(""),
+			inputRequest:         testutil.ToPtr(""),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "invalid request body: Unable to parse JSON\n"},
 		{
 			testName:             "body does not match CreateCompanyRequest",
-			inputRequest:         testutil.StringPtr(`{"recruiter_name":"Mark Droog"}`),
+			inputRequest:         testutil.ToPtr(`{"recruiter_name":"Mark Droog"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "validation error on field 'Name': Name is empty\n"},
 		{
 			testName:             "body Name is missing",
-			inputRequest:         testutil.StringPtr(`{"company_type":"recruiter"}`),
+			inputRequest:         testutil.ToPtr(`{"company_type":"recruiter"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "validation error on field 'Name': Name is empty\n"},
 		{
 			testName:             "body CompanyType is missing",
-			inputRequest:         testutil.StringPtr(`{"name":"random company name"}`),
+			inputRequest:         testutil.ToPtr(`{"name":"random company name"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "validation error on field 'CompanyType': CompanyType is invalid\n"},
 		{
 			testName:             "body CompanyType is invalid",
-			inputRequest:         testutil.StringPtr(`{"name":"random company name","company_type":"other"}`),
+			inputRequest:         testutil.ToPtr(`{"name":"random company name","company_type":"other"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "validation error on field 'CompanyType': CompanyType is invalid\n"},
 		{
 			testName:             "body is invalid",
-			inputRequest:         testutil.StringPtr(`{"recruiter_name":"Mark Droog"}`),
+			inputRequest:         testutil.ToPtr(`{"recruiter_name":"Mark Droog"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "validation error on field 'Name': Name is empty\n"},
 		{
 			testName:             "malformed json",
-			inputRequest:         testutil.StringPtr(`"name":"random company name","company_type":"consultancy"`),
+			inputRequest:         testutil.ToPtr(`"name":"random company name","company_type":"consultancy"`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "invalid request body: Unable to parse JSON\n"},
 	}
@@ -134,7 +134,7 @@ func TestGetCompanyById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 	companyHandler := v1.NewCompanyHandler(nil)
 
-	request, err := http.NewRequest(http.MethodPost, "/api/v1/company/get/name", nil)
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/name", nil)
 	assert.NoError(t, err)
 
 	responseRecorder := httptest.NewRecorder()
@@ -168,43 +168,43 @@ func TestUpdateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {
 		},
 		{
 			testName:             "body is empty",
-			inputRequest:         testutil.StringPtr(""),
+			inputRequest:         testutil.ToPtr(""),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
 		},
 		{
 			testName:             "body does not match UpdateCompanyRequest",
-			inputRequest:         testutil.StringPtr(`{"company_id": "8abb5944-761b-447c-8a77-11ba1108ff68", "notes": "Notes"}`),
+			inputRequest:         testutil.ToPtr(`{"company_id": "8abb5944-761b-447c-8a77-11ba1108ff68", "notes": "Notes"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
 		},
 		{
 			testName:             "body ID is missing",
-			inputRequest:         testutil.StringPtr(`{"company_type":"recruiter"}`),
+			inputRequest:         testutil.ToPtr(`{"company_type":"recruiter"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "Unable to convert request to internal model: validation error: ID is empty\n",
 		},
 		{
 			testName:             "body CompanyType is invalid",
-			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "name":"random company name","company_type":"other"}`),
+			inputRequest:         testutil.ToPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "name":"random company name","company_type":"other"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "Unable to convert request to internal model: validation error on field 'CompanyType': CompanyType is invalid\n",
 		},
 		{
 			testName:             "body is invalid",
-			inputRequest:         testutil.StringPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "recruiter_name":"Mark Droog"}`),
+			inputRequest:         testutil.ToPtr(`{"id": "8abb5944-761b-447c-8a77-11ba1108ff68", "recruiter_name":"Mark Droog"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
 		},
 		{
 			testName:             "malformed json",
-			inputRequest:         testutil.StringPtr(`"name":"random company name","company_type":"consultancy"`),
+			inputRequest:         testutil.ToPtr(`"name":"random company name","company_type":"consultancy"`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "invalid request body: Unable to parse JSON\n",
 		},
 		{
 			testName:             "body contains no fields to update",
-			inputRequest:         testutil.StringPtr(`{"id":"8abb5944-761b-447c-8a77-11ba1108ff68"}`),
+			inputRequest:         testutil.ToPtr(`{"id":"8abb5944-761b-447c-8a77-11ba1108ff68"}`),
 			expectedResponseCode: http.StatusBadRequest,
 			expectedErrorMessage: "Unable to convert request to internal model: validation error: nothing to update\n",
 		},

@@ -54,37 +54,37 @@ func TestCreateCompany_ShouldReturnCompany(t *testing.T) {
 	}
 
 	requestBytes, err := json.Marshal(requestBody)
-	assert.Nil(t, err, "Failed to marshal create company request")
+	assert.Nil(t, err)
 
-	request, err := http.NewRequest(http.MethodPost, "/api/v1/companies/new", bytes.NewBuffer(requestBytes))
-	assert.Nil(t, err, "Failed to create request")
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/company/new", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
 
 	responseRecorder := httptest.NewRecorder()
 
 	companyHandler.CreateCompany(responseRecorder, request)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code, "expected response code to be 201")
+	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	responseBodyString := responseRecorder.Body.String()
-	assert.NotEmpty(t, responseBodyString, "CreateCompany returned empty body")
+	assert.NotEmpty(t, responseBodyString)
 
 	var companyResponse responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&companyResponse)
-	assert.Nil(t, err, "Failed to unmarshal create company response")
+	assert.NoError(t, err)
 
-	assert.Equal(t, *requestBody.ID, companyResponse.ID, "companyResponse.ID should be the same as requestBody.ID")
-	assert.Equal(t, requestBody.Name, companyResponse.Name, "companyResponse.Name should be the same as requestBody.Name")
-	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType, "companyResponse.requestBodyType should be the same as requestBody.requestBodyType")
-	assert.Equal(t, requestBody.Notes, companyResponse.Notes, "companyResponse.Notes should be the same as requestBody.Notes")
+	assert.Equal(t, *requestBody.ID, companyResponse.ID)
+	assert.Equal(t, requestBody.Name, companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
+	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
 
 	companyResponseLastContact := companyResponse.LastContact.Format(time.RFC3339)
 	requestBodyToInsertLastContact := requestBody.LastContact.Format(time.RFC3339)
-	assert.Equal(t, requestBodyToInsertLastContact, companyResponseLastContact, "companyResponse.LastContact should be the same as requestBody.LastContact")
+	assert.Equal(t, requestBodyToInsertLastContact, companyResponseLastContact)
 
 	companyResponseCreatedDate := companyResponse.CreatedDate.Format(time.RFC3339)
 	now := time.Now().Format(time.RFC3339)
-	assert.Equal(t, now, companyResponseCreatedDate, "companyResponse.CreatedDate should be the same as now")
+	assert.Equal(t, now, companyResponseCreatedDate)
 
-	assert.Nil(t, companyResponse.UpdatedDate, "companyResponse.UpdatedDate should be nil")
+	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
@@ -96,34 +96,34 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 	}
 
 	requestBytes, err := json.Marshal(requestBody)
-	assert.Nil(t, err, "Failed to marshal create company request")
+	assert.NoError(t, err)
 
-	request, err := http.NewRequest(http.MethodPost, "/api/v1/companies/new", bytes.NewBuffer(requestBytes))
-	assert.Nil(t, err, "Failed to create request")
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/company/new", bytes.NewBuffer(requestBytes))
+	assert.NoError(t, err)
 
 	responseRecorder := httptest.NewRecorder()
 
 	createdDateApproximation := time.Now().Format(time.RFC3339)
 	companyHandler.CreateCompany(responseRecorder, request)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code, "expected response code to be 201")
+	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	var responseBodyString = responseRecorder.Body.String()
-	assert.NotEmpty(t, responseBodyString, "CreateCompany returned empty body")
+	assert.NotEmpty(t, responseBodyString)
 
 	var companyResponse responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&companyResponse)
-	assert.Nil(t, err, "Failed to unmarshal create company response")
+	assert.NoError(t, err)
 
-	assert.Equal(t, requestBody.Name, companyResponse.Name, "companyResponse.Name should be the same as requestBody.Name")
-	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType, "companyResponse.requestBodyType should be the same as requestBody.requestBodyType")
+	assert.Equal(t, requestBody.Name, companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
 
-	assert.Nil(t, companyResponse.Notes, "inserted company.Notes should be nil, but got '%s'", companyResponse.Notes)
-	assert.Nil(t, companyResponse.LastContact, "inserted company.LastContact should be nil, but got '%s'", companyResponse.LastContact)
+	assert.Nil(t, companyResponse.Notes)
+	assert.Nil(t, companyResponse.LastContact)
 
 	insertedCompanyCreatedDate := companyResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as '%s'", createdDateApproximation)
+	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate)
 
-	assert.Nil(t, companyResponse.UpdatedDate, "companyResponse.UpdatedDate should be nil")
+	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *testing.T) {
@@ -138,21 +138,21 @@ func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *test
 	}
 
 	firstRequestBytes, err := json.Marshal(firstRequestBody)
-	assert.Nil(t, err, "Failed to marshal create first company request")
+	assert.NoError(t, err)
 
-	firstRequest, err := http.NewRequest(http.MethodPost, "/api/v1/companies/new", bytes.NewBuffer(firstRequestBytes))
-	assert.Nil(t, err, "Failed to create second request")
+	firstRequest, err := http.NewRequest(http.MethodPost, "/api/v1/company/new", bytes.NewBuffer(firstRequestBytes))
+	assert.NoError(t, err)
 
 	firstResponseRecorder := httptest.NewRecorder()
 
 	companyHandler.CreateCompany(firstResponseRecorder, firstRequest)
-	assert.Equal(t, http.StatusCreated, firstResponseRecorder.Code, "expected response code to be 201")
+	assert.Equal(t, http.StatusCreated, firstResponseRecorder.Code)
 
 	var firstCompanyResponse responses.CompanyResponse
 	err = json.NewDecoder(firstResponseRecorder.Body).Decode(&firstCompanyResponse)
-	assert.Nil(t, err, "Failed to unmarshal first create company response")
+	assert.NoError(t, err)
 
-	assert.Equal(t, companyID, firstCompanyResponse.ID, "firstCompanyResponse.ID should be the same as companyID")
+	assert.Equal(t, companyID, firstCompanyResponse.ID)
 
 	secondRequestBody := requests.CreateCompanyRequest{
 		ID:          &companyID,
@@ -161,18 +161,128 @@ func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *test
 	}
 
 	secondRequestBytes, err := json.Marshal(secondRequestBody)
-	assert.Nil(t, err, "Failed to marshal create second company request")
+	assert.NoError(t, err)
 
-	secondRequest, err := http.NewRequest(http.MethodPost, "/api/v1/companies/new", bytes.NewBuffer(secondRequestBytes))
-	assert.Nil(t, err, "Failed to create second request")
+	secondRequest, err := http.NewRequest(http.MethodPost, "/api/v1/company/new", bytes.NewBuffer(secondRequestBytes))
+	assert.NoError(t, err)
 
 	secondResponseRecorder := httptest.NewRecorder()
 
 	companyHandler.CreateCompany(secondResponseRecorder, secondRequest)
-	assert.Equal(t, http.StatusConflict, secondResponseRecorder.Code, "expected response code to be 400")
+	assert.Equal(t, http.StatusConflict, secondResponseRecorder.Code)
 
-	expectedError := "Conflict error on insert: ID already exists\n"
-	assert.Equal(t, expectedError, secondResponseRecorder.Body.String(), "secondCompanyResponse returned wrong error in body")
+	assert.Equal(t, "Conflict error on insert: ID already exists\n", secondResponseRecorder.Body.String())
+}
+
+// -------- GetCompanyById tests: --------
+
+func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// Insert the company:
+
+	id := uuid.New()
+	notes := "Not a lot of notes for this company"
+	lastContact := time.Now().AddDate(0, 0, -1)
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &id,
+		Name:        "random company name",
+		CompanyType: requests.CompanyTypeConsultancy,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+
+	_, createdDateApproximation := insertCompany(t, companyHandler, requestBody)
+
+	// Get the company:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	vars := map[string]string{
+		"id": id.String(),
+	}
+	getRequest = mux.SetURLVars(getRequest, vars)
+
+	companyHandler.GetCompanyById(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var getCompanyResponse responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
+	assert.NoError(t, err)
+
+	assert.Equal(t, *requestBody.ID, getCompanyResponse.ID)
+	assert.Equal(t, requestBody.Name, getCompanyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType, getCompanyResponse.CompanyType)
+	assert.Equal(t, requestBody.Notes, getCompanyResponse.Notes)
+
+	companyResponseLastContact := getCompanyResponse.LastContact.Format(time.RFC3339)
+	requestBodyToInsertLastContact := requestBody.LastContact.Format(time.RFC3339)
+	assert.Equal(t, requestBodyToInsertLastContact, companyResponseLastContact)
+
+	companyResponseCreatedDate := getCompanyResponse.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, *createdDateApproximation, companyResponseCreatedDate)
+
+	assert.Nil(t, getCompanyResponse.UpdatedDate)
+}
+
+func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) {
+	companyHandler := setupCompanyHandler(t)
+
+	// Get a company that doesn't exist
+
+	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	firstGetVars := map[string]string{
+		"id": uuid.New().String(),
+	}
+	firstGetRequest = mux.SetURLVars(firstGetRequest, firstGetVars)
+
+	companyHandler.GetCompanyById(responseRecorder, firstGetRequest)
+	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	firstResponseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, firstResponseBodyString)
+
+	// Insert a company
+
+	id := uuid.New()
+	notes := "Not a lot of notes for this company"
+	lastContact := time.Now().AddDate(0, 0, -1)
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &id,
+		Name:        "random company name",
+		CompanyType: requests.CompanyTypeConsultancy,
+		Notes:       &notes,
+		LastContact: &lastContact,
+	}
+	insertCompany(t, companyHandler, requestBody)
+
+	// Get another company that doesn't exist
+
+	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
+	assert.NoError(t, err)
+
+	responseRecorder = httptest.NewRecorder()
+
+	secondGetVars := map[string]string{
+		"id": uuid.New().String(),
+	}
+	secondGetRequest = mux.SetURLVars(secondGetRequest, secondGetVars)
+
+	companyHandler.GetCompanyById(responseRecorder, secondGetRequest)
+	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	secondResponseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, secondResponseBodyString)
 }
 
 // -------- GetCompanyByName tests: --------
