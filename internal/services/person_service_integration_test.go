@@ -145,7 +145,7 @@ func TestGetPersonById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testi
 	assert.NotNil(t, err)
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
 }
 
 // -------- GetPersonsByName tests: --------
@@ -263,7 +263,7 @@ func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) 
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: Name: '"+nameToGet+"'", err.Error())
+	assert.Equal(t, "error: object not found: Name: '"+nameToGet+"'", notFoundError.Error())
 }
 
 // -------- GetAllPersons tests: --------
@@ -410,7 +410,7 @@ func TestDeletePerson_ShouldWork(t *testing.T) {
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
 }
 
 func TestDeletePerson_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
@@ -422,5 +422,5 @@ func TestDeletePerson_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testi
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: Person does not exist. ID: "+id.String(), err.Error())
+	assert.Equal(t, "error: object not found: Person does not exist. ID: "+id.String(), notFoundError.Error())
 }

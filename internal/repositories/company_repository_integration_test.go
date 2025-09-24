@@ -33,7 +33,7 @@ func setupCompanyRepository(t *testing.T) *repositories.CompanyRepository {
 
 // -------- Create tests: --------
 
-func TestCreate_ShouldInsertCompany(t *testing.T) {
+func TestCreate_ShouldInsertAndReturnCompany(t *testing.T) {
 	companyRepository := setupCompanyRepository(t)
 
 	id := uuid.New()
@@ -57,22 +57,22 @@ func TestCreate_ShouldInsertCompany(t *testing.T) {
 	assert.Nil(t, err, "Error on companyRepository.Create(): '%s'.", err)
 	assert.NotNil(t, insertedCompany, "inserted company is nil")
 
-	assert.Equal(t, *company.ID, insertedCompany.ID, "insertedCompany.ID should be the same as company.ID")
-	assert.Equal(t, company.Name, insertedCompany.Name, "insertedCompany.Name should be the same as company.Name")
-	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as company.CompanyType")
-	assert.Equal(t, company.Notes, insertedCompany.Notes, "insertedCompany.Notes should be the same as company.Notes")
+	assert.Equal(t, *company.ID, insertedCompany.ID)
+	assert.Equal(t, company.Name, insertedCompany.Name)
+	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, company.Notes, insertedCompany.Notes)
 
 	insertedCompanyLastContact := insertedCompany.LastContact.Format(time.RFC3339)
 	companyToInsertLastContact := company.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, insertedCompanyLastContact, "insertedCompany.LastContact should be the same as company.LastContact")
+	assert.Equal(t, companyToInsertLastContact, insertedCompanyLastContact)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
 	companyToInsertCreatedDate := company.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as company.CreatedDate")
+	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate)
 
 	insertedCompanyUpdatedDate := insertedCompany.UpdatedDate.Format(time.RFC3339)
 	companyToInsertUpdatedDate := company.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, insertedCompanyUpdatedDate, "insertedCompany.UpdatedDate should be the same as company.UpdatedDate")
+	assert.Equal(t, companyToInsertUpdatedDate, insertedCompanyUpdatedDate)
 }
 
 func TestCreate_ShouldInsertCompanyWithMinimumRequiredFields(t *testing.T) {
@@ -86,18 +86,18 @@ func TestCreate_ShouldInsertCompanyWithMinimumRequiredFields(t *testing.T) {
 	createdDateApproximation := time.Now().Format(time.RFC3339)
 	insertedCompany, err := companyRepository.Create(&company)
 
-	assert.Nil(t, err, "Error on companyRepository.Create(): '%s'.", err)
-	assert.NotNil(t, insertedCompany, "inserted company is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, company.Name, insertedCompany.Name, "insertedCompany.Name should be the same as company.Name")
-	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as company.CompanyType")
-	assert.Nil(t, insertedCompany.Notes, "inserted company.Notes should be nil, but got '%s'", insertedCompany.Notes)
-	assert.Nil(t, insertedCompany.LastContact, "inserted company.LastContact should be nil, but got '%s'", insertedCompany.LastContact)
+	assert.Equal(t, company.Name, insertedCompany.Name)
+	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType)
+	assert.Nil(t, insertedCompany.Notes)
+	assert.Nil(t, insertedCompany.LastContact)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as '%s'", createdDateApproximation)
+	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate)
 
-	assert.Nil(t, insertedCompany.UpdatedDate, "inserted company.UpdatedDate should be nil, but got '%s'", insertedCompany.UpdatedDate)
+	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
 func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
@@ -119,10 +119,10 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 
 	firstInsertedCompany, err := companyRepository.Create(&firstCompany)
 
-	assert.Nil(t, err, "error on companyRepository.Create(): '%s'.", err)
-	assert.NotNil(t, firstInsertedCompany, "inserted company is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, firstInsertedCompany)
 
-	assert.Equal(t, firstInsertedCompany.ID, id, "insertedCompany.ID should be '%s'", id)
+	assert.Equal(t, firstInsertedCompany.ID, id)
 
 	secondCompany := models.CreateCompany{
 		ID:          &id,
@@ -134,15 +134,12 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 	}
 
 	shouldBeNil, err := companyRepository.Create(&secondCompany)
-	assert.Nil(t, shouldBeNil, "expected returned company to be nil")
-	assert.NotNil(t, err, "expected error but got nil")
+	assert.Nil(t, shouldBeNil)
+	assert.NotNil(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
-	assert.Equal(t,
-		"conflict error on insert: ID already exists in database: '"+id.String()+"'",
-		err.Error(),
-		"returned error is not expected error")
+	assert.Equal(t, "conflict error on insert: ID already exists in database: '"+id.String()+"'", err.Error())
 }
 
 // -------- GetById tests: --------
@@ -167,38 +164,38 @@ func TestGetById_ShouldGetCompany(t *testing.T) {
 	}
 
 	insertedCompany, err := companyRepository.Create(&companyToInsert)
-	assert.Nil(t, err, "Error on companyRepository.Create(): '%s'.", err)
-	assert.NotNil(t, insertedCompany, "inserted company is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
 	retrievedCompany, err := companyRepository.GetById(&id)
-	assert.Nil(t, err, "Error on companyRepository.GetById(): '%s'.", err)
-	assert.NotNil(t, retrievedCompany, "retrieved company is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompany)
 
-	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID, "retrievedCompany.ID should be the same as companyToInsert.ID")
-	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name, "retrievedCompany.Name should be the same as companyToInsert.Name")
-	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType, "retrievedCompany.CompanyType should be the same as companyToInsert.CompanyType")
-	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes, "retrievedCompany.Notes should be the same as companyToInsert.Notes")
+	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID)
+	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes)
 
 	retrievedCompanyLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
 	companyToInsertLastContact := companyToInsert.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, retrievedCompanyLastContact, "retrievedCompany.LastContact should be the same as companyToInsert.LastContact")
+	assert.Equal(t, companyToInsertLastContact, retrievedCompanyLastContact)
 
 	retrievedCompanyCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
 	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, retrievedCompanyCreatedDate, "retrievedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertCreatedDate, retrievedCompanyCreatedDate)
 
 	retrievedCompanyUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
 	companyToInsertUpdatedDate := companyToInsert.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate, "retrievedCompany.UpdatedDate should be the same as companyToInsert.UpdatedDate")
+	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate)
 }
 
 func TestGetById_ShouldReturnErrorIfCompanyIDIsNil(t *testing.T) {
 	companyRepository := setupCompanyRepository(t)
 
 	response, err := companyRepository.GetById(nil)
-	assert.Nil(t, response, "Response should be nil")
-	assert.NotNil(t, err, "Error should not be nil")
-	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error(), "Wrong error returned")
+	assert.Nil(t, response)
+	assert.NotNil(t, err)
+	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
 }
 
 func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
@@ -207,9 +204,9 @@ func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
 	id := uuid.New()
 
 	response, err := companyRepository.GetById(&id)
-	assert.Nil(t, response, "response should be nil")
-	assert.NotNil(t, err, err.Error(), "Wrong error returned")
-	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error(), "Wrong error returned")
+	assert.Nil(t, response)
+	assert.NotNil(t, err, err.Error())
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 }
 
 // -------- GetAllByName tests: --------
@@ -419,6 +416,193 @@ func TestGetAll_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
 	assert.Nil(t, companies)
 }
 
+// -------- Update tests: --------
+func TestUpdate_ShouldUpdateCompany(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	// create a company
+
+	id := uuid.New()
+	notes := "More notes"
+	lastContact := time.Now().AddDate(0, 0, 1)
+	createdDate := time.Now().AddDate(0, 0, 2)
+	updatedDate := time.Now().AddDate(0, 0, 3)
+
+	companyToInsert := models.CreateCompany{
+		ID:          &id,
+		Name:        "Some AB",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       &notes,
+		LastContact: &lastContact,
+		CreatedDate: &createdDate,
+		UpdatedDate: &updatedDate,
+	}
+
+	insertedCompany, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	// update a company
+
+	nameToUpdate := "a different name"
+	companyTypeToUpdate := models.CompanyType(models.CompanyTypeConsultancy)
+	notesToUpdate := "Different notes"
+	lastContactToUpdate := time.Now().AddDate(0, 2, 0)
+
+	updateModel := models.UpdateCompany{
+		ID:          id,
+		Name:        &nameToUpdate,
+		CompanyType: &companyTypeToUpdate,
+		Notes:       &notesToUpdate,
+		LastContact: &lastContactToUpdate,
+	}
+
+	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	err = companyRepository.Update(&updateModel)
+	assert.NoError(t, err)
+
+	// get the company and verify that it's updated
+
+	retrievedCompany, err := companyRepository.GetById(&id)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompany)
+
+	assert.Equal(t, updateModel.ID, retrievedCompany.ID)
+	assert.Equal(t, *updateModel.Name, retrievedCompany.Name)
+	assert.Equal(t, *updateModel.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, *updateModel.Notes, *retrievedCompany.Notes)
+
+	retrievedCompanyLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
+	updatedCompanyLastContact := updateModel.LastContact.Format(time.RFC3339)
+	assert.Equal(t, updatedCompanyLastContact, retrievedCompanyLastContact)
+
+	retrievedCompanyCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
+	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, insertedCompanyCreatedDate, retrievedCompanyCreatedDate)
+
+	retrievedCompanyUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, updatedDateApproximation, retrievedCompanyUpdatedDate)
+
+}
+
+func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	// create a company
+
+	id := uuid.New()
+	notes := "some notes"
+	lastContact := time.Now().AddDate(-1, 0, 0)
+	createdDate := time.Now().AddDate(0, -5, 0)
+	updatedDate := time.Now().AddDate(0, 0, -3)
+
+	companyToInsert := models.CreateCompany{
+		ID:          &id,
+		Name:        "companyName",
+		CompanyType: models.CompanyTypeEmployer,
+		Notes:       &notes,
+		LastContact: &lastContact,
+		CreatedDate: &createdDate,
+		UpdatedDate: &updatedDate,
+	}
+	insertedCompany, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	// update Name
+	nameToUpdate := "a different name"
+	nameUpdateModel := models.UpdateCompany{
+		ID:   id,
+		Name: &nameToUpdate,
+	}
+	retrievedCompany := updateAndGetCompany(t, companyRepository, nameUpdateModel)
+	assert.Equal(t, nameToUpdate, retrievedCompany.Name)
+
+	// update CompanyType
+	var companyTypeToUpdate models.CompanyType = models.CompanyTypeRecruiter
+	companyTypeUpdateModel := models.UpdateCompany{
+		ID:          id,
+		CompanyType: &companyTypeToUpdate,
+	}
+	retrievedCompany = updateAndGetCompany(t, companyRepository, companyTypeUpdateModel)
+	assert.Equal(t, *companyTypeUpdateModel.CompanyType, retrievedCompany.CompanyType)
+
+	// update CompanyType
+	notesToUpdate := "additional notes"
+	notesUpdateModel := models.UpdateCompany{
+		ID:    id,
+		Notes: &notesToUpdate,
+	}
+	retrievedCompany = updateAndGetCompany(t, companyRepository, notesUpdateModel)
+	assert.Equal(t, notesToUpdate, *retrievedCompany.Notes)
+
+	// update CompanyType
+	lastContactToUpdate := time.Now().AddDate(0, 0, -2)
+	lastContactUpdateModel := models.UpdateCompany{
+		ID:          id,
+		LastContact: &lastContactToUpdate,
+	}
+	retrievedCompany = updateAndGetCompany(t, companyRepository, lastContactUpdateModel)
+	retrievedCompanyCreatedDate := retrievedCompany.LastContact.Format(time.RFC3339)
+	formattedLastContactToUpdate := lastContactToUpdate.Format(time.RFC3339)
+	assert.Equal(t, formattedLastContactToUpdate, retrievedCompanyCreatedDate)
+}
+
+func TestUpdate_ShouldReturnValidationErrorIfNoCompanyFieldsToUpdate(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	id := uuid.New()
+	updateModel := models.UpdateCompany{
+		ID: id,
+	}
+
+	err := companyRepository.Update(&updateModel)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+}
+
+func TestUpdate_ShouldNotReturnErrorIfCompanyDoesNotExist(t *testing.T) {
+	companyRepository := setupCompanyRepository(t)
+
+	id := uuid.New()
+
+	nameToUpdate := "a different name"
+	companyTypeToUpdate := models.CompanyType(models.CompanyTypeConsultancy)
+	notesToUpdate := "Different notes"
+	lastContactToUpdate := time.Now().AddDate(0, 2, 0)
+
+	updateModel := models.UpdateCompany{
+		ID:          id,
+		Name:        &nameToUpdate,
+		CompanyType: &companyTypeToUpdate,
+		Notes:       &notesToUpdate,
+		LastContact: &lastContactToUpdate,
+	}
+
+	err := companyRepository.Update(&updateModel)
+	assert.NoError(t, err)
+}
+
+func updateAndGetCompany(
+	t *testing.T,
+	companyRepository *repositories.CompanyRepository,
+	updateCompany models.UpdateCompany,
+) *models.Company {
+
+	err := companyRepository.Update(&updateCompany)
+	assert.NoError(t, err)
+
+	retrievedCompany, err := companyRepository.GetById(&updateCompany.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedCompany)
+	assert.Equal(t, updateCompany.ID, retrievedCompany.ID)
+
+	return retrievedCompany
+}
+
 // -------- Delete tests: --------
 
 func TestDelete_ShouldDeleteCompany(t *testing.T) {
@@ -445,7 +629,7 @@ func TestDelete_ShouldDeleteCompany(t *testing.T) {
 	assert.NotNil(t, insertedCompany)
 
 	err = companyRepository.Delete(&id)
-	assert.Nil(t, err, "error on companyRepository.Delete(): '%s'.", err)
+	assert.NoError(t, err)
 
 	deletedCompany, err := companyRepository.GetById(&id)
 	assert.NotNil(t, err)
@@ -461,7 +645,7 @@ func TestDelete_ShouldReturnErrorIfCompanyIdIsNil(t *testing.T) {
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
+	assert.Equal(t, "validation error on field 'ID': ID is nil", validationErr.Error())
 }
 
 func TestDelete_ShouldReturnNotFoundErrorIfCompanyIdDoesNotExist(t *testing.T) {

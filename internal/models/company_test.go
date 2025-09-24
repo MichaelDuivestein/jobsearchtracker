@@ -65,7 +65,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'Name': company name is empty", err.Error())
+	assert.Equal(t, "validation error on field 'Name': company name is empty", validationErr.Error())
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.T) {
@@ -89,7 +89,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", err.Error())
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
 
 }
 
@@ -115,7 +115,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", err.Error())
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
@@ -142,12 +142,12 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *
 	assert.Equal(
 		t,
 		"validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		err.Error())
+		validationErr.Error())
 }
 
 // -------- CompanyType.IsValid tests: --------
 
-func TestCompanyTypeisValid_ShouldReturnTrue(t *testing.T) {
+func TestCompanyTypeIsValid_ShouldReturnTrue(t *testing.T) {
 	employer := CompanyType(CompanyTypeEmployer)
 	assert.True(t, employer.IsValid())
 

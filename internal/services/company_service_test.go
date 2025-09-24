@@ -17,12 +17,12 @@ func TestCreateCompany_ShouldReturnValidationErrorOnNilCompany(t *testing.T) {
 	companyService := NewCompanyService(nil)
 
 	nilCompany, err := companyService.CreateCompany(nil)
-	assert.Nil(t, nilCompany, "company should be nil")
-	assert.NotNil(t, err, "error should not be nil")
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
-	assert.Equal(t, "validation error: CreateCompany is nil", err.Error())
+	assert.Equal(t, "validation error: CreateCompany is nil", validationError.Error())
 }
 
 func TestCreateCompany_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
@@ -45,12 +45,12 @@ func TestCreateCompany_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
 	}
 
 	nilCompany, err := companyService.CreateCompany(company)
-	assert.Nil(t, nilCompany, "company should be nil")
-	assert.NotNil(t, err, "error should not be nil")
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'Name': company name is empty", err.Error())
+	assert.Equal(t, "validation error on field 'Name': company name is empty", validationErr.Error())
 }
 
 func TestCreateCompany_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.T) {
@@ -72,12 +72,12 @@ func TestCreateCompany_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.
 	}
 
 	nilCompany, err := companyService.CreateCompany(company)
-	assert.Nil(t, nilCompany, "company should be nil")
-	assert.NotNil(t, err, "error should not be nil")
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", err.Error())
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
 }
 
 func TestCreateCompany_ShouldReturnValidationErrorOnInvalidCompanyType(t *testing.T) {
@@ -100,12 +100,12 @@ func TestCreateCompany_ShouldReturnValidationErrorOnInvalidCompanyType(t *testin
 	}
 
 	nilCompany, err := companyService.CreateCompany(company)
-	assert.Nil(t, nilCompany, "company should be nil")
-	assert.NotNil(t, err, "error should not be nil")
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", err.Error())
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
 }
 
 func TestCreateCompany_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
@@ -127,12 +127,15 @@ func TestCreateCompany_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.
 	}
 
 	nilCompany, err := companyService.CreateCompany(company)
-	assert.Nil(t, nilCompany, "company should be nil")
-	assert.NotNil(t, err, "error should not be nil")
+	assert.Nil(t, nilCompany)
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil", err.Error())
+	assert.Equal(
+		t,
+		"validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
+		validationErr.Error())
 }
 
 // -------- GetCompanyById tests: --------
@@ -141,9 +144,12 @@ func TestGetCompanyById_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T
 	companyService := NewCompanyService(nil)
 
 	company, err := companyService.GetCompanyById(nil)
-	assert.NotNil(t, err, "error should not be nil")
-	assert.Equal(t, "validation error on field 'company ID': companyId is required", err.Error())
-	assert.Nil(t, company, "company should be nil")
+	assert.Nil(t, company)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error on field 'company ID': companyId is required", validationErr.Error())
 }
 
 // -------- GetCompaniesByName tests: --------
@@ -167,7 +173,7 @@ func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsEmpty(t *t
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: companyName is required", err.Error())
+	assert.Equal(t, "validation error: companyName is required", validationErr.Error())
 }
 
 // -------- UpdateCompany tests: --------
@@ -180,7 +186,7 @@ func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyIsNil(t *testing.T) {
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: UpdateCompany model is nil", err.Error())
+	assert.Equal(t, "validation error: UpdateCompany model is nil", validationErr.Error())
 }
 
 func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyContainsNothingToUpdate(t *testing.T) {
@@ -195,7 +201,7 @@ func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyContainsNothingToUpda
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 // -------- DeleteCompany tests: --------
@@ -208,4 +214,5 @@ func TestDeleteCompany_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error on field 'company ID': companyId is required", err.Error())
+	assert.Equal(t, "validation error on field 'company ID': companyId is required", validationErr.Error())
 }

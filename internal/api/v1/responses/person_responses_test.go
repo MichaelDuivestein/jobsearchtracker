@@ -113,3 +113,71 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvali
 		"internal service error: Error converting internal PersonType to external PersonType: 'Blah'",
 		err.Error())
 }
+
+// -------- NewPersonsResponse tests: --------
+
+func TestNewPersonsResponse_ShouldWork(t *testing.T) {
+	personModels := []*models.Person{
+		{
+			ID:          uuid.New(),
+			Name:        "Aaron",
+			PersonType:  models.PersonTypeUnknown,
+			CreatedDate: time.Now().AddDate(0, 0, 3),
+		},
+		{
+			ID:          uuid.New(),
+			Name:        "Bru",
+			PersonType:  models.PersonTypeCTO,
+			CreatedDate: time.Now().AddDate(0, 0, 1),
+		},
+	}
+
+	persons, err := NewPersonsResponse(personModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 2)
+}
+
+func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsNil(t *testing.T) {
+	response, err := NewPersonsResponse(nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, 0, len(response))
+}
+
+func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
+	var personModels []*models.Person
+	response, err := NewPersonsResponse(personModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, 0, len(response))
+}
+
+func TestNewPersonsResponse_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {
+	personModels := []*models.Person{
+		{
+			ID:          uuid.New(),
+			Name:        "Sammy",
+			PersonType:  models.PersonTypeJobAdvertiser,
+			CreatedDate: time.Now().AddDate(0, 0, 7),
+		},
+		{
+			ID:          uuid.New(),
+			Name:        "Britt",
+			PersonType:  "",
+			CreatedDate: time.Now().AddDate(0, 0, 0),
+		},
+	}
+
+	persons, err := NewPersonsResponse(personModels)
+	assert.Nil(t, persons)
+	assert.NotNil(t, err)
+
+	var internalServiceErr *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal PersonType to external PersonType: ''",
+		err.Error())
+}

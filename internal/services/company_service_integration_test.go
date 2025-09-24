@@ -53,25 +53,25 @@ func TestCreateCompany_ShouldWork(t *testing.T) {
 	}
 
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
-	assert.NotNil(t, insertedCompany, "CreateCompany should return a company")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
 	assert.Equal(t, *companyToInsert.ID, id)
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name, "insertedCompany.Name should be the same as companyToInsert.Name")
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as companyToInsert.CompanyType")
-	assert.Equal(t, companyToInsert.Notes, insertedCompany.Notes, "insertedCompany.Notes should be the same as companyToInsert.Notes")
+	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Notes, insertedCompany.Notes)
 
 	insertedCompanyLastContact := insertedCompany.LastContact.Format(time.RFC3339)
 	companyToInsertLastContact := companyToInsert.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, insertedCompanyLastContact, "insertedCompany.LastContact should be the same as companyToInsert.LastContact")
+	assert.Equal(t, companyToInsertLastContact, insertedCompanyLastContact)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
 	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate)
 
 	insertedCompanyUpdatedDate := insertedCompany.UpdatedDate.Format(time.RFC3339)
 	companyToInsertUpdatedDate := companyToInsert.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, insertedCompanyUpdatedDate, "insertedCompany.UpdatedDate should be the same as companyToInsert.UpdatedDate")
+	assert.Equal(t, companyToInsertUpdatedDate, insertedCompanyUpdatedDate)
 }
 
 func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
@@ -85,18 +85,18 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 	insertedDateApproximation := time.Now().Format(time.RFC3339)
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
 
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
-	assert.NotNil(t, insertedCompany, "CreateCompany should return a company")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name, "insertedCompany.Name should be the same as company.Name")
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as company.CompanyType")
-	assert.Nil(t, insertedCompany.Notes, "inserted company.Notes should be nil, but got '%s'", insertedCompany.Notes)
-	assert.Nil(t, insertedCompany.LastContact, "inserted company.LastContact should be nil, but got '%s'", insertedCompany.LastContact)
+	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Nil(t, insertedCompany.Notes)
+	assert.Nil(t, insertedCompany.LastContact)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as '%s'", insertedDateApproximation)
+	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate)
 
-	assert.Nil(t, insertedCompany.UpdatedDate, "inserted company.UpdatedDate should be nil, but got '%s'", insertedCompany.UpdatedDate)
+	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
@@ -111,18 +111,18 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 	insertedDateApproximation := time.Now().Format(time.RFC3339)
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
 
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
-	assert.NotNil(t, insertedCompany, "CreateCompany should return a company")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name, "insertedCompany.Name should be the same as company.Name")
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as company.CompanyType")
-	assert.Nil(t, insertedCompany.Notes, "inserted company.Notes should be nil, but got '%s'", insertedCompany.Notes)
-	assert.Nil(t, insertedCompany.LastContact, "inserted company.LastContact should be nil, but got '%s'", insertedCompany.LastContact)
+	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Nil(t, insertedCompany.Notes)
+	assert.Nil(t, insertedCompany.LastContact)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as '%s'", insertedDateApproximation)
+	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate)
 
-	assert.Nil(t, insertedCompany.UpdatedDate, "inserted company.UpdatedDate should be nil, but got '%s'", insertedCompany.UpdatedDate)
+	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
@@ -142,21 +142,21 @@ func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
 
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
 
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
-	assert.NotNil(t, insertedCompany, "CreateCompany should return a company")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name, "insertedCompany.Name should be the same as company.Name")
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType, "insertedCompany.CompanyType should be the same as company.CompanyType")
-	assert.Nil(t, insertedCompany.Notes, "inserted company.Notes should be nil, but got '%s'", insertedCompany.Notes)
+	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Nil(t, insertedCompany.Notes)
 
 	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
 	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate, "insertedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate)
 
 	insertedCompanyLastContact := insertedCompany.LastContact.Format(time.RFC3339)
-	assert.Equal(t, insertedCompanyCreatedDate, insertedCompanyLastContact, "insertedCompany.LastContact should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, insertedCompanyCreatedDate, insertedCompanyLastContact)
 
-	assert.Nil(t, insertedCompany.UpdatedDate, "inserted company.UpdatedDate should be nil, but got '%s'", insertedCompany.UpdatedDate)
+	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
 // -------- GetCompanyById tests: --------
@@ -181,28 +181,28 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 	}
 
 	_, err := companyService.CreateCompany(&companyToInsert)
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
+	assert.NoError(t, err)
 
 	retrievedCompany, err := companyService.GetCompanyById(&id)
-	assert.Nil(t, err, "Failed to create retrieve: '%s'", err)
-	assert.NotNil(t, retrievedCompany, "retrieved company is nil")
+	assert.Nil(t, err)
+	assert.NotNil(t, retrievedCompany)
 
-	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID, "retrievedCompany.ID should match companyToInsert.ID")
-	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name, "retrievedCompany.Name should match companyToInsert.Name")
-	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType, "retrievedCompany.CompanyType should match companyToInsert.CompanyType")
-	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes, "retrievedCompany.Notes should match companyToInsert.Notes")
+	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID)
+	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes)
 
 	retrievedCompanyLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
 	companyToInsertLastContact := companyToInsert.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, retrievedCompanyLastContact, "retrievedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertLastContact, retrievedCompanyLastContact)
 
 	retrievedCompanyCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
 	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, retrievedCompanyCreatedDate, "retrievedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertCreatedDate, retrievedCompanyCreatedDate)
 
 	retrievedCompanyUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
 	companyToInsertUpdatedDate := companyToInsert.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate, "retrievedCompany.CreatedDate should be the same as companyToInsert.CreatedDate")
+	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate)
 }
 
 func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testing.T) {
@@ -210,12 +210,12 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *test
 
 	nonExistingId := uuid.New()
 	retrievedCompany, err := companyService.GetCompanyById(&nonExistingId)
-	assert.NotNil(t, err, "Error should not be nil", err)
-	assert.Nil(t, retrievedCompany, "retrieved company should be nil")
+	assert.NotNil(t, err)
+	assert.Nil(t, retrievedCompany)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: ID: '"+nonExistingId.String()+"'", err.Error())
+	assert.Equal(t, "error: object not found: ID: '"+nonExistingId.String()+"'", notFoundError.Error())
 
 	id := uuid.New()
 	notes := "some notes"
@@ -234,11 +234,11 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *test
 	}
 
 	_, err = companyService.CreateCompany(&companyToInsert)
-	assert.Nil(t, err, "Failed to create company: '%s'", err)
+	assert.NoError(t, err)
 
 	retrievedCompany, err = companyService.GetCompanyById(&nonExistingId)
-	assert.NotNil(t, err, "Error should not be nil", err)
-	assert.Nil(t, retrievedCompany, "retrieved company should be nil")
+	assert.NotNil(t, err)
+	assert.Nil(t, retrievedCompany)
 
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: ID: '"+nonExistingId.String()+"'", err.Error())
@@ -366,6 +366,7 @@ func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T
 
 func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	companyService := setupCompanyService(t)
+	// insert companies
 
 	company1Id := uuid.New()
 	company1Notes := "some notes"
@@ -446,7 +447,7 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 	}
 
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
 	// update a company:

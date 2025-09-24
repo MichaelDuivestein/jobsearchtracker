@@ -20,9 +20,9 @@ func TestCreatePerson_ShouldReturnValidationErrorOnNilPerson(t *testing.T) {
 	assert.Nil(t, nilPerson)
 	assert.NotNil(t, err)
 
-	var validationError *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationError))
-	assert.Equal(t, "validation error: CreatePerson is nil", err.Error())
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: CreatePerson is nil", validationErr.Error())
 }
 
 func TestCreatePerson_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
@@ -39,7 +39,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'Name': person name is empty", err.Error())
+	assert.Equal(t, "validation error on field 'Name': person name is empty", validationErr.Error())
 }
 
 func TestCreatePerson_ShouldReturnValidationErrorOnInvalidPersonType(t *testing.T) {
@@ -55,7 +55,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnInvalidPersonType(t *testing.
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'PersonType': person type is invalid", err.Error())
+	assert.Equal(t, "validation error on field 'PersonType': person type is invalid", validationErr.Error())
 }
 
 func TestCreatePerson_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
@@ -74,7 +74,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t,
 		"validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		err.Error())
+		validationErr.Error())
 }
 
 // -------- GetPersonById tests: --------
@@ -87,7 +87,7 @@ func TestGetPersonById_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) 
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'person ID': personId is required", err.Error())
+	assert.Equal(t, "validation error on field 'person ID': personId is required", validationErr.Error())
 }
 
 // -------- GetPersonsByName tests: --------
@@ -100,7 +100,7 @@ func TestGetPersonsByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testin
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'personName': personName is required", err.Error())
+	assert.Equal(t, "validation error on field 'personName': personName is required", validationErr.Error())
 }
 
 // -------- UpdatePerson tests: --------
@@ -112,7 +112,7 @@ func TestUpdatePerson_ShouldReturnValidationErrorIfPersonIsNil(t *testing.T) {
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: UpdatePerson model is nil", err.Error())
+	assert.Equal(t, "validation error: UpdatePerson model is nil", validationErr.Error())
 }
 
 func TestUpdatePerson_ShouldReturnValidationErrorIfPersonContainsNothingToUpdate(t *testing.T) {
@@ -128,7 +128,7 @@ func TestUpdatePerson_ShouldReturnValidationErrorIfPersonContainsNothingToUpdate
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
 }
 
 // -------- DeletePerson tests: --------
@@ -140,5 +140,5 @@ func TestDeletePerson_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) {
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'person ID': personId is required", err.Error())
+	assert.Equal(t, "validation error on field 'person ID': personId is required", validationErr.Error())
 }

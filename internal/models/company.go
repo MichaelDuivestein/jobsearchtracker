@@ -58,7 +58,11 @@ type UpdateCompany struct {
 
 // Validate can return ValidationError
 func (updateCompany *UpdateCompany) Validate() error {
-	if updateCompany.Name == nil && updateCompany.CompanyType == nil && updateCompany.Notes == nil && updateCompany.LastContact == nil {
+	if updateCompany.Name == nil &&
+		updateCompany.CompanyType == nil &&
+		updateCompany.Notes == nil &&
+		updateCompany.LastContact == nil {
+
 		return errors.NewValidationError(nil, "nothing to update")
 	}
 	return nil

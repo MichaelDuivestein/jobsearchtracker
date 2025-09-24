@@ -64,19 +64,19 @@ func TestCreateApplication_ShouldReturnValidationErrorOnEmptyCompanyIDAndEmptyJo
 		{
 			"nil companyID and empty JobAdURL",
 			nil,
-			testutil.StringPtr(""),
+			testutil.ToPtr(""),
 			"validation error: JobAdURL is empty",
 		},
 		{
 			"empty companyID and nil JobAdURL",
-			testutil.StringPtr(""),
+			testutil.ToPtr(""),
 			nil,
 			"validation error: JobTitle is empty",
 		},
 		{
 			"empty companyID and empty JobAdURL",
-			testutil.StringPtr(""),
-			testutil.StringPtr(""),
+			testutil.ToPtr(""),
+			testutil.ToPtr(""),
 			"validation error: JobTitle is empty",
 		},
 	}

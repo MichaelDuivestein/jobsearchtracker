@@ -44,12 +44,16 @@ func (companyService *CompanyService) CreateCompany(company *models.CreateCompan
 	} else if company.CreatedDate.IsZero() {
 		createdDate := time.Now()
 		company.CreatedDate = &createdDate
-		slog.Info("company_service.createCompany: company.CreatedDate is zero. Setting to '" + company.CreatedDate.String() + "'")
+		slog.Info(
+			"company_service.createCompany: company.CreatedDate is zero. Setting to '" +
+				company.CreatedDate.String() + "'")
 	}
 
 	if company.LastContact != nil && company.LastContact.IsZero() {
 		company.LastContact = company.CreatedDate
-		slog.Info("company_service.createCompany: company.LastContact is zero. Setting to CreatedDate: '" + company.LastContact.String() + "'")
+		slog.Info(
+			"company_service.createCompany: company.LastContact is zero. Setting to CreatedDate: '" +
+				company.LastContact.String() + "'")
 	}
 
 	// can return ConflictError, InternalServiceError
@@ -63,7 +67,9 @@ func (companyService *CompanyService) CreateCompany(company *models.CreateCompan
 }
 
 // GetCompanyById can return InternalServiceError, NotFoundError, ValidationError
-func (companyService *CompanyService) GetCompanyById(companyId *uuid.UUID) (*models.Company, error) {
+func (companyService *CompanyService) GetCompanyById(
+	companyId *uuid.UUID) (*models.Company, error) {
+
 	if companyId == nil {
 		companyIdString := "company ID"
 		err := internalErrors.NewValidationError(&companyIdString, "companyId is required")
@@ -116,7 +122,7 @@ func (companyService *CompanyService) GetAllCompanies() ([]*models.Company, erro
 	if err != nil {
 		return nil, err
 	}
-	if companies == nil {
+	if companies == nil || len(companies) == 0 {
 		slog.Info("CompanyService.GetAllCompanies: Retrieved zero companies")
 	} else {
 		slog.Info("CompanyService.GetAllCompanies: Retrieved " + string(rune(len(companies))) + " companies")

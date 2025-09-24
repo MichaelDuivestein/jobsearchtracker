@@ -165,15 +165,15 @@ func TestNewApplicationsResponse_ShouldWork(t *testing.T) {
 	applicationModels := []*models.Application{
 		{
 			ID:               uuid.New(),
-			CompanyID:        testutil.UUIDPtr(uuid.New()),
-			JobAdURL:         testutil.StringPtr("Job Ad URL"),
+			CompanyID:        testutil.ToPtr(uuid.New()),
+			JobAdURL:         testutil.ToPtr("Job Ad URL"),
 			RemoteStatusType: models.RemoteStatusTypeUnknown,
 			CreatedDate:      time.Now().AddDate(0, 0, 3),
 		},
 		{
 			ID:               uuid.New(),
-			RecruiterID:      testutil.UUIDPtr(uuid.New()),
-			JobTitle:         testutil.StringPtr("Job Title "),
+			RecruiterID:      testutil.ToPtr(uuid.New()),
+			JobTitle:         testutil.ToPtr("Job Title "),
 			RemoteStatusType: models.RemoteStatusTypeRemote,
 			CreatedDate:      time.Now().AddDate(0, 0, 1),
 		},
@@ -204,15 +204,15 @@ func TestNewApplicationsResponse_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsIn
 	applicationModels := []*models.Application{
 		{
 			ID:               uuid.New(),
-			RecruiterID:      testutil.UUIDPtr(uuid.New()),
-			JobTitle:         testutil.StringPtr("Job Title "),
+			RecruiterID:      testutil.ToPtr(uuid.New()),
+			JobTitle:         testutil.ToPtr("Job Title "),
 			RemoteStatusType: models.RemoteStatusTypeUnknown,
 			CreatedDate:      time.Now().AddDate(0, 0, 7),
 		},
 		{
 			ID:               uuid.New(),
-			RecruiterID:      testutil.UUIDPtr(uuid.New()),
-			JobTitle:         testutil.StringPtr("Job Title "),
+			RecruiterID:      testutil.ToPtr(uuid.New()),
+			JobTitle:         testutil.ToPtr("Job Title "),
 			RemoteStatusType: "",
 			CreatedDate:      time.Now().AddDate(0, 0, 0),
 		},

@@ -59,6 +59,7 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 	return &applicationResponse, nil
 }
 
+// NewApplicationsResponse can return InternalServerError
 func NewApplicationsResponse(applications []*models.Application) ([]*ApplicationResponse, error) {
 	if applications == nil || len(applications) == 0 {
 		return []*ApplicationResponse{}, nil
