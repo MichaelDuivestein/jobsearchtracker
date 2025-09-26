@@ -239,7 +239,7 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 	return
 }
 
-func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, request *http.Request) {
+func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, _ *http.Request) {
 	// can return InternalServiceError
 	applications, err := applicationHandler.applicationService.GetAllApplications()
 	if err != nil {
@@ -251,7 +251,7 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 		return
 	}
 
-	//  can return InternalServiceError
+	// can return InternalServiceError
 	applicationsResponse, err := responses.NewApplicationsResponse(applications)
 	if err != nil {
 		slog.Error(

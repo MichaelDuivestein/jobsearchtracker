@@ -11,13 +11,14 @@ import (
 )
 
 type CompanyResponse struct {
-	ID          uuid.UUID            `json:"id"`
-	Name        string               `json:"name"`
-	CompanyType requests.CompanyType `json:"company_type"`
-	Notes       *string              `json:"notes"`
-	LastContact *time.Time           `json:"last_contact"`
-	CreatedDate time.Time            `json:"created_date"`
-	UpdatedDate *time.Time           `json:"updated_date"`
+	ID           uuid.UUID               `json:"id"`
+	Name         string                  `json:"name"`
+	CompanyType  requests.CompanyType    `json:"company_type"`
+	Notes        *string                 `json:"notes"`
+	LastContact  *time.Time              `json:"last_contact"`
+	CreatedDate  time.Time               `json:"created_date"`
+	UpdatedDate  *time.Time              `json:"updated_date"`
+	Applications *[]*ApplicationResponse `json:"applications"`
 }
 
 // NewCompanyResponse can return InternalServiceError
@@ -33,14 +34,23 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 		return nil, err
 	}
 
+	var applications []*ApplicationResponse = nil
+	if companyModel.Applications != nil && len(*companyModel.Applications) >= 0 {
+		applications, err = NewApplicationsResponse(*companyModel.Applications)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	companyResponse := CompanyResponse{
-		ID:          companyModel.ID,
-		Name:        companyModel.Name,
-		CompanyType: companyType,
-		Notes:       companyModel.Notes,
-		LastContact: companyModel.LastContact,
-		CreatedDate: companyModel.CreatedDate,
-		UpdatedDate: companyModel.UpdatedDate,
+		ID:           companyModel.ID,
+		Name:         companyModel.Name,
+		CompanyType:  companyType,
+		Notes:        companyModel.Notes,
+		LastContact:  companyModel.LastContact,
+		CreatedDate:  companyModel.CreatedDate,
+		UpdatedDate:  companyModel.UpdatedDate,
+		Applications: &applications,
 	}
 
 	return &companyResponse, nil

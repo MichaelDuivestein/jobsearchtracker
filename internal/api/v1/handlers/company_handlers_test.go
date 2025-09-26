@@ -151,6 +151,25 @@ func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 	assert.Equal(t, "company Name is empty\n", responseBodyString)
 }
 
+// -------- GetAllCompanies tests: --------
+func TestGetAllCompanies_ShouldReturnErrorIfIncludeAllCompaniesIsInvalid(t *testing.T) {
+	companyHandler := v1.NewCompanyHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_applications=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdateCompany tests: --------
 
 func TestUpdateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {

@@ -15,12 +15,12 @@ type Application struct {
 	JobAdURL             *string
 	Country              *string
 	Area                 *string
-	RemoteStatusType     RemoteStatusType
+	RemoteStatusType     *RemoteStatusType
 	WeekdaysInOffice     *int
 	EstimatedCycleTime   *int
 	EstimatedCommuteTime *int
 	ApplicationDate      *time.Time
-	CreatedDate          time.Time
+	CreatedDate          *time.Time
 	UpdatedDate          *time.Time
 }
 
@@ -142,4 +142,8 @@ func (remoteStatusType RemoteStatusType) IsValid() bool {
 
 func (remoteStatusType RemoteStatusType) String() string {
 	return string(remoteStatusType)
+}
+
+func (remoteStatusType RemoteStatusType) ToPtr() *RemoteStatusType {
+	return &remoteStatusType
 }

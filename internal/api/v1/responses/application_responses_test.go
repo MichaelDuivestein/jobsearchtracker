@@ -22,6 +22,7 @@ func TestNewApplicationResponse_ShouldWork(t *testing.T) {
 	jobAdURL := "Job Ad URL"
 	country := "Job Country"
 	area := "Job Area"
+	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
 	weekdaysInOffice := 2
 	estimatedCycleTime := 30
 	estimatedCommuteTime := 40
@@ -37,12 +38,12 @@ func TestNewApplicationResponse_ShouldWork(t *testing.T) {
 		JobAdURL:             &jobAdURL,
 		Country:              &country,
 		Area:                 &area,
-		RemoteStatusType:     models.RemoteStatusTypeHybrid,
+		RemoteStatusType:     &remoteStatusType,
 		WeekdaysInOffice:     &weekdaysInOffice,
 		EstimatedCycleTime:   &estimatedCycleTime,
 		EstimatedCommuteTime: &estimatedCommuteTime,
 		ApplicationDate:      &applicationDate,
-		CreatedDate:          createdDate,
+		CreatedDate:          &createdDate,
 		UpdatedDate:          &updatedDate,
 	}
 
@@ -79,13 +80,14 @@ func TestNewApplicationResponse_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 
 	companyID := uuid.New()
 	jobAdURL := "Job Ad URL"
+	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeRemote
 
 	model := models.Application{
 		ID:               uuid.New(),
 		CompanyID:        &companyID,
 		JobAdURL:         &jobAdURL,
-		RemoteStatusType: models.RemoteStatusTypeRemote,
-		CreatedDate:      time.Now().AddDate(0, 3, 0),
+		RemoteStatusType: &remoteStatusType,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 3, 0)),
 	}
 
 	response, err := NewApplicationResponse(&model)
@@ -123,12 +125,13 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfRemoteStatusTy
 	recruiterID := uuid.New()
 	JobAdURL := "Job Ad URL"
 
+	var remoteStatusTypeEmpty models.RemoteStatusType = ""
 	emptyRemoteStatusType := models.Application{
 		ID:               uuid.New(),
 		RecruiterID:      &recruiterID,
 		JobAdURL:         &JobAdURL,
-		RemoteStatusType: "",
-		CreatedDate:      time.Now().AddDate(0, 0, 16),
+		RemoteStatusType: &remoteStatusTypeEmpty,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	emptyResponse, err := NewApplicationResponse(&emptyRemoteStatusType)
 	assert.Nil(t, emptyResponse)
@@ -141,12 +144,13 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfRemoteStatusTy
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: ''",
 		err.Error())
 
+	var remoteStatusTypeBlah models.RemoteStatusType = "Blah"
 	invalidRemoteStatusType := models.Application{
 		ID:               uuid.New(),
 		RecruiterID:      &recruiterID,
 		JobAdURL:         &JobAdURL,
-		RemoteStatusType: "Blah",
-		CreatedDate:      time.Now().AddDate(0, 0, 16),
+		RemoteStatusType: &remoteStatusTypeBlah,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	invalidResponse, err := NewApplicationResponse(&invalidRemoteStatusType)
 	assert.Nil(t, invalidResponse)
@@ -162,20 +166,22 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfRemoteStatusTy
 // -------- NewApplicationsResponse tests: --------
 
 func TestNewApplicationsResponse_ShouldWork(t *testing.T) {
+	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeUnknown
+	var application2RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeRemote
 	applicationModels := []*models.Application{
 		{
 			ID:               uuid.New(),
 			CompanyID:        testutil.ToPtr(uuid.New()),
 			JobAdURL:         testutil.ToPtr("Job Ad URL"),
-			RemoteStatusType: models.RemoteStatusTypeUnknown,
-			CreatedDate:      time.Now().AddDate(0, 0, 3),
+			RemoteStatusType: &application1RemoteStatusType,
+			CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 		},
 		{
 			ID:               uuid.New(),
 			RecruiterID:      testutil.ToPtr(uuid.New()),
 			JobTitle:         testutil.ToPtr("Job Title "),
-			RemoteStatusType: models.RemoteStatusTypeRemote,
-			CreatedDate:      time.Now().AddDate(0, 0, 1),
+			RemoteStatusType: &application2RemoteStatusType,
+			CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 		},
 	}
 
@@ -201,20 +207,22 @@ func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing
 }
 
 func TestNewApplicationsResponse_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsInvalid(t *testing.T) {
+	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeUnknown
+	var application2RemoteStatusType models.RemoteStatusType = ""
 	applicationModels := []*models.Application{
 		{
 			ID:               uuid.New(),
 			RecruiterID:      testutil.ToPtr(uuid.New()),
 			JobTitle:         testutil.ToPtr("Job Title "),
-			RemoteStatusType: models.RemoteStatusTypeUnknown,
-			CreatedDate:      time.Now().AddDate(0, 0, 7),
+			RemoteStatusType: &application1RemoteStatusType,
+			CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
 		},
 		{
 			ID:               uuid.New(),
 			RecruiterID:      testutil.ToPtr(uuid.New()),
 			JobTitle:         testutil.ToPtr("Job Title "),
-			RemoteStatusType: "",
-			CreatedDate:      time.Now().AddDate(0, 0, 0),
+			RemoteStatusType: &application2RemoteStatusType,
+			CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
 		},
 	}
 

@@ -11,20 +11,20 @@ import (
 )
 
 type ApplicationResponse struct {
-	ID                   uuid.UUID                 `json:"id,omitempty"`
-	CompanyID            *uuid.UUID                `json:"company_id,omitempty"`
-	RecruiterID          *uuid.UUID                `json:"recruiter_id,omitempty"`
-	JobTitle             *string                   `json:"job_title,omitempty"`
-	JobAdURL             *string                   `json:"job_ad_url,omitempty"`
-	Country              *string                   `json:"country,omitempty"`
-	Area                 *string                   `json:"area,omitempty"`
-	RemoteStatusType     requests.RemoteStatusType `json:"remote_status_type"`
-	WeekdaysInOffice     *int                      `json:"weekdays_in_office,omitempty"`
-	EstimatedCycleTime   *int                      `json:"estimated_cycle_time,omitempty"`
-	EstimatedCommuteTime *int                      `json:"estimated_commute_time,omitempty"`
-	ApplicationDate      *time.Time                `json:"application_date,omitempty"`
-	CreatedDate          time.Time                 `json:"created_date"`
-	UpdatedDate          *time.Time                `json:"updated_date"`
+	ID                   uuid.UUID                  `json:"id,omitempty"`
+	CompanyID            *uuid.UUID                 `json:"company_id,omitempty"`
+	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty"`
+	JobTitle             *string                    `json:"job_title,omitempty"`
+	JobAdURL             *string                    `json:"job_ad_url,omitempty"`
+	Country              *string                    `json:"country,omitempty"`
+	Area                 *string                    `json:"area,omitempty"`
+	RemoteStatusType     *requests.RemoteStatusType `json:"remote_status_type"`
+	WeekdaysInOffice     *int                       `json:"weekdays_in_office,omitempty"`
+	EstimatedCycleTime   *int                       `json:"estimated_cycle_time,omitempty"`
+	EstimatedCommuteTime *int                       `json:"estimated_commute_time,omitempty"`
+	ApplicationDate      *time.Time                 `json:"application_date,omitempty"`
+	CreatedDate          *time.Time                 `json:"created_date"`
+	UpdatedDate          *time.Time                 `json:"updated_date"`
 }
 
 // NewApplicationResponse can return InternalServerError
@@ -34,9 +34,13 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		return nil, internalErrors.NewInternalServiceError("Error building response: Application is nil")
 	}
 
-	remoteStatusType, err := requests.NewRemoteStatusType(&applicationModel.RemoteStatusType)
-	if err != nil {
-		return nil, err
+	var remoteStatusType *requests.RemoteStatusType = nil
+	if applicationModel.RemoteStatusType != nil {
+		nonNilRemoteStatusType, err := requests.NewRemoteStatusType(applicationModel.RemoteStatusType)
+		if err != nil {
+			return nil, err
+		}
+		remoteStatusType = &nonNilRemoteStatusType
 	}
 
 	applicationResponse := ApplicationResponse{

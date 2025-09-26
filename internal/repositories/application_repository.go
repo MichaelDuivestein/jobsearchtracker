@@ -48,7 +48,7 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 	if application.CreatedDate != nil {
 		createdDate = application.CreatedDate.Format(time.RFC3339)
 	} else {
-		createdDate = time.Now()
+		createdDate = time.Now().Format(time.RFC3339)
 	}
 
 	if application.UpdatedDate != nil {
@@ -419,7 +419,7 @@ func (repository *ApplicationRepository) mapRow(
 				"error", err.Error())
 			return nil, internalErrors.NewInternalServiceError("Error parsing createdDate: " + err.Error())
 		}
-		result.CreatedDate = timestamp
+		result.CreatedDate = &timestamp
 	}
 
 	if updatedDate.Valid {

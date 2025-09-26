@@ -479,7 +479,7 @@ func TestUpdateApplication_ShouldWork(t *testing.T) {
 	assert.Equal(t, newJobAdURL, *retrievedApplication.JobAdURL)
 	assert.Equal(t, newCountry, *retrievedApplication.Country)
 	assert.Equal(t, newArea, *retrievedApplication.Area)
-	assert.Equal(t, newRemoteStatusType, retrievedApplication.RemoteStatusType)
+	assert.Equal(t, newRemoteStatusType, *retrievedApplication.RemoteStatusType)
 	assert.Equal(t, newWeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
 	assert.Equal(t, newEstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
 	assert.Equal(t, newEstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)

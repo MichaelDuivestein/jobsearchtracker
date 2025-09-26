@@ -223,14 +223,53 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 	return
 }
 
-func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter, _ *http.Request) {
+func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter, request *http.Request) {
+
+	query := request.URL.Query()
+	includeApplicationsString := query.Get("include_applications")
+
+	var includeApplicationsType requests.IncludeExtraDataType
+	if includeApplicationsString == "" {
+		includeApplicationsType = requests.IncludeExtraDataTypeNone
+	} else {
+		var err error
+
+		// can return ValidationError
+		includeApplicationsType, err = requests.NewIncludeExtraDataType(includeApplicationsString)
+
+		if err != nil {
+			slog.Error("v1.CompanyHandler.CreateCompany: Could not parse include_applications param", "error", err)
+
+			status := http.StatusBadRequest
+			writer.WriteHeader(status)
+			http.Error(
+				writer,
+				"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'",
+				status)
+			return
+		}
+	}
+
+	includeApplicationsTypeModel, err := includeApplicationsType.ToModel()
+	if err != nil {
+		slog.Error(
+			"v1.CompanyHandler.CreateCompany: For include_applications, unable to convert request to model",
+			"error", err)
+
+		status := http.StatusInternalServerError
+		writer.WriteHeader(status)
+		http.Error(writer, "For include_applications, unable to convert request to model", status)
+		return
+	}
+
 	// can return InternalServiceError
-	companies, err := companyHandler.companyService.GetAllCompanies()
+	companies, err := companyHandler.companyService.GetAllCompanies(includeApplicationsTypeModel)
 	if err != nil {
 		errorMessage := "Internal service error while getting all companies"
-		status := http.StatusInternalServerError
 		slog.Error("v1.CompanyHandler.CreateCompany: "+errorMessage, "error", err)
 
+		status := http.StatusInternalServerError
+		writer.WriteHeader(status)
 		http.Error(writer, errorMessage, status)
 		return
 	}
@@ -239,15 +278,20 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 	companiesResponse, err := responses.NewCompaniesResponse(companies)
 	if err != nil {
 		slog.Error("v1.CompanyHandler.GetAllCompanies: Unable to convert internal model to response", "error", err)
-		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
+
+		status := http.StatusInternalServerError
+		writer.WriteHeader(http.StatusInternalServerError)
+		http.Error(writer, "Error: Unable to convert internal model to response", status)
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(companiesResponse)
 	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
 		slog.Error("v1.CompanyHandler.GetAllCompanies: Unable to write response", "error", err)
-		http.Error(writer, "Companies retrieved but unable to create response", http.StatusInternalServerError)
+
+		status := http.StatusInternalServerError
+		writer.WriteHeader(status)
+		http.Error(writer, "Companies retrieved but unable to create response", status)
 
 		return
 	}

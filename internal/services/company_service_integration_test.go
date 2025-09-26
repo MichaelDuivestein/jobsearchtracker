@@ -5,7 +5,9 @@ import (
 	configPackage "jobsearchtracker/internal/config"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/repositories"
 	"jobsearchtracker/internal/services"
+	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
 	"testing"
 	"time"
@@ -14,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupCompanyService(t *testing.T) *services.CompanyService {
+func setupCompanyService(t *testing.T) (*services.CompanyService, *repositories.ApplicationRepository) {
 	config := &configPackage.Config{
 		DatabaseMigrationsPath:               "../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
@@ -28,13 +30,19 @@ func setupCompanyService(t *testing.T) *services.CompanyService {
 	})
 	assert.NoError(t, err)
 
-	return companyService
+	var applicationRepository *repositories.ApplicationRepository
+	err = container.Invoke(func(applicationRepo *repositories.ApplicationRepository) {
+		applicationRepository = applicationRepo
+	})
+	assert.NoError(t, err)
+
+	return companyService, applicationRepository
 }
 
 // -------- CreateCompany tests: --------
 
 func TestCreateCompany_ShouldWork(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	id := uuid.New()
 	notes := "some notes"
@@ -75,7 +83,7 @@ func TestCreateCompany_ShouldWork(t *testing.T) {
 }
 
 func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	companyToInsert := models.CreateCompany{
 		Name:        "companyName",
@@ -100,7 +108,7 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 }
 
 func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	companyToInsert := models.CreateCompany{
 		Name:        "companyName",
@@ -126,7 +134,7 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 }
 
 func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	createdDate := time.Now().AddDate(0, 0, -2)
 
@@ -162,7 +170,7 @@ func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
 // -------- GetCompanyById tests: --------
 
 func TestGetCompanyById_ShouldWork(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	id := uuid.New()
 	notes := "some notes"
@@ -206,7 +214,7 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 }
 
 func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	nonExistingId := uuid.New()
 	retrievedCompany, err := companyService.GetCompanyById(&nonExistingId)
@@ -247,7 +255,7 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *test
 // -------- GetCompaniesByName tests: --------
 
 func TestGetCompaniesByName_ShouldReturnASingleCompany(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	// insert companies
 	id1 := uuid.New()
@@ -281,7 +289,7 @@ func TestGetCompaniesByName_ShouldReturnASingleCompany(t *testing.T) {
 }
 
 func TestGetCompaniesByName_ShouldReturnMultipleCompanies(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	// insert companies
 
@@ -328,7 +336,7 @@ func TestGetCompaniesByName_ShouldReturnMultipleCompanies(t *testing.T) {
 }
 
 func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	// insert companies
 	id1 := uuid.New()
@@ -365,11 +373,11 @@ func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T
 // -------- GetAllCompanies tests: --------
 
 func TestGetAllCompanies_ShouldWork(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, applicationRepository := setupCompanyService(t)
+
 	// insert companies
 
 	company1Id := uuid.New()
-	company1Notes := "some notes"
 	company1LastContact := time.Now().AddDate(-1, 0, 0)
 	company1CreatedDate := time.Now().AddDate(0, -5, 0)
 	company1UpdatedDate := time.Now().AddDate(0, 0, -3)
@@ -377,8 +385,8 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	company1ToInsert := models.CreateCompany{
 		ID:          &company1Id,
 		Name:        "company1Name",
-		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &company1Notes,
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("company 1 notes"),
 		LastContact: &company1LastContact,
 		CreatedDate: &company1CreatedDate,
 		UpdatedDate: &company1UpdatedDate,
@@ -389,7 +397,6 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	assert.NotNil(t, insertedCompany1)
 
 	company2Id := uuid.New()
-	company2Notes := "some notes"
 	company2LastContact := time.Now().AddDate(-1, 0, 0)
 	company2CreatedDate := time.Now().AddDate(0, -4, 22)
 	company2UpdatedDate := time.Now().AddDate(0, 0, -3)
@@ -398,7 +405,7 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 		ID:          &company2Id,
 		Name:        "company2Name",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &company2Notes,
+		Notes:       testutil.ToPtr("company 2 notes"),
 		LastContact: &company2LastContact,
 		CreatedDate: &company2CreatedDate,
 		UpdatedDate: &company2UpdatedDate,
@@ -407,27 +414,592 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany2)
 
-	results, err := companyService.GetAllCompanies()
+	company3Id := uuid.New()
+	company3CreatedDate := time.Now().AddDate(0, 0, 4)
+	company3ToInsert := models.CreateCompany{
+		ID:          &company3Id,
+		Name:        "company3Name",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: &company3CreatedDate,
+	}
+	insertedCompany3, err := companyService.CreateCompany(&company3ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// insert applications
+
+	application1Id := uuid.New()
+	application1 := models.CreateApplication{
+		ID:                   &application1Id,
+		CompanyID:            &company2Id,
+		RecruiterID:          &company3Id,
+		JobTitle:             testutil.ToPtr("Application1JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application1JobAdURL"),
+		Country:              testutil.ToPtr("Application1Country"),
+		Area:                 testutil.ToPtr("Application1Area"),
+		RemoteStatusType:     models.RemoteStatusTypeRemote,
+		WeekdaysInOffice:     testutil.ToPtr(0),
+		EstimatedCycleTime:   testutil.ToPtr(1),
+		EstimatedCommuteTime: testutil.ToPtr(2),
+		ApplicationDate:      testutil.ToPtr(time.Now()),
+		CreatedDate:          testutil.ToPtr(time.Now()),
+		UpdatedDate:          testutil.ToPtr(time.Now()),
+	}
+	_, err = applicationRepository.Create(&application1)
 	assert.NoError(t, err)
 
-	assert.NotNil(t, results)
-	assert.Equal(t, 2, len(results))
+	application2Id := uuid.New()
+	application2 := models.CreateApplication{
+		ID:               &application2Id,
+		CompanyID:        &company2Id,
+		JobAdURL:         testutil.ToPtr("Application2JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+		CreatedDate:      testutil.ToPtr(time.Now()),
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
 
-	assert.Equal(t, company2Id, results[0].ID)
-	assert.Equal(t, company1Id, results[1].ID)
+	application3Id := uuid.New()
+	application3 := models.CreateApplication{
+		ID:               &application3Id,
+		RecruiterID:      &company2Id,
+		JobTitle:         testutil.ToPtr("Application3JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+		CreatedDate:      testutil.ToPtr(time.Now()),
+	}
+	_, err = applicationRepository.Create(&application3)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 3, len(results))
+
+	assert.Equal(t, company3Id, results[0].ID)
+	assert.Equal(t, "company3Name", results[0].Name)
+	assert.Equal(t, company3ToInsert.CompanyType, results[0].CompanyType)
+	assert.Nil(t, results[0].Notes)
+	assert.Nil(t, results[0].LastContact)
+
+	company3ToInsertCreatedDate := company3ToInsert.CreatedDate.Format(time.RFC3339)
+	insertedCompany3CreatedDate := insertedCompany3.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, company3ToInsertCreatedDate, insertedCompany3CreatedDate)
+
+	assert.Nil(t, results[0].UpdatedDate)
+	assert.Equal(t, 1, len(*results[0].Applications))
+
+	results0Application := (*results[0].Applications)[0]
+	assert.Equal(t, application1Id, results0Application.ID)
+	assert.Equal(t, company2Id, *results0Application.CompanyID)
+	assert.Equal(t, company3Id, *results0Application.RecruiterID)
+	assert.Equal(t, "Application1JobTitle", *results0Application.JobTitle)
+	assert.Equal(t, "Application1JobAdURL", *results0Application.JobAdURL)
+	assert.Equal(t, "Application1Country", *results0Application.Country)
+	assert.Equal(t, "Application1Area", *results0Application.Area)
+	assert.Equal(t, models.RemoteStatusTypeRemote, results0Application.RemoteStatusType.String())
+	assert.Equal(t, 0, *results0Application.WeekdaysInOffice)
+	assert.Equal(t, 1, *results0Application.EstimatedCycleTime)
+	assert.Equal(t, 2, *results0Application.EstimatedCommuteTime)
+
+	assert.Equal(t, company2Id, results[1].ID)
+	assert.Equal(t, "company2Name", results[1].Name)
+	assert.Equal(t, company2ToInsert.CompanyType, results[1].CompanyType)
+	assert.Equal(t, "company 2 notes", *results[1].Notes)
+
+	company2ToInsertLastContact := company2ToInsert.LastContact.Format(time.RFC3339)
+	insertedCompany2LastContact := insertedCompany2.LastContact.Format(time.RFC3339)
+	assert.Equal(t, company2ToInsertLastContact, insertedCompany2LastContact)
+
+	company2ToInsertCreatedDate := company2ToInsert.CreatedDate.Format(time.RFC3339)
+	insertedCompany2CreatedDate := insertedCompany2.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, company2ToInsertCreatedDate, insertedCompany2CreatedDate)
+
+	company2ToInsertUpdatedDate := company2ToInsert.UpdatedDate.Format(time.RFC3339)
+	insertedCompany2UpdatedDate := insertedCompany2.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, company2ToInsertUpdatedDate, insertedCompany2UpdatedDate)
+
+	assert.Equal(t, 3, len(*results[1].Applications))
+
+	results1Applications := *results[1].Applications
+
+	assert.Equal(t, application1Id, results1Applications[0].ID)
+	assert.Equal(t, company2Id, *results1Applications[0].CompanyID)
+	assert.Equal(t, company3Id, *results1Applications[0].RecruiterID)
+	assert.Equal(t, "Application1JobTitle", *results1Applications[0].JobTitle)
+	assert.Equal(t, "Application1JobAdURL", *results1Applications[0].JobAdURL)
+	assert.Equal(t, "Application1Country", *results1Applications[0].Country)
+	assert.Equal(t, "Application1Area", *results1Applications[0].Area)
+	assert.Equal(t, models.RemoteStatusTypeRemote, results1Applications[0].RemoteStatusType.String())
+	assert.Equal(t, 0, *results1Applications[0].WeekdaysInOffice)
+	assert.Equal(t, 1, *results1Applications[0].EstimatedCycleTime)
+	assert.Equal(t, 2, *results1Applications[0].EstimatedCommuteTime)
+
+	application1ToInsertApplicationDate := application1.ApplicationDate.Format(time.RFC3339)
+	insertedApplication2ApplicationDate := results1Applications[0].ApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, application1ToInsertApplicationDate, insertedApplication2ApplicationDate)
+
+	application1ToInsertCreatedDate := application1.CreatedDate.Format(time.RFC3339)
+	insertedApplication1CreatedDate := results1Applications[0].CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, application1ToInsertCreatedDate, insertedApplication1CreatedDate)
+
+	application1ToInsertUpdatedDate := application1.UpdatedDate.Format(time.RFC3339)
+	insertedApplication2UpdatedDate := results1Applications[0].UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, application1ToInsertUpdatedDate, insertedApplication2UpdatedDate)
+
+	assert.Equal(t, application2Id, results1Applications[1].ID)
+	assert.Equal(t, company2Id, *results1Applications[1].CompanyID)
+	assert.Nil(t, results1Applications[1].RecruiterID)
+	assert.Nil(t, results1Applications[1].JobTitle)
+	assert.Equal(t, "Application2JobAdURL", *results1Applications[1].JobAdURL)
+	assert.Nil(t, results1Applications[1].Country)
+	assert.Nil(t, results1Applications[1].Area)
+	assert.Equal(t, models.RemoteStatusTypeHybrid, results1Applications[1].RemoteStatusType.String())
+	assert.Nil(t, results1Applications[1].WeekdaysInOffice)
+	assert.Nil(t, results1Applications[1].EstimatedCycleTime)
+	assert.Nil(t, results1Applications[1].EstimatedCommuteTime)
+	assert.Nil(t, results1Applications[1].ApplicationDate)
+
+	application2ToInsertCreatedDate := application2.CreatedDate.Format(time.RFC3339)
+	insertedApplication2CreatedDate := results1Applications[1].CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, application2ToInsertCreatedDate, insertedApplication2CreatedDate)
+
+	assert.Nil(t, results1Applications[1].UpdatedDate)
+
+	assert.Equal(t, application3Id, results1Applications[2].ID)
+	assert.Nil(t, results1Applications[2].CompanyID)
+	assert.Equal(t, company2Id, *results1Applications[2].RecruiterID)
+	assert.Equal(t, "Application3JobTitle", *results1Applications[2].JobTitle)
+	assert.Equal(t, models.RemoteStatusTypeOffice, results1Applications[2].RemoteStatusType.String())
+
+	application3ToInsertCreatedDate := application3.CreatedDate.Format(time.RFC3339)
+	insertedApplication3CreatedDate := results1Applications[2].CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, application3ToInsertCreatedDate, insertedApplication3CreatedDate)
+
+	assert.Equal(t, company1Id, results[2].ID)
+	assert.Equal(t, "company1Name", results[2].Name)
+	assert.Equal(t, company1ToInsert.CompanyType, results[2].CompanyType)
+	assert.Equal(t, "company 1 notes", *results[2].Notes)
+
+	company1ToInsertLastContact := company1ToInsert.LastContact.Format(time.RFC3339)
+	insertedCompany1LastContact := insertedCompany1.LastContact.Format(time.RFC3339)
+	assert.Equal(t, company1ToInsertLastContact, insertedCompany1LastContact)
+
+	company1ToInsertCreatedDate := company1ToInsert.CreatedDate.Format(time.RFC3339)
+	insertedCompany1CreatedDate := insertedCompany1.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, company1ToInsertCreatedDate, insertedCompany1CreatedDate)
+
+	company1ToInsertUpdatedDate := company1ToInsert.UpdatedDate.Format(time.RFC3339)
+	insertedCompany1UpdatedDate := insertedCompany1.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, company1ToInsertUpdatedDate, insertedCompany1UpdatedDate)
+	assert.Nil(t, results[2].Applications)
+
 }
 
 func TestGetAllCompanies_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
-	results, err := companyService.GetAllCompanies()
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeNone)
+	assert.Nil(t, err, "Error on companyService.GetAll(): '%s'.", err)
+	assert.Nil(t, results, "results should not be nil")
+}
+
+func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplicationsIsNone(t *testing.T) {
+	companyService, applicationRepository := setupCompanyService(t)
+
+	// insert companies
+	company1Id := uuid.New()
+	company1ToInsert := &models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err := companyService.CreateCompany(company1ToInsert)
 	assert.NoError(t, err)
-	assert.Nil(t, results)
+
+	company2Id := uuid.New()
+	company2ToInsert := &models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = companyService.CreateCompany(company2ToInsert)
+	assert.NoError(t, err)
+
+	company3Id := uuid.New()
+	company3ToInsert := &models.CreateCompany{
+		ID:          &company3Id,
+		Name:        "company3Name",
+		CompanyType: models.CompanyTypeRecruiter,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyService.CreateCompany(company3ToInsert)
+	assert.NoError(t, err)
+
+	// insert applications
+
+	application1Id := uuid.New()
+	application1 := models.CreateApplication{
+		ID:               &application1Id,
+		CompanyID:        &company2Id,
+		RecruiterID:      &company3Id,
+		JobTitle:         testutil.ToPtr("Application1JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+	_, err = applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+
+	application2Id := uuid.New()
+	application2 := models.CreateApplication{
+		ID:               &application2Id,
+		CompanyID:        &company2Id,
+		JobTitle:         testutil.ToPtr("Application2JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+
+	application3Id := uuid.New()
+	application3 := models.CreateApplication{
+		ID:               &application3Id,
+		RecruiterID:      &company2Id,
+		JobAdURL:         testutil.ToPtr("Application3JobAdUrl"),
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+	}
+	_, err = applicationRepository.Create(&application3)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeNone)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 3, len(results))
+
+	assert.Equal(t, company3Id, results[0].ID)
+	assert.Nil(t, results[0].Applications)
+
+	assert.Equal(t, company2Id, results[1].ID)
+	assert.Nil(t, results[1].Applications)
+
+	assert.Equal(t, company1Id, results[2].ID)
+	assert.Nil(t, results[2].Applications)
+}
+
+func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplicationsIsIDs(t *testing.T) {
+	companyService, applicationRepository := setupCompanyService(t)
+
+	// insert companies
+
+	company1Id := uuid.New()
+	company1ToInsert := &models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	insertedCompany1, err := companyService.CreateCompany(company1ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2Id := uuid.New()
+	company2ToInsert := &models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	insertedCompany2, err := companyService.CreateCompany(company2ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	company3Id := uuid.New()
+	company3ToInsert := &models.CreateCompany{
+		ID:          &company3Id,
+		Name:        "company3Name",
+		CompanyType: models.CompanyTypeRecruiter,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	insertedCompany3, err := companyService.CreateCompany(company3ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// insert applications
+
+	application1Id := uuid.New()
+	application1 := models.CreateApplication{
+		ID:               &application1Id,
+		CompanyID:        &company2Id,
+		RecruiterID:      &company3Id,
+		JobTitle:         testutil.ToPtr("Application1JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+
+	application2Id := uuid.New()
+	application2 := models.CreateApplication{
+		ID:               &application2Id,
+		CompanyID:        &company2Id,
+		JobTitle:         testutil.ToPtr("Application2JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+
+	application3Id := uuid.New()
+	application3 := models.CreateApplication{
+		ID:               &application3Id,
+		RecruiterID:      &company2Id,
+		JobAdURL:         testutil.ToPtr("Application3JobAdUrl"),
+		RemoteStatusType: models.RemoteStatusTypeOffice,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = applicationRepository.Create(&application3)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 3, len(results))
+
+	assert.Equal(t, company3Id, results[0].ID)
+	assert.Equal(t, 1, len(*results[0].Applications))
+
+	results0Application := (*results[0].Applications)[0]
+	assert.Equal(t, application1Id, results0Application.ID)
+	assert.Equal(t, company2Id, *results0Application.CompanyID)
+	assert.Equal(t, company3Id, *results0Application.RecruiterID)
+
+	assert.Equal(t, company2Id, results[1].ID)
+	assert.Equal(t, 3, len(*results[1].Applications))
+
+	results1Applications := *results[1].Applications
+	assert.Equal(t, application1Id, results1Applications[0].ID)
+	assert.Equal(t, company2Id, *results1Applications[0].CompanyID)
+	assert.Equal(t, company3Id, *results1Applications[0].RecruiterID)
+	assert.Nil(t, results1Applications[0].JobTitle)
+	assert.Nil(t, results1Applications[0].JobAdURL)
+	assert.Nil(t, results1Applications[0].Country)
+	assert.Nil(t, results1Applications[0].Area)
+	assert.Nil(t, results1Applications[0].RemoteStatusType)
+	assert.Nil(t, results1Applications[0].WeekdaysInOffice)
+	assert.Nil(t, results1Applications[0].EstimatedCycleTime)
+	assert.Nil(t, results1Applications[0].EstimatedCommuteTime)
+	assert.Nil(t, results1Applications[0].ApplicationDate)
+	assert.Nil(t, results1Applications[0].CreatedDate)
+	assert.Nil(t, results1Applications[0].UpdatedDate)
+
+	assert.Equal(t, application2Id, results1Applications[1].ID)
+	assert.Equal(t, company2Id, *results1Applications[1].CompanyID)
+	assert.Nil(t, results1Applications[1].RecruiterID)
+	assert.Nil(t, results1Applications[1].JobTitle)
+	assert.Nil(t, results1Applications[1].JobAdURL)
+	assert.Nil(t, results1Applications[1].Country)
+	assert.Nil(t, results1Applications[1].Area)
+	assert.Nil(t, results1Applications[1].RemoteStatusType)
+	assert.Nil(t, results1Applications[1].WeekdaysInOffice)
+	assert.Nil(t, results1Applications[1].EstimatedCycleTime)
+	assert.Nil(t, results1Applications[1].EstimatedCommuteTime)
+	assert.Nil(t, results1Applications[1].ApplicationDate)
+	assert.Nil(t, results1Applications[1].CreatedDate)
+	assert.Nil(t, results1Applications[1].UpdatedDate)
+
+	assert.Equal(t, application3Id, results1Applications[2].ID)
+	assert.Nil(t, results1Applications[2].CompanyID)
+	assert.Equal(t, company2Id, *results1Applications[2].RecruiterID)
+	assert.Nil(t, results1Applications[2].JobTitle)
+	assert.Nil(t, results1Applications[2].JobAdURL)
+	assert.Nil(t, results1Applications[2].Country)
+	assert.Nil(t, results1Applications[2].Area)
+	assert.Nil(t, results1Applications[2].RemoteStatusType)
+	assert.Nil(t, results1Applications[2].WeekdaysInOffice)
+	assert.Nil(t, results1Applications[2].EstimatedCycleTime)
+	assert.Nil(t, results1Applications[2].EstimatedCommuteTime)
+	assert.Nil(t, results1Applications[2].ApplicationDate)
+	assert.Nil(t, results1Applications[2].CreatedDate)
+	assert.Nil(t, results1Applications[2].UpdatedDate)
+
+	assert.Equal(t, company1Id, results[2].ID)
+	assert.Nil(t, results[2].Applications)
+}
+
+func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplicationsIsIDsAndThereAreNoApplications(t *testing.T) {
+	companyService, _ := setupCompanyService(t)
+
+	// insert companies
+
+	company1Id := uuid.New()
+	company1ToInsert := &models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	insertedCompany1, err := companyService.CreateCompany(company1ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2Id := uuid.New()
+	company2ToInsert := &models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	insertedCompany2, err := companyService.CreateCompany(company2ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	company3Id := uuid.New()
+	company3ToInsert := &models.CreateCompany{
+		ID:          &company3Id,
+		Name:        "company3Name",
+		CompanyType: models.CompanyTypeRecruiter,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	insertedCompany3, err := companyService.CreateCompany(company3ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// get all companies
+
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 3, len(results))
+
+	assert.Equal(t, company3Id, results[0].ID)
+	assert.Nil(t, results[0].Applications)
+
+	assert.Equal(t, company2Id, results[1].ID)
+	assert.Nil(t, results[1].Applications)
+
+	assert.Equal(t, company1Id, results[2].ID)
+	assert.Nil(t, results[2].Applications)
+}
+
+func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplicationsIsAllAndThereAreNoApplications(t *testing.T) {
+	companyService, _ := setupCompanyService(t)
+
+	// insert companies
+
+	company1Id := uuid.New()
+	company1ToInsert := &models.CreateCompany{
+		ID:          &company1Id,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	insertedCompany1, err := companyService.CreateCompany(company1ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany1)
+
+	company2Id := uuid.New()
+	company2ToInsert := &models.CreateCompany{
+		ID:          &company2Id,
+		Name:        "company2Name",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	insertedCompany2, err := companyService.CreateCompany(company2ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany2)
+
+	company3Id := uuid.New()
+	company3ToInsert := &models.CreateCompany{
+		ID:          &company3Id,
+		Name:        "company3Name",
+		CompanyType: models.CompanyTypeRecruiter,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	insertedCompany3, err := companyService.CreateCompany(company3ToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany3)
+
+	// get all companies
+
+	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, results)
+	assert.Equal(t, 3, len(results))
+
+	assert.Equal(t, company3Id, results[0].ID)
+	assert.Nil(t, results[0].Applications)
+
+	assert.Equal(t, company2Id, results[1].ID)
+	assert.Nil(t, results[1].Applications)
+
+	assert.Equal(t, company1Id, results[2].ID)
+	assert.Nil(t, results[2].Applications)
+}
+
+func TestGetAllCompanies_ShouldReturnASingleEntryWhenCompanyIDAndRecruiterIDAreTheSame(t *testing.T) {
+	companyService, applicationRepository := setupCompanyService(t)
+
+	// insert company
+
+	companyId := uuid.New()
+	companyToInsert := &models.CreateCompany{
+		ID:          &companyId,
+		Name:        "companyName",
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	insertedCompany, err := companyService.CreateCompany(companyToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedCompany)
+
+	// insert application
+
+	applicationId := uuid.New()
+	application := models.CreateApplication{
+		ID:               &applicationId,
+		CompanyID:        &companyId,
+		RecruiterID:      &companyId,
+		JobTitle:         testutil.ToPtr("ApplicationJobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+	}
+
+	_, err = applicationRepository.Create(&application)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	idResults, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, idResults)
+	assert.Equal(t, 1, len(idResults))
+
+	assert.Equal(t, companyId, idResults[0].ID)
+	assert.Equal(t, 1, len(*idResults[0].Applications))
+
+	allResults, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, allResults)
+	assert.Equal(t, 1, len(allResults))
+
+	assert.Equal(t, companyId, allResults[0].ID)
+	assert.Equal(t, 1, len(*allResults[0].Applications))
 }
 
 // -------- UpdateCompany tests: --------
+
 func TestUpdateCompany_ShouldWork(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	// insert a company:
 	id := uuid.New()
@@ -491,7 +1063,7 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 }
 
 func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	nameToUpdate := "Updated Name"
 	var companyTypeToUpdate models.CompanyType = models.CompanyTypeConsultancy
@@ -513,7 +1085,7 @@ func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T
 // -------- DeleteCompany tests: --------
 
 func TestDeleteCompany_ShouldWork(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	// create a company:
 
@@ -554,7 +1126,7 @@ func TestDeleteCompany_ShouldWork(t *testing.T) {
 }
 
 func TestDeleteCompany_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
-	companyService := setupCompanyService(t)
+	companyService, _ := setupCompanyService(t)
 
 	id := uuid.New()
 
@@ -564,5 +1136,4 @@ func TestDeleteCompany_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *test
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: Company does not exist. ID: "+id.String(), err.Error())
-
 }
