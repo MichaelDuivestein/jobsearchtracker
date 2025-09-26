@@ -8,13 +8,14 @@ import (
 )
 
 type Company struct {
-	ID          uuid.UUID
-	Name        string
-	CompanyType CompanyType
-	Notes       *string
-	LastContact *time.Time
-	CreatedDate time.Time
-	UpdatedDate *time.Time
+	ID           uuid.UUID
+	Name         string
+	CompanyType  CompanyType
+	Notes        *string
+	LastContact  *time.Time
+	CreatedDate  time.Time
+	UpdatedDate  *time.Time
+	Applications *[]*Application
 }
 
 type CreateCompany struct {

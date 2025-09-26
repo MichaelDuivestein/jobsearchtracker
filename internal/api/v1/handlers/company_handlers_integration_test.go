@@ -8,6 +8,8 @@ import (
 	"jobsearchtracker/internal/api/v1/responses"
 	configPackage "jobsearchtracker/internal/config"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/repositories"
+	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
 	"net/http"
 	"net/http/httptest"
@@ -19,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupCompanyHandler(t *testing.T) *handlers.CompanyHandler {
+func setupCompanyHandler(t *testing.T) (*handlers.CompanyHandler, *repositories.ApplicationRepository) {
 	config := configPackage.Config{
 		DatabaseMigrationsPath:               "../../../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
@@ -33,13 +35,19 @@ func setupCompanyHandler(t *testing.T) *handlers.CompanyHandler {
 	})
 	assert.NoError(t, err)
 
-	return companyHandler
+	var applicationRepository *repositories.ApplicationRepository
+	err = container.Invoke(func(applicationRepo *repositories.ApplicationRepository) {
+		applicationRepository = applicationRepo
+	})
+	assert.NoError(t, err)
+
+	return companyHandler, applicationRepository
 }
 
 // -------- CreateCompany tests: --------
 
-func TestCreateCompany_ShouldReturnCompany(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
+	companyHandler, _ := setupCompanyHandler(t)
 
 	id := uuid.New()
 	notes := "Not a lot of notes for this company"
@@ -54,7 +62,7 @@ func TestCreateCompany_ShouldReturnCompany(t *testing.T) {
 	}
 
 	requestBytes, err := json.Marshal(requestBody)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	request, err := http.NewRequest(http.MethodPost, "/api/v1/company/new", bytes.NewBuffer(requestBytes))
 	assert.NoError(t, err)
@@ -88,7 +96,7 @@ func TestCreateCompany_ShouldReturnCompany(t *testing.T) {
 }
 
 func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	requestBody := requests.CreateCompanyRequest{
 		Name:        "random company name",
@@ -127,7 +135,7 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 }
 
 func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	companyID := uuid.New()
 
@@ -177,7 +185,7 @@ func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *test
 // -------- GetCompanyById tests: --------
 
 func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// Insert the company:
 
@@ -214,7 +222,7 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 
 	var getCompanyResponse responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 
 	assert.Equal(t, *requestBody.ID, getCompanyResponse.ID)
 	assert.Equal(t, requestBody.Name, getCompanyResponse.Name)
@@ -232,7 +240,7 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 }
 
 func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// Get a company that doesn't exist
 
@@ -288,7 +296,7 @@ func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) 
 // -------- GetCompanyByName tests: --------
 
 func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// Insert a company:
 
@@ -354,7 +362,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 }
 
 func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// Insert two companies:
 
@@ -413,7 +421,7 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 }
 
 func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/name", nil)
 	assert.NoError(t, err)
@@ -436,31 +444,31 @@ func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *tes
 // -------- GetAllCompanies tests: --------
 
 func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// create 2 companies
 
 	company1Id := uuid.New()
-	company1Notes := "First Company Notes"
-	company1LastContact := time.Now().AddDate(-1, 0, 0)
 	request1Body := requests.CreateCompanyRequest{
 		ID:          &company1Id,
 		Name:        "company1Name",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &company1Notes,
-		LastContact: &company1LastContact,
+		Notes:       testutil.ToPtr("First Company Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-2, 0, 0)),
 	}
 	insertCompany(t, companyHandler, request1Body)
 
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
+
 	company2Id := uuid.New()
-	company2Notes := "Second Company notes"
-	company2LastContact := time.Now().AddDate(-1, 0, 0)
 	request2Body := requests.CreateCompanyRequest{
 		ID:          &company2Id,
 		Name:        "company2Name",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &company2Notes,
-		LastContact: &company2LastContact,
+		Notes:       testutil.ToPtr("Second Company notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
 	}
 	insertCompany(t, companyHandler, request2Body)
 
@@ -489,7 +497,7 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 }
 
 func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all", nil)
 	assert.NoError(t, err)
@@ -504,16 +512,265 @@ func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *tes
 
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 
 	assert.NotNil(t, response)
 	assert.Equal(t, 0, len(response))
 }
 
+func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsIDs(t *testing.T) {
+	companyHandler, applicationRepository := setupCompanyHandler(t)
+
+	// setup company
+
+	companyId := uuid.New()
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &companyId,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	insertCompany(t, companyHandler, requestBody)
+
+	// setup applications
+
+	application1ID := uuid.New()
+	application1 := models.CreateApplication{
+		ID:               testutil.ToPtr(application1ID),
+		CompanyID:        &companyId,
+		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err := applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+
+	application2ID := uuid.New()
+	application2 := models.CreateApplication{
+		ID:               testutil.ToPtr(application2ID),
+		RecruiterID:      &companyId,
+		JobAdURL:         testutil.ToPtr("Application2JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeRemote,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_applications=ids", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, 1, len(response))
+
+	assert.Equal(t, companyId, response[0].ID)
+	retrievedCompany := response[0]
+
+	assert.NotNil(t, retrievedCompany.Applications)
+	assert.Equal(t, 2, len(*retrievedCompany.Applications))
+
+	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[0].ID)
+	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
+	assert.Nil(t, (*retrievedCompany.Applications)[0].RecruiterID)
+
+	application := (*retrievedCompany.Applications)[1]
+	assert.Equal(t, application2ID, application.ID)
+	assert.Nil(t, application.CompanyID)
+	assert.Equal(t, companyId, *application.RecruiterID)
+	assert.Nil(t, application.JobTitle)
+	assert.Nil(t, application.JobAdURL)
+	assert.Nil(t, application.Country)
+	assert.Nil(t, application.Area)
+	assert.Nil(t, application.RemoteStatusType)
+	assert.Nil(t, application.WeekdaysInOffice)
+	assert.Nil(t, application.EstimatedCycleTime)
+	assert.Nil(t, application.EstimatedCommuteTime)
+	assert.Nil(t, application.ApplicationDate)
+	assert.Nil(t, application.CreatedDate)
+	assert.Nil(t, application.UpdatedDate)
+
+}
+
+func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *testing.T) {
+	companyHandler, applicationRepository := setupCompanyHandler(t)
+
+	// setup company
+
+	companyId := uuid.New()
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &companyId,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	insertCompany(t, companyHandler, requestBody)
+
+	// setup applications
+
+	application1ID := uuid.New()
+	application1 := models.CreateApplication{
+		ID:               testutil.ToPtr(application1ID),
+		CompanyID:        &companyId,
+		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+
+	application2ID := uuid.New()
+	application2 := models.CreateApplication{
+		ID:                   testutil.ToPtr(application2ID),
+		RecruiterID:          &companyId,
+		JobTitle:             testutil.ToPtr("Application2JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
+		Country:              testutil.ToPtr("Application2Country"),
+		Area:                 testutil.ToPtr("Application2Area"),
+		RemoteStatusType:     models.RemoteStatusTypeRemote,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_applications=all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, 1, len(response))
+
+	assert.Equal(t, companyId, response[0].ID)
+	retrievedCompany := response[0]
+
+	assert.NotNil(t, retrievedCompany.Applications)
+	assert.Equal(t, 2, len(*retrievedCompany.Applications))
+
+	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[0].ID)
+	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
+	assert.Nil(t, (*retrievedCompany.Applications)[0].RecruiterID)
+
+	application := (*retrievedCompany.Applications)[1]
+	assert.Equal(t, application2ID, application.ID)
+	assert.Nil(t, application.CompanyID)
+	assert.Equal(t, companyId, *application.RecruiterID)
+	assert.Equal(t, "Application2JobTitle", *application.JobTitle)
+	assert.Equal(t, "Application2JobAdURL", *application.JobAdURL)
+	assert.Equal(t, "Application2Country", *application.Country)
+	assert.Equal(t, "Application2Area", *application.Area)
+	assert.Equal(t, models.RemoteStatusTypeRemote, application.RemoteStatusType.String())
+	assert.Equal(t, 1, *application.WeekdaysInOffice)
+	assert.Equal(t, 2, *application.EstimatedCycleTime)
+	assert.Equal(t, 3, *application.EstimatedCommuteTime)
+
+	applicationToInsertApplicationDate := application2.ApplicationDate.Format(time.RFC3339)
+	applicationResponseApplicationDate := application.ApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertApplicationDate, applicationResponseApplicationDate)
+
+	applicationToInsertCreatedDate := application2.CreatedDate.Format(time.RFC3339)
+	applicationResponseCreatedDate := application.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertCreatedDate, applicationResponseCreatedDate)
+
+	applicationToInsertUpdatedDate := application2.UpdatedDate.Format(time.RFC3339)
+	applicationResponseUpdatedDate := application.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertUpdatedDate, applicationResponseUpdatedDate)
+}
+
+func TestGetAllCompanies_ShouldReturnNoApplicationsIfIncludeApplicationsIsNone(t *testing.T) {
+	companyHandler, applicationRepository := setupCompanyHandler(t)
+
+	// setup company
+
+	companyId := uuid.New()
+	requestBody := requests.CreateCompanyRequest{
+		ID:          &companyId,
+		Name:        "company1Name",
+		CompanyType: models.CompanyTypeConsultancy,
+	}
+	insertCompany(t, companyHandler, requestBody)
+
+	// setup applications
+
+	application1ID := uuid.New()
+	application1 := models.CreateApplication{
+		ID:               testutil.ToPtr(application1ID),
+		CompanyID:        &companyId,
+		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err := applicationRepository.Create(&application1)
+	assert.NoError(t, err)
+
+	application2ID := uuid.New()
+	application2 := models.CreateApplication{
+		ID:               testutil.ToPtr(application2ID),
+		RecruiterID:      &companyId,
+		JobAdURL:         testutil.ToPtr("Application2JobAdURL"),
+		RemoteStatusType: models.RemoteStatusTypeRemote,
+		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = applicationRepository.Create(&application2)
+	assert.NoError(t, err)
+
+	// get all companies
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_applications=none", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, response)
+	assert.Equal(t, 1, len(response))
+
+	assert.Equal(t, companyId, response[0].ID)
+	retrievedCompany := response[0]
+
+	assert.Nil(t, retrievedCompany.Applications)
+}
+
 // -------- Update tests: --------
 
 func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// create a company
 
@@ -592,7 +849,7 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 }
 
 func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// create a company
 
@@ -636,7 +893,7 @@ func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 // -------- DeleteCompany tests: --------
 
 func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	// insert the company
 
@@ -680,7 +937,7 @@ func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
 }
 
 func TestDeleteCompany_ShouldReturnStatusNotFoundIfCompanyDoesNotExist(t *testing.T) {
-	companyHandler := setupCompanyHandler(t)
+	companyHandler, _ := setupCompanyHandler(t)
 
 	id := uuid.New()
 

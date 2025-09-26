@@ -4,6 +4,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -18,14 +19,45 @@ func TestNewCompanyResponse_ShouldWork(t *testing.T) {
 	lastContact := time.Now().AddDate(0, 0, -3)
 	updatedDate := time.Now().AddDate(0, 0, -2)
 
+	companyId := uuid.New()
+
+	application1ID := uuid.New()
+	application1 := models.Application{
+		ID:        application1ID,
+		CompanyID: &companyId,
+	}
+
+	application2ID := uuid.New()
+	var application2RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeOffice
+	application2 := models.Application{
+		ID:                   application2ID,
+		RecruiterID:          &companyId,
+		JobTitle:             testutil.ToPtr("Application2JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
+		Country:              testutil.ToPtr("Application2Country"),
+		Area:                 testutil.ToPtr("Application2Area"),
+		RemoteStatusType:     &application2RemoteStatusType,
+		WeekdaysInOffice:     testutil.ToPtr(3),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(1),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+	}
+	applications := []*models.Application{
+		&application1,
+		&application2,
+	}
+
 	model := models.Company{
-		ID:          uuid.New(),
-		Name:        "Randomized Company",
-		CompanyType: models.CompanyTypeEmployer,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: time.Now().AddDate(0, 0, -4),
-		UpdatedDate: &updatedDate,
+		ID:           companyId,
+		Name:         "Randomized Company",
+		CompanyType:  models.CompanyTypeEmployer,
+		Notes:        &notes,
+		LastContact:  &lastContact,
+		Applications: &applications,
+		CreatedDate:  time.Now().AddDate(0, 0, -4),
+		UpdatedDate:  &updatedDate,
 	}
 
 	response, err := NewCompanyResponse(&model)
@@ -39,6 +71,35 @@ func TestNewCompanyResponse_ShouldWork(t *testing.T) {
 	assert.Equal(t, model.LastContact, response.LastContact)
 	assert.Equal(t, model.CreatedDate, response.CreatedDate)
 	assert.Equal(t, model.UpdatedDate, response.UpdatedDate)
+
+	assert.Equal(t, application1ID, (*response.Applications)[0].ID)
+	assert.Equal(t, companyId, *(*response.Applications)[0].CompanyID)
+	assert.Nil(t, (*response.Applications)[0].RecruiterID)
+
+	application := (*response.Applications)[1]
+	assert.Equal(t, application2ID, application.ID)
+	assert.Nil(t, application.CompanyID)
+	assert.Equal(t, companyId, *application.RecruiterID)
+	assert.Equal(t, "Application2JobTitle", *application.JobTitle)
+	assert.Equal(t, "Application2JobAdURL", *application.JobAdURL)
+	assert.Equal(t, "Application2Country", *application.Country)
+	assert.Equal(t, "Application2Area", *application.Area)
+	assert.Equal(t, models.RemoteStatusTypeOffice, application.RemoteStatusType.String())
+	assert.Equal(t, 3, *application.WeekdaysInOffice)
+	assert.Equal(t, 2, *application.EstimatedCycleTime)
+	assert.Equal(t, 1, *application.EstimatedCommuteTime)
+
+	applicationToInsertApplicationDate := application2.ApplicationDate.Format(time.RFC3339)
+	applicationResponseApplicationDate := application.ApplicationDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertApplicationDate, applicationResponseApplicationDate)
+
+	applicationToInsertCreatedDate := application2.CreatedDate.Format(time.RFC3339)
+	applicationResponseCreatedDate := application.CreatedDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertCreatedDate, applicationResponseCreatedDate)
+
+	applicationToInsertUpdatedDate := application2.UpdatedDate.Format(time.RFC3339)
+	applicationResponseUpdatedDate := application.UpdatedDate.Format(time.RFC3339)
+	assert.Equal(t, applicationToInsertUpdatedDate, applicationResponseUpdatedDate)
 }
 
 func TestNewCompanyResponse_ShouldWorkWithOnlyRequiredFields(t *testing.T) {

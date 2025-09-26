@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
@@ -27,7 +29,7 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 	sqlInsert :=
 		"INSERT INTO company (id, name, company_type, notes, last_contact, created_date, updated_date) " +
 			"VALUES (?, ?, ?, ?, ?, ?, ?) " +
-			"RETURNING id, name, company_type, notes, last_contact, created_date, updated_date"
+			"RETURNING id, name, company_type, notes, last_contact, created_date, updated_date, null"
 
 	var companyID uuid.UUID
 	if company.ID != nil {
@@ -45,7 +47,7 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 	if company.CreatedDate != nil {
 		createdDate = company.CreatedDate.Format(time.RFC3339)
 	} else {
-		createdDate = time.Now()
+		createdDate = time.Now().Format(time.RFC3339)
 	}
 
 	if company.UpdatedDate != nil {
@@ -85,7 +87,7 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 	}
 
 	sqlSelect :=
-		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date " +
+		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null " +
 			"FROM company " +
 			"WHERE id = ?"
 
@@ -112,7 +114,7 @@ func (repository *CompanyRepository) GetAllByName(name *string) ([]*models.Compa
 	}
 
 	sqlSelect :=
-		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date " +
+		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null " +
 			"FROM company " +
 			"WHERE name LIKE ? " +
 			"ORDER BY name ASC"
@@ -152,11 +154,25 @@ func (repository *CompanyRepository) GetAllByName(name *string) ([]*models.Compa
 }
 
 // GetAll can return InternalServiceError
-func (repository *CompanyRepository) GetAll() ([]*models.Company, error) {
-	sqlSelect :=
-		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date " +
-			"FROM company " +
-			"ORDER BY created_date DESC"
+func (repository *CompanyRepository) GetAll(
+	includeApplications models.IncludeExtraDataType) ([]*models.Company, error) {
+
+	sqlSelect := `
+		SELECT c.id, c.name, c.company_type, c.notes, c.last_contact, c.created_date, c.updated_date, %s
+		FROM company c
+		%s
+		GROUP BY c.id, c.name, c.company_type
+		ORDER BY c.created_date DESC;
+		`
+
+	applicationsCoalesceString := "null \n"
+	applicationsJoinString := ""
+	if includeApplications != models.IncludeExtraDataTypeNone {
+		applicationsCoalesceString, applicationsJoinString =
+			repository.buildApplicationsCoalesceAndJoin(includeApplications)
+	}
+
+	sqlSelect = fmt.Sprintf(sqlSelect, applicationsCoalesceString, applicationsJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -285,12 +301,14 @@ func (repository *CompanyRepository) Delete(id *uuid.UUID) error {
 	return nil
 }
 
+// internal functions
+
 // mapRow can return ConflictError, InternalServiceError
 func (repository *CompanyRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Company, error) {
 
 	var result models.Company
-	var lastContact, createdDate, updatedDate sql.NullString
+	var lastContact, createdDate, updatedDate, applicationsString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -300,6 +318,7 @@ func (repository *CompanyRepository) mapRow(
 		&lastContact,
 		&createdDate,
 		&updatedDate,
+		&applicationsString,
 	)
 
 	if err != nil {
@@ -354,5 +373,59 @@ func (repository *CompanyRepository) mapRow(
 		result.UpdatedDate = &timestamp
 	}
 
+	if applicationsString.Valid {
+		var applications []*models.Application
+		if err := json.NewDecoder(strings.NewReader(applicationsString.String)).Decode(&applications); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing applications: " + err.Error())
+		}
+
+		if applications != nil && len(applications) > 0 {
+			result.Applications = &applications
+		}
+	}
+
 	return &result, nil
+}
+
+func (repository *CompanyRepository) buildApplicationsCoalesceAndJoin(
+	includeApplications models.IncludeExtraDataType) (string, string) {
+
+	if includeApplications == models.IncludeExtraDataTypeNone {
+		return "", ""
+	}
+
+	coalesceString := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', a.id,
+					'CompanyID', a.company_id,
+					'RecruiterID', a.recruiter_id%s
+				)
+			) FILTER (WHERE a.id IS NOT NULL),
+			JSON_ARRAY()
+		) as applications
+	`
+
+	allColumns := ""
+	if includeApplications == models.IncludeExtraDataTypeAll {
+		allColumns = `,
+					'JobTitle', a.job_title,
+					'JobAdURL', a.job_ad_url,
+					'Country', a.country,
+					'Area', a.area,
+					'RemoteStatusType', a.remote_status_type,
+					'WeekdaysInOffice', a.weekdays_in_office,
+					'EstimatedCycleTime', a.estimated_cycle_time,
+					'EstimatedCommuteTime', a.estimated_commute_time,
+					'ApplicationDate', a.application_date,
+					'CreatedDate', a.created_date,
+					'UpdatedDate', a.updated_date`
+
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString := "		LEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n"
+
+	return coalesceString, joinString
 }

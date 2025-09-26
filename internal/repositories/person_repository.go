@@ -41,7 +41,7 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 	if person.CreatedDate != nil {
 		createdDate = person.CreatedDate.Format(time.RFC3339)
 	} else {
-		createdDate = time.Now()
+		createdDate = time.Now().Format(time.RFC3339)
 	}
 
 	if person.UpdatedDate != nil {
