@@ -7,6 +7,7 @@ import (
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/repositories"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
+	"jobsearchtracker/internal/testutil/repositoryhelpers"
 	"testing"
 	"time"
 
@@ -42,8 +43,8 @@ func setupApplicationRepository(t *testing.T) (*repositories.ApplicationReposito
 func TestCreate_ShouldInsertAndReturnApplication(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	id := uuid.New()
 	jobTitle := "Job Title"
@@ -106,7 +107,7 @@ func TestCreate_ShouldInsertAndReturnApplication(t *testing.T) {
 func TestCreate_ShouldInsertAndReturnWithMinimumRequiredFields(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	companyID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	jobAdURL := "Job Ad URL"
 	application := models.CreateApplication{
@@ -203,7 +204,7 @@ func TestCreate_ShouldReturnErrorIfRecruiterIDIsNotInCompany(t *testing.T) {
 func TestCreate_ShouldReturnErrorIfJobTitleAndJobAdURLIsNil(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	companyID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	createApplication := models.CreateApplication{
 		CompanyID:        companyID,
@@ -227,8 +228,8 @@ func TestCreate_ShouldReturnErrorIfJobTitleAndJobAdURLIsNil(t *testing.T) {
 func TestGetById_ShouldGetApplication(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	id := uuid.New()
 	jobTitle := "Job Title"
@@ -317,7 +318,7 @@ func TestGetById_ShouldReturnErrorIfApplicationIDDoesNotExist(t *testing.T) {
 func TestGetAllByJobTitle_ShouldReturnApplication(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	recruiterID := createCompany(t, companyRepository)
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 	jobTitle := "Some Job Title"
 
 	applicationToInsert := models.CreateApplication{
@@ -364,7 +365,7 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 	// insert some applications
 
 	application1ID := uuid.New()
-	application1CompanyID := createCompany(t, companyRepository)
+	application1CompanyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 	application1JobTitle := "Developer"
 	application1 := models.CreateApplication{
 		ID:               &application1ID,
@@ -377,7 +378,7 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 	assert.NotNil(t, insertedApplication1)
 
 	application2ID := uuid.New()
-	application2RecruiterID := createCompany(t, companyRepository)
+	application2RecruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 	application2JobTitle := "Software Engineer"
 	application2 := models.CreateApplication{
 		ID:               &application2ID,
@@ -390,7 +391,7 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 	assert.NotNil(t, insertedApplication2)
 
 	application3ID := uuid.New()
-	application3CompanyID := createCompany(t, companyRepository)
+	application3CompanyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 	application3JobTitle := "Backend Developer"
 	application3 := models.CreateApplication{
 		ID:               &application3ID,
@@ -420,8 +421,8 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 
 func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	id1 := uuid.New()
 	jobTitle1 := "Job Title1"
@@ -512,8 +513,8 @@ func TestGetAll_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
 func TestUpdate_ShouldUpdateApplication(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	// create an application
 	id := uuid.New()
@@ -548,8 +549,8 @@ func TestUpdate_ShouldUpdateApplication(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedApplication)
 
-	newCompanyID := createCompany(t, companyRepository)
-	newRecruiterID := createCompany(t, companyRepository)
+	newCompanyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	newRecruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	newJobTitle := "New Job Title"
 	newJobAdURL := "New Job Ad URL"
@@ -618,7 +619,10 @@ func TestUpdate_ShouldReturnValidationErrorIfNoApplicationFieldsToUpdate(t *test
 
 	err := applicationRepository.Update(&applicationToUpdate)
 	assert.Error(t, err)
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError)
 }
 
 func TestUpdate_ShouldNotReturnErrorIfApplicationDoesNotExist(t *testing.T) {
@@ -641,7 +645,7 @@ func TestUpdate_ShouldNotReturnErrorIfApplicationDoesNotExist(t *testing.T) {
 func TestDelete_ShouldDeleteApplication(t *testing.T) {
 	applicationRepository, companyRepository := setupApplicationRepository(t)
 
-	recruiterID := createCompany(t, companyRepository)
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	id := uuid.New()
 	jobTitle := "JobTitle"
@@ -681,18 +685,3 @@ func TestDelete_ShouldReturnNotFoundErrorIfApplicationIdDoesNotExist(t *testing.
 }
 
 // -------- Test helpers: --------
-
-func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {
-
-	id := uuid.New()
-	company := models.CreateCompany{
-		ID:          &id,
-		Name:        "Example Company Name",
-		CompanyType: models.CompanyTypeEmployer,
-	}
-
-	insertedCompany, err := companyRepository.Create(&company)
-	assert.NoError(t, err)
-
-	return &insertedCompany.ID
-}
