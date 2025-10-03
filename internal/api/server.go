@@ -31,6 +31,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	applicationService := services.NewApplicationService(applicationRepository)
 	applicationHandler := apiV1.NewApplicationHandler(applicationService)
 
+	companyPersonRepository := repositories.NewCompanyPersonRepository(database)
+	companyPersonService := services.NewCompanyPersonService(companyPersonRepository)
+	companyPersonHandler := apiV1.NewCompanyPersonHandler(companyPersonService)
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
@@ -52,7 +56,11 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/application/get/title/{title}", applicationHandler.GetApplicationsByJobTitle).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application/get/all", applicationHandler.GetAllApplications).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application/update", applicationHandler.UpdateApplication).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/application/delete/{id}", applicationHandler.DeleteApplication).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/company-person/associate", companyPersonHandler.AssociateCompanyPerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company-person/get/", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-person/get/all", companyPersonHandler.GetAllCompanyPersons).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-person/delete", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
 
 	slog.Info("Server created. Returning Server.")
 	return &Server{router: router, logger: logger}
