@@ -622,7 +622,7 @@ func TestUpdate_ShouldReturnValidationErrorIfNoApplicationFieldsToUpdate(t *test
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
-	assert.Equal(t, "validation error: nothing to update", validationError)
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 func TestUpdate_ShouldNotReturnErrorIfApplicationDoesNotExist(t *testing.T) {
