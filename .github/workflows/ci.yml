@@ -24,6 +24,9 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Verify swag dependency
+        run: go get github.com/swaggo/swag github.com/swaggo/http-swagger
+
       - name: Generate OpenAPI documentation
         run: go run github.com/swaggo/swag/cmd/swag@latest init
 
