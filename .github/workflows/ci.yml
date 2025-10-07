@@ -25,7 +25,7 @@ jobs:
         run: go mod download
 
       - name: Generate OpenAPI documentation
-        run: go generate ./...
+        run: go run github.com/swaggo/swag/cmd/swag@latest init
 
       - name: Verify generated docs
         run: |
