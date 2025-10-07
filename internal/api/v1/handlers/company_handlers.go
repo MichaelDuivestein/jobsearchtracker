@@ -22,6 +22,19 @@ func NewCompanyHandler(companyService *services.CompanyService) *CompanyHandler 
 	return &CompanyHandler{companyService: companyService}
 }
 
+// CreateCompany creates a company and returns it
+//
+// @Summary create a company
+// @Description create a `company` and return it
+// @Tags company
+// @Accept json
+// @Produce json
+// @Param company body requests.CreateCompanyRequest true "Create Company request"
+// @Success 201 {object} responses.CompanyResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company/new [post]
 func (companyHandler *CompanyHandler) CreateCompany(writer http.ResponseWriter, request *http.Request) {
 	var createCompanyRequest requests.CreateCompanyRequest
 	if err := json.NewDecoder(request.Body).Decode(&createCompanyRequest); err != nil {
@@ -97,6 +110,18 @@ func (companyHandler *CompanyHandler) CreateCompany(writer http.ResponseWriter, 
 	}
 }
 
+// GetCompanyById retrieves a company matching input UUID
+//
+// @Summary Get a company by ID
+// @Description Get a `company` by ID
+// @Tags company
+// @Produce json
+// @Param id path string true "Company ID UUID"
+// @Success 200 {object} responses.CompanyResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company/get/id/{id} [get]
 func (companyHandler *CompanyHandler) GetCompanyById(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	companyIDStr := vars["id"]
@@ -164,6 +189,18 @@ func (companyHandler *CompanyHandler) GetCompanyById(writer http.ResponseWriter,
 	return
 }
 
+// GetCompaniesByName retrieves `company`s which fully, or partially, match the input name
+//
+// @Summary Get companies by name
+// @Description Get `company`s which fully, or partially, match the input name
+// @Tags company
+// @Produce json
+// @Param name path string true "Company Name"
+// @Success 200 {array} responses.CompanyResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company/get/name/{name} [get]
 func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	companyName := vars["name"]
@@ -223,6 +260,20 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 	return
 }
 
+// GetAllCompanies retrieves all companies.
+//
+// @Summary Get all companies
+// @Description Get all `company`s
+// @Description - include_applications=all: Returns `application`s with all fields
+// @Description - include_applications=ids: Returns `application`s with only `id`, `application_id`, and `recruiter_id`
+// @Description - include_applications=none: No `application` data included (default)
+// @Tags company
+// @Produce json
+// @Param include_applications query string false "string enums" Enums(all, ids, none)
+// @Success 200 {array} responses.CompanyResponse
+// @Failure 400
+// @Failure 500
+// @Router /v1/company/get/all [get]
 func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter, request *http.Request) {
 
 	query := request.URL.Query()
@@ -266,7 +317,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 	companies, err := companyHandler.companyService.GetAllCompanies(includeApplicationsTypeModel)
 	if err != nil {
 		errorMessage := "Internal service error while getting all companies"
-		slog.Error("v1.CompanyHandler.CreateCompany: "+errorMessage, "error", err)
+		slog.Error("v1.CompanyHandler.GetAllCompanies: "+errorMessage, "error", err)
 
 		status := http.StatusInternalServerError
 		writer.WriteHeader(status)
@@ -301,6 +352,19 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 	return
 }
 
+// UpdateCompany updates a company
+//
+// @Summary update a company
+// @Description update a `company`
+// @Tags company
+// @Accept json
+// @Produce json
+// @Param company body requests.UpdateCompanyRequest true "Update Company Request"
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company/update [post]
 func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, request *http.Request) {
 	var updateCompanyRequest requests.UpdateCompanyRequest
 	if err := json.NewDecoder(request.Body).Decode(&updateCompanyRequest); err != nil {
@@ -355,6 +419,17 @@ func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, 
 	return
 }
 
+// DeleteCompany deletes a `company` matching input UUID
+//
+// @Summary Delete a company by ID
+// @Description Delete a `company` by ID
+// @Tags company
+// @Param id path string true "Company ID UUID"
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company/delete/{id} [delete]
 func (companyHandler *CompanyHandler) DeleteCompany(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	companyIDStr := vars["id"]

@@ -1,3 +1,5 @@
+//go:generate go run github.com/swaggo/swag/cmd/swag@latest init
+
 package main
 
 import (
