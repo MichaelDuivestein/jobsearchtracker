@@ -57,8 +57,11 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - name: Verify swag dependency
+        run: go get github.com/swaggo/swag github.com/swaggo/http-swagger
+
       - name: Generate OpenAPI documentation
-        run: go generate ./...
+        run: go run github.com/swaggo/swag/cmd/swag@latest init
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
