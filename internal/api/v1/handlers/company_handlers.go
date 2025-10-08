@@ -116,7 +116,7 @@ func (companyHandler *CompanyHandler) CreateCompany(writer http.ResponseWriter, 
 // @Description Get a `company` by ID
 // @Tags company
 // @Produce json
-// @Param id path string true "Company ID UUID"
+// @Param id path string true "Company ID" format(uuid)
 // @Success 200 {object} responses.CompanyResponse
 // @Failure 400
 // @Failure 404
@@ -424,7 +424,7 @@ func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, 
 // @Summary Delete a company by ID
 // @Description Delete a `company` by ID
 // @Tags company
-// @Param id path string true "Company ID UUID"
+// @Param id path string true "Company ID" format(uuid)
 // @Success 200
 // @Failure 400
 // @Failure 404

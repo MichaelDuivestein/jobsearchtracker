@@ -11,20 +11,20 @@ import (
 )
 
 type ApplicationResponse struct {
-	ID                   uuid.UUID                  `json:"id,omitempty"`
-	CompanyID            *uuid.UUID                 `json:"company_id,omitempty"`
-	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty"`
-	JobTitle             *string                    `json:"job_title,omitempty"`
-	JobAdURL             *string                    `json:"job_ad_url,omitempty"`
-	Country              *string                    `json:"country,omitempty"`
-	Area                 *string                    `json:"area,omitempty"`
-	RemoteStatusType     *requests.RemoteStatusType `json:"remote_status_type"`
-	WeekdaysInOffice     *int                       `json:"weekdays_in_office,omitempty"`
-	EstimatedCycleTime   *int                       `json:"estimated_cycle_time,omitempty"`
-	EstimatedCommuteTime *int                       `json:"estimated_commute_time,omitempty"`
-	ApplicationDate      *time.Time                 `json:"application_date,omitempty"`
-	CreatedDate          *time.Time                 `json:"created_date"`
-	UpdatedDate          *time.Time                 `json:"updated_date"`
+	ID                   uuid.UUID                  `json:"id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=00"`
+	CompanyID            *uuid.UUID                 `json:"company_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=01"`
+	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=02"`
+	JobTitle             *string                    `json:"job_title,omitempty" example:"Job Title" extensions:"x-order=03"`
+	JobAdURL             *string                    `json:"job_ad_url,omitempty" example:"https://job.ad.url" extensions:"x-order=04"`
+	Country              *string                    `json:"country,omitempty" example:"Sweden" extensions:"x-order=05"`
+	Area                 *string                    `json:"area,omitempty" example:"Stockholm" extensions:"x-order=06"`
+	RemoteStatusType     *requests.RemoteStatusType `json:"remote_status_type" example:"hybrid" extensions:"x-order=07"`
+	WeekdaysInOffice     *int                       `json:"weekdays_in_office,omitempty" example:"2" extensions:"x-order=08"`
+	EstimatedCycleTime   *int                       `json:"estimated_cycle_time,omitempty" example:"25" extensions:"x-order=09"`
+	EstimatedCommuteTime *int                       `json:"estimated_commute_time,omitempty" example:"35" extensions:"x-order=10"`
+	ApplicationDate      *time.Time                 `json:"application_date,omitempty" example:"2025-12-31T23:59Z" extensions:"x-order=11"`
+	CreatedDate          *time.Time                 `json:"created_date" example:"2025-12-31T23:59Z" extensions:"x-order=12"`
+	UpdatedDate          *time.Time                 `json:"updated_date" example:"2025-12-31T23:59Z" extensions:"x-order=13"`
 }
 
 // NewApplicationResponse can return InternalServerError
