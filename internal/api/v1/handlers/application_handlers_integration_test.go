@@ -359,6 +359,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
 	// get the application by full job title:
 
 	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
@@ -383,6 +384,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
 	// get the application by partial name:
 
 	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	assert.NoError(t, err)
 	responseRecorder = httptest.NewRecorder()
 
 	vars = map[string]string{
@@ -436,6 +438,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
 	// Get applications by name:
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/title", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
