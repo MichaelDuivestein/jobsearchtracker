@@ -170,8 +170,6 @@ func (applicationHandler *ApplicationHandler) GetApplicationByID(writer http.Res
 	slog.Info(
 		"v1.ApplicationHandler.GetApplicationByID: retrieved application successfully",
 		"application.ID", application.ID.String())
-
-	return
 }
 
 func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
@@ -235,8 +233,6 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 	slog.Info(
 		"v1.ApplicationHandler.GetApplicationsByJobTitle: retrieved applications successfully",
 		"jobTitle", jobTitle)
-
-	return
 }
 
 func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, _ *http.Request) {
@@ -271,8 +267,6 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 	}
 
 	slog.Info("v1.ApplicationHandler.GetAllApplications: retrieved all applications successfully")
-
-	return
 }
 
 func (applicationHandler *ApplicationHandler) UpdateApplication(writer http.ResponseWriter, request *http.Request) {

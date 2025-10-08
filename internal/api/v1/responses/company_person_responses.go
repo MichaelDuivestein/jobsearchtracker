@@ -28,7 +28,7 @@ func NewCompanyPersonResponse(model *models.CompanyPerson) *CompanyPersonRespons
 }
 
 func NewCompanyPersonsResponse(models []*models.CompanyPerson) []*CompanyPersonResponse {
-	if models == nil || len(models) == 0 {
+	if len(models) == 0 {
 		return []*CompanyPersonResponse{}
 	}
 

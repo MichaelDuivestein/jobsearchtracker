@@ -58,7 +58,7 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 
 // NewCompaniesResponse can return InternalServiceError
 func NewCompaniesResponse(companyModels []*models.Company) ([]*CompanyResponse, error) {
-	if companyModels == nil || len(companyModels) == 0 {
+	if len(companyModels) == 0 {
 		return []*CompanyResponse{}, nil
 	}
 
