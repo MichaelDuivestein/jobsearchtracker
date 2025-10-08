@@ -18,6 +18,11 @@ import (
 	"go.uber.org/dig"
 )
 
+// @title JobSearchTracker API
+// @version 1.0
+// @description Job application tracking API
+// @BasePath /api
+
 func run() error {
 	// Handle SIGINT (CTRL+C) and SIGTERM gracefully.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
