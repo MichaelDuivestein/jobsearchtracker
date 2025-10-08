@@ -10,11 +10,11 @@ import (
 )
 
 type CreateCompanyRequest struct {
-	ID          *uuid.UUID  `json:"id,omitempty"`
-	Name        string      `json:"name"`
-	CompanyType CompanyType `json:"company_type"`
-	Notes       *string     `json:"notes,omitempty"`
-	LastContact *time.Time  `json:"last_contact,omitempty"`
+	ID          *uuid.UUID  `json:"id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name        string      `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
+	CompanyType CompanyType `json:"company_type" example:"employer" extensions:"x-order=2"`
+	Notes       *string     `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=3"`
+	LastContact *time.Time  `json:"last_contact,omitempty" example:"2025-12-31T23:59Z" extensions:"x-order=4"`
 }
 
 // Validate can return ValidationError
@@ -72,11 +72,11 @@ func (request *CreateCompanyRequest) ToModel() (*models.CreateCompany, error) {
 }
 
 type UpdateCompanyRequest struct {
-	ID          uuid.UUID    `json:"id"`
-	Name        *string      `json:"name,omitempty"`
-	CompanyType *CompanyType `json:"company_type,omitempty"`
-	Notes       *string      `json:"notes,omitempty"`
-	LastContact *time.Time   `json:"last_contact,omitempty"`
+	ID          uuid.UUID    `json:"id" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name        *string      `json:"name,omitempty" example:"CompanyName AB" extensions:"x-order=1"`
+	CompanyType *CompanyType `json:"company_type,omitempty" example:"employer" extensions:"x-order=2"`
+	Notes       *string      `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=3"`
+	LastContact *time.Time   `json:"last_contact,omitempty" example:"2025-12-31T23:59Z" extensions:"x-order=4"`
 }
 
 // Validate can return ValidationError
@@ -147,6 +147,9 @@ func (request *UpdateCompanyRequest) ToModel() (*models.UpdateCompany, error) {
 	return &updateModel, nil
 }
 
+// CompanyType represents the type of company
+//
+// @enum employer,recruiter,consultancy
 type CompanyType string
 
 const (
