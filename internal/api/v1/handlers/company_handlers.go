@@ -358,7 +358,6 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 // @Description update a `company`
 // @Tags company
 // @Accept json
-// @Produce json
 // @Param company body requests.UpdateCompanyRequest true "Update Company Request"
 // @Success 200
 // @Failure 400
