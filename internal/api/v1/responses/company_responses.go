@@ -11,14 +11,14 @@ import (
 )
 
 type CompanyResponse struct {
-	ID           uuid.UUID               `json:"id"`
-	Name         string                  `json:"name"`
-	CompanyType  requests.CompanyType    `json:"company_type"`
-	Notes        *string                 `json:"notes"`
-	LastContact  *time.Time              `json:"last_contact"`
-	CreatedDate  time.Time               `json:"created_date"`
-	UpdatedDate  *time.Time              `json:"updated_date"`
-	Applications *[]*ApplicationResponse `json:"applications"`
+	ID           uuid.UUID               `json:"id" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name         string                  `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
+	CompanyType  requests.CompanyType    `json:"company_type" example:"employer" extensions:"x-order=2"`
+	Notes        *string                 `json:"notes" example:"Notes go here" extensions:"x-order=3"`
+	LastContact  *time.Time              `json:"last_contact" example:"2025-12-31T23:59Z"  extensions:"x-order=4"`
+	CreatedDate  time.Time               `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=5"`
+	UpdatedDate  *time.Time              `json:"updated_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
+	Applications *[]*ApplicationResponse `json:"applications" extensions:"x-order=7"`
 }
 
 // NewCompanyResponse can return InternalServiceError

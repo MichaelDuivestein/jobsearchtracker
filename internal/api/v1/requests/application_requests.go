@@ -198,6 +198,9 @@ func (request *UpdateApplicationRequest) ToModel() (*models.UpdateApplication, e
 	return &updateModel, nil
 }
 
+// RemoteStatusType represents how an employer allows remote work
+//
+// @enum hybrid,office,remote,unknown
 type RemoteStatusType string
 
 const (
