@@ -21,6 +21,19 @@ func NewCompanyPersonHandler(companyPersonService *services.CompanyPersonService
 	return &CompanyPersonHandler{companyPersonService: companyPersonService}
 }
 
+// AssociateCompanyPerson associates a company with a person and returns it
+//
+// @Summary associate a company with a person
+// @Description associate a `company` with a `person` and return it
+// @Tags companyPerson
+// @Accept json
+// @Produce json
+// @Param company body requests.AssociateCompanyPersonRequest true "Associate Company Person request"
+// @Success 201 {object} responses.CompanyPersonResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company-person/associate [post]
 func (handler *CompanyPersonHandler) AssociateCompanyPerson(writer http.ResponseWriter, request *http.Request) {
 	var createCompanyPersonRequest requests.AssociateCompanyPersonRequest
 	if err := json.NewDecoder(request.Body).Decode(&createCompanyPersonRequest); err != nil {
@@ -99,6 +112,19 @@ func (handler *CompanyPersonHandler) AssociateCompanyPerson(writer http.Response
 	}
 }
 
+// GetCompanyPersonsByID retrieves a company matching input company UUID and/or the input person UUID.  `company-id` AND/OR `person-id` must be provided.
+//
+// @Summary Get companyPersons by ID
+// @Description Get `companyPerson`s by ID
+// @Tags companyPerson
+// @Produce json
+// @Param company-id query string false "company ID" format(uuid)
+// @Param person-id query string false "person ID" format(uuid)
+// @Success 200 {array} responses.CompanyPersonResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company-person/get/ [get]
 func (handler *CompanyPersonHandler) GetCompanyPersonsByID(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	companyIDString := query.Get("company-id")
@@ -173,6 +199,16 @@ func (handler *CompanyPersonHandler) GetCompanyPersonsByID(writer http.ResponseW
 	slog.Info("v1.CompanyPersonHandler.GetCompanyPersonsByID: retrieved all companies successfully")
 }
 
+// GetAllCompanyPersons retrieves all companyPersons.
+//
+// @Summary Get all companyPersons
+// @Description Get all `companyPerson`s
+// @Tags companyPerson
+// @Produce json
+// @Success 200 {array} responses.CompanyPersonResponse
+// @Failure 400
+// @Failure 500
+// @Router /v1/company-person/get/all [get]
 func (handler *CompanyPersonHandler) GetAllCompanyPersons(writer http.ResponseWriter, request *http.Request) {
 	companyPersons, err := handler.companyPersonService.GetAll()
 	if err != nil {
@@ -202,7 +238,18 @@ func (handler *CompanyPersonHandler) GetAllCompanyPersons(writer http.ResponseWr
 	slog.Info("v1.CompanyPersonHandler.GetAllCompanyPersons: retrieved all CompanyPersons successfully")
 }
 
-// DeleteCompanyPerson can return InternalServiceError, ValidationError
+// DeleteCompanyPerson deletes a `companyPerson` matching input company UUID and person UUID
+//
+// @Summary Delete a companyPerson by company UUID and person UUID
+// @Description Delete a `companyPerson` by company UUID and person UUID
+// @Tags companyPerson
+// @Param company-id query string true "company ID" format(uuid)
+// @Param person-id query string true "person ID" format(uuid)
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/company-person/delete [delete]
 func (handler *CompanyPersonHandler) DeleteCompanyPerson(writer http.ResponseWriter, request *http.Request) {
 	var deleteRequest requests.DeleteCompanyPersonRequest
 	if err := json.NewDecoder(request.Body).Decode(&deleteRequest); err != nil {
