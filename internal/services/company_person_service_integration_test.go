@@ -37,11 +37,13 @@ func setupCompanyPersonService(t *testing.T) (
 	err = container.Invoke(func(repository *repositories.CompanyRepository) {
 		companyRepository = repository
 	})
+	assert.NoError(t, err)
 
 	var personRepository *repositories.PersonRepository
 	err = container.Invoke(func(repository *repositories.PersonRepository) {
 		personRepository = repository
 	})
+	assert.NoError(t, err)
 
 	return companyPersonService, companyRepository, personRepository
 }

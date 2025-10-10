@@ -33,6 +33,7 @@ func setupCompanyRepository(t *testing.T) (*repositories.CompanyRepository, *rep
 	err = container.Invoke(func(repository *repositories.ApplicationRepository) {
 		applicationRepository = repository
 	})
+	assert.NoError(t, err)
 
 	return companyRepository, applicationRepository
 }
