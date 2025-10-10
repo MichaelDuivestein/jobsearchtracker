@@ -204,9 +204,9 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
 	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
 
-	reqestApplicationDate := applicationDate.Format(time.RFC3339)
+	requestApplicationDate := applicationDate.Format(time.RFC3339)
 	modelApplicationDate := model.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, reqestApplicationDate, modelApplicationDate)
+	assert.Equal(t, requestApplicationDate, modelApplicationDate)
 }
 
 func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {

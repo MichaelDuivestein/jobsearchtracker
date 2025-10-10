@@ -123,7 +123,7 @@ func (companyService *CompanyService) GetAllCompanies(
 	if err != nil {
 		return nil, err
 	}
-	if companies == nil || len(companies) == 0 {
+	if len(companies) == 0 {
 		slog.Info("CompanyService.GetAllCompanies: Retrieved zero companies")
 		return nil, nil
 	}

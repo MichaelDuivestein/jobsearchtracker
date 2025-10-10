@@ -379,7 +379,7 @@ func (repository *CompanyRepository) mapRow(
 			return nil, internalErrors.NewInternalServiceError("Error parsing applications: " + err.Error())
 		}
 
-		if applications != nil && len(applications) > 0 {
+		if len(applications) > 0 {
 			result.Applications = &applications
 		}
 	}
