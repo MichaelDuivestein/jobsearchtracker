@@ -17,8 +17,8 @@ type PersonResponse struct {
 	Email       *string             `json:"email,omitempty" example:"name@domain.com" extensions:"x-order=3"`
 	Phone       *string             `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
 	Notes       *string             `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
-	CreatedDate time.Time           `json:"created_date" extensions:"x-order=6" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
-	UpdatedDate *time.Time          `json:"updated_date,omitempty" extensions:"x-order=7" example:"2025-12-31T23:59Z"  extensions:"x-order=7"`
+	CreatedDate time.Time           `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
+	UpdatedDate *time.Time          `json:"updated_date,omitempty" example:"2025-12-31T23:59Z"  extensions:"x-order=7"`
 }
 
 // NewPersonResponse can return InternalServerError
