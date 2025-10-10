@@ -28,9 +28,13 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
 	}
 
-	personType, err := requests.NewPersonType(&personModel.PersonType)
-	if err != nil {
-		return nil, err
+	var personType *requests.PersonType = nil
+	if personModel.PersonType != nil {
+		nonNilPersonType, err := requests.NewPersonType(personModel.PersonType)
+		if err != nil {
+			return nil, err
+		}
+		personType = &nonNilPersonType
 	}
 
 	personResponse := PersonResponse{
