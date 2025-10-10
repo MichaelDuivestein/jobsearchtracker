@@ -168,6 +168,7 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfRemoteStatusTy
 func TestNewApplicationsResponse_ShouldWork(t *testing.T) {
 	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeUnknown
 	var application2RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeRemote
+
 	applicationModels := []*models.Application{
 		{
 			ID:               uuid.New(),
@@ -195,7 +196,7 @@ func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsNil(t *testing.T
 	response, err := NewApplicationsResponse(nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
@@ -203,7 +204,7 @@ func TestNewApplicationsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing
 	response, err := NewApplicationsResponse(applicationModels)
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestNewApplicationsResponse_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsInvalid(t *testing.T) {

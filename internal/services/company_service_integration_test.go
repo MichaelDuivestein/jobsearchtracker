@@ -192,7 +192,7 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 	assert.NoError(t, err)
 
 	retrievedCompany, err := companyService.GetCompanyById(&id)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, retrievedCompany)
 
 	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID)
@@ -283,7 +283,7 @@ func TestGetCompaniesByName_ShouldReturnASingleCompany(t *testing.T) {
 	companies, err := companyService.GetCompaniesByName(&nameToGet)
 	assert.NoError(t, err)
 	assert.NotNil(t, companies)
-	assert.Equal(t, 1, len(companies))
+	assert.Len(t, companies, 1)
 
 	assert.Equal(t, id2, companies[0].ID)
 }
@@ -329,7 +329,7 @@ func TestGetCompaniesByName_ShouldReturnMultipleCompanies(t *testing.T) {
 	companies, err := companyService.GetCompaniesByName(&nameToGet)
 	assert.NoError(t, err)
 	assert.NotNil(t, companies)
-	assert.Equal(t, 2, len(companies))
+	assert.Len(t, companies, 2)
 
 	assert.Equal(t, id1, companies[1].ID)
 	assert.Equal(t, id3, companies[0].ID)
@@ -473,10 +473,10 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	// get all companies
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 3, len(results))
+	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
 	assert.Equal(t, "company3Name", results[0].Name)
@@ -489,7 +489,7 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	assert.Equal(t, company3ToInsertCreatedDate, insertedCompany3CreatedDate)
 
 	assert.Nil(t, results[0].UpdatedDate)
-	assert.Equal(t, 1, len(*results[0].Applications))
+	assert.Len(t, *results[0].Applications, 1)
 
 	results0Application := (*results[0].Applications)[0]
 	assert.Equal(t, application1Id, results0Application.ID)
@@ -521,7 +521,7 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	insertedCompany2UpdatedDate := insertedCompany2.UpdatedDate.Format(time.RFC3339)
 	assert.Equal(t, company2ToInsertUpdatedDate, insertedCompany2UpdatedDate)
 
-	assert.Equal(t, 3, len(*results[1].Applications))
+	assert.Len(t, *results[1].Applications, 3)
 
 	results1Applications := *results[1].Applications
 
@@ -602,8 +602,8 @@ func TestGetAllCompanies_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
 	companyService, _ := setupCompanyService(t)
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeNone)
-	assert.Nil(t, err, "Error on companyService.GetAll(): '%s'.", err)
-	assert.Nil(t, results, "results should not be nil")
+	assert.NoError(t, err)
+	assert.Nil(t, results)
 }
 
 func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplicationsIsNone(t *testing.T) {
@@ -676,10 +676,10 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplica
 	// get all companies
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeNone)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 3, len(results))
+	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
 	assert.Nil(t, results[0].Applications)
@@ -768,13 +768,13 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplica
 	// get all companies
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 3, len(results))
+	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
-	assert.Equal(t, 1, len(*results[0].Applications))
+	assert.Len(t, *results[0].Applications, 1)
 
 	results0Application := (*results[0].Applications)[0]
 	assert.Equal(t, application1Id, results0Application.ID)
@@ -782,7 +782,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplica
 	assert.Equal(t, company3Id, *results0Application.RecruiterID)
 
 	assert.Equal(t, company2Id, results[1].ID)
-	assert.Equal(t, 3, len(*results[1].Applications))
+	assert.Len(t, *results[1].Applications, 3)
 
 	results1Applications := *results[1].Applications
 	assert.Equal(t, application1Id, results1Applications[0].ID)
@@ -875,10 +875,10 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplica
 	// get all companies
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 3, len(results))
+	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
 	assert.Nil(t, results[0].Applications)
@@ -931,10 +931,10 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplica
 	// get all companies
 
 	results, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 3, len(results))
+	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
 	assert.Nil(t, results[0].Applications)
@@ -978,22 +978,22 @@ func TestGetAllCompanies_ShouldReturnASingleEntryWhenCompanyIDAndRecruiterIDAreT
 	// get all companies
 
 	idResults, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeIDs)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, idResults)
-	assert.Equal(t, 1, len(idResults))
+	assert.Len(t, idResults, 1)
 
 	assert.Equal(t, companyId, idResults[0].ID)
-	assert.Equal(t, 1, len(*idResults[0].Applications))
+	assert.Len(t, *idResults[0].Applications, 1)
 
 	allResults, err := companyService.GetAllCompanies(models.IncludeExtraDataTypeAll)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, allResults)
-	assert.Equal(t, 1, len(allResults))
+	assert.Len(t, allResults, 1)
 
 	assert.Equal(t, companyId, allResults[0].ID)
-	assert.Equal(t, 1, len(*allResults[0].Applications))
+	assert.Len(t, *allResults[0].Applications, 1)
 }
 
 // -------- UpdateCompany tests: --------

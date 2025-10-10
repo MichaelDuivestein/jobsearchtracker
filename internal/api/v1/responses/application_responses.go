@@ -10,10 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// ApplicationResponse represents a job application
 type ApplicationResponse struct {
-	ID                   uuid.UUID                  `json:"id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=00"`
-	CompanyID            *uuid.UUID                 `json:"company_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=01"`
-	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=02"`
+	ID                   uuid.UUID                  `json:"id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=00"`
+	CompanyID            *uuid.UUID                 `json:"company_id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=01"`
+	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=02"`
 	JobTitle             *string                    `json:"job_title,omitempty" example:"Job Title" extensions:"x-order=03"`
 	JobAdURL             *string                    `json:"job_ad_url,omitempty" example:"https://job.ad.url" extensions:"x-order=04"`
 	Country              *string                    `json:"country,omitempty" example:"Sweden" extensions:"x-order=05"`

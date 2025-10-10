@@ -142,7 +142,7 @@ func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsNil(t *testing.T) {
 	response, err := NewPersonsResponse(nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
@@ -150,7 +150,7 @@ func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	response, err := NewPersonsResponse(personModels)
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestNewPersonsResponse_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {

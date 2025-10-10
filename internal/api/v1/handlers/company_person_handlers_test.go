@@ -210,5 +210,4 @@ func TestDeleteCompanyPerson_ShouldRespondWithBadRequestStatus(t *testing.T) {
 			assert.Equal(t, test.expectedErrorMessage, responseBodyString)
 		})
 	}
-
 }

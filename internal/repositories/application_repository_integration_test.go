@@ -308,8 +308,8 @@ func TestGetById_ShouldReturnErrorIfApplicationIDDoesNotExist(t *testing.T) {
 	id := uuid.New()
 
 	response, err := applicationRepository.GetById(&id)
-	assert.Nil(t, response, "response should be nil")
-	assert.NotNil(t, err, err.Error(), "Wrong error returned")
+	assert.Nil(t, response)
+	assert.NotNil(t, err, err.Error())
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 }
 
@@ -333,7 +333,7 @@ func TestGetAllByJobTitle_ShouldReturnApplication(t *testing.T) {
 	retrievedApplications, err := applicationRepository.GetAllByJobTitle(insertedApplication.JobTitle)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedApplications)
-	assert.Equal(t, 1, len(retrievedApplications))
+	assert.Len(t, retrievedApplications, 1)
 
 	assert.Equal(t, "Some Job Title", *retrievedApplications[0].JobTitle)
 
@@ -408,7 +408,7 @@ func TestGetAllByJobTitle_ShouldReturnMultipleApplicationsWithSameJobTitle(t *te
 	retrievedApplications, err := applicationRepository.GetAllByJobTitle(&developer)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedApplications)
-	assert.Equal(t, 2, len(retrievedApplications))
+	assert.Len(t, retrievedApplications, 2)
 
 	foundApplication1 := retrievedApplications[0]
 	assert.Equal(t, insertedApplication1.ID.String(), foundApplication1.ID.String())
@@ -454,8 +454,8 @@ func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
 	}
 
 	insertedApplication1, err := applicationRepository.Create(&application1ToInsert)
-	assert.Nil(t, err, "Error on applicationRepository.Create(): '%s'.", err)
-	assert.NotNil(t, insertedApplication1, "inserted application 1 is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication1)
 
 	id2 := uuid.New()
 	jobTitle2 := "Job Title2"
@@ -487,14 +487,14 @@ func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
 	}
 
 	insertedApplication2, err := applicationRepository.Create(&application2ToInsert)
-	assert.Nil(t, err, "Error on applicationRepository.Create(): '%s'.", err)
-	assert.NotNil(t, insertedApplication2, "inserted application 2 is nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication2)
 
 	results, err := applicationRepository.GetAll()
-	assert.Nil(t, err, "Error on applicationRepository.GetAll(): '%s'.", err)
+	assert.NoError(t, err)
 
-	assert.NotNil(t, results, "results should not be nil")
-	assert.Equal(t, 2, len(results), "number of results should be 2")
+	assert.NotNil(t, results)
+	assert.Len(t, results, 2)
 
 	assert.Equal(t, id2.String(), results[1].ID.String())
 	assert.Equal(t, id1.String(), results[0].ID.String())
@@ -504,8 +504,8 @@ func TestGetAll_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
 	applicationRepository, _ := setupApplicationRepository(t)
 
 	applications, err := applicationRepository.GetAll()
-	assert.Nil(t, err, "Error on applicationRepository.GetAll(): '%s'.", err)
-	assert.Nil(t, applications, "applications should be nil")
+	assert.NoError(t, err)
+	assert.Nil(t, applications)
 }
 
 // -------- Update tests: --------

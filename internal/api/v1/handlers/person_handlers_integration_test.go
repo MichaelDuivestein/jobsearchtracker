@@ -251,7 +251,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	var firstResponse []responses.PersonResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(firstResponse), 1)
+	assert.Len(t, firstResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
 	assert.Equal(t, requestBody.Name, firstResponse[0].Name)
@@ -276,7 +276,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	var secondResponse []responses.PersonResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(secondResponse), 1)
+	assert.Len(t, secondResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
 	assert.Equal(t, requestBody.Name, secondResponse[0].Name)
@@ -335,7 +335,7 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 	var response []responses.PersonResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, len(response), 2)
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
 	assert.Equal(t, firstRequestBody.Name, response[0].Name)
@@ -415,7 +415,7 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	}
 	insertPerson(t, personHandler, thirdRequestBody)
 
-	// GetAllPersons:
+	// get all persons:
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all", nil)
 	assert.NoError(t, err)
@@ -433,7 +433,7 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, len(response), 3)
+	assert.Len(t, response, 3)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
@@ -442,8 +442,6 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 
 func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing.T) {
 	personHandler := setupPersonHandler(t)
-
-	// GetAllPersons:
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all", nil)
 	assert.NoError(t, err)
@@ -460,7 +458,7 @@ func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 // -------- UpdatePerson tests: --------
@@ -469,6 +467,7 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 	personHandler := setupPersonHandler(t)
 
 	// create a person
+
 	id := uuid.New()
 	email := "Person Email"
 	phone := "2345345"

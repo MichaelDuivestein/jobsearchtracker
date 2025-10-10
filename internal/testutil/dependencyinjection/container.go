@@ -169,7 +169,7 @@ func SetupApplicationRepositoryTestContainer(t *testing.T, config configPackage.
 		return repositories.NewCompanyRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide personRepository in SetupApplicationRepositoryTestContainer", err)
+		log.Fatal("Failed to provide companyRepository in SetupApplicationRepositoryTestContainer", err)
 	}
 
 	return container
@@ -182,7 +182,7 @@ func SetupApplicationServiceTestContainer(t *testing.T, config configPackage.Con
 		return services.NewApplicationService(applicationRepository)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide personService", err)
+		log.Fatal("Failed to provide applicationService", err)
 	}
 
 	return container
@@ -195,7 +195,7 @@ func SetupApplicationHandlerTestContainer(t *testing.T, config configPackage.Con
 		return apiV1.NewApplicationHandler(applicationService)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide personHandler", err)
+		log.Fatal("Failed to provide applicationHandler", err)
 	}
 
 	return container

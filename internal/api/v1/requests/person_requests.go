@@ -17,6 +17,7 @@ type CreatePersonRequest struct {
 	Notes      *string    `json:"notes,omitempty"`
 }
 
+// validate can return ValidationError
 func (request *CreatePersonRequest) validate() error {
 	if request.ID != nil {
 		err := uuid.Validate(request.ID.String())
@@ -241,8 +242,4 @@ func NewPersonType(modelPersonType *models.PersonType) (PersonType, error) {
 		return "", internalErrors.NewInternalServiceError(
 			"Error converting internal PersonType to external PersonType: '" + modelPersonType.String() + "'")
 	}
-}
-
-func (personType PersonType) ToPointer() *PersonType {
-	return &personType
 }

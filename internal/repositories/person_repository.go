@@ -292,6 +292,7 @@ func (repository *PersonRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error },
 	methodName string,
 	ID *uuid.UUID) (*models.Person, error) {
+
 	var result models.Person
 	var createdDate, updatedDate sql.NullString
 

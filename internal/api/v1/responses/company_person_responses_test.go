@@ -49,7 +49,7 @@ func TestNewCompanyPersonsResponse_ShouldWork(t *testing.T) {
 
 	response := NewCompanyPersonsResponse(companyPersonModels)
 	assert.NotNil(t, response)
-	assert.Equal(t, 2, len(response))
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, response[0].CompanyID, companyPersonModels[0].CompanyID)
 	assert.Equal(t, response[0].PersonID, companyPersonModels[0].PersonID)
@@ -63,11 +63,11 @@ func TestNewCompanyPersonsResponse_ShouldWork(t *testing.T) {
 func TestNewCompanyPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	response := NewCompanyPersonsResponse([]*models.CompanyPerson{})
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestNewCompanyPersonsResponse_ShouldReturnEmptySliceIfModelIsNil(t *testing.T) {
 	response := NewCompanyPersonsResponse(nil)
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
