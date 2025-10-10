@@ -22,6 +22,19 @@ func NewApplicationHandler(applicationService *services.ApplicationService) *App
 	return &ApplicationHandler{applicationService: applicationService}
 }
 
+// CreateApplication creates an application and returns it
+//
+// @Summary create an application
+// @Description create an `application` and return it. `company_id` AND/OR `recruiter_id` must be provided. `job_title` AND/OR `job_ad_url` must be provided.
+// @Tags application
+// @Accept json
+// @Produce json
+// @Param application body requests.CreateApplicationRequest true "Create Application request"
+// @Success 201 {object} responses.ApplicationResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/application/new [post]
 func (applicationHandler *ApplicationHandler) CreateApplication(writer http.ResponseWriter, request *http.Request) {
 	var createApplicationRequest requests.CreateApplicationRequest
 	if err := json.NewDecoder(request.Body).Decode(&createApplicationRequest); err != nil {
@@ -103,6 +116,18 @@ func (applicationHandler *ApplicationHandler) CreateApplication(writer http.Resp
 	}
 }
 
+// GetApplicationByID retrieves an application matching input UUID
+//
+// @Summary Get an application by ID
+// @Description Get an `application` by ID
+// @Tags application
+// @Produce json
+// @Param id path string true "application ID" format(uuid)
+// @Success 200 {object} responses.ApplicationResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/application/get/id/{id} [get]
 func (applicationHandler *ApplicationHandler) GetApplicationByID(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	applicationIDStr := vars["id"]
@@ -172,6 +197,18 @@ func (applicationHandler *ApplicationHandler) GetApplicationByID(writer http.Res
 		"application.ID", application.ID.String())
 }
 
+// GetApplicationsByJobTitle retrieves `application`s which fully, or partially, match the input job title
+//
+// @Summary Get applications by job title
+// @Description Get `application`s which fully, or partially, match the input job title
+// @Tags application
+// @Produce json
+// @Param job_title path string true "job title"
+// @Success 200 {array} responses.ApplicationResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/application/get/title/{title} [get]
 func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 	writer http.ResponseWriter, request *http.Request) {
 
@@ -235,6 +272,14 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 		"jobTitle", jobTitle)
 }
 
+// GetAllApplications retrieves all job applications.
+//
+// @Summary Get all applications
+// @Description Get all `application`s
+// @Tags application
+// @Produce json
+// @Success 200 {array} responses.ApplicationResponse
+// @Router /v1/application/get/all [get]
 func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, _ *http.Request) {
 	// can return InternalServiceError
 	applications, err := applicationHandler.applicationService.GetAllApplications()
@@ -269,6 +314,18 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 	slog.Info("v1.ApplicationHandler.GetAllApplications: retrieved all applications successfully")
 }
 
+// UpdateApplication updates an application
+//
+// @Summary update an application
+// @Description update an `application`
+// @Tags application
+// @Accept json
+// @Param application body requests.UpdateApplicationRequest true "Update Application Request"
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/application/update [post]
 func (applicationHandler *ApplicationHandler) UpdateApplication(writer http.ResponseWriter, request *http.Request) {
 	var updateApplicationRequest requests.UpdateApplicationRequest
 	if err := json.NewDecoder(request.Body).Decode(&updateApplicationRequest); err != nil {
@@ -327,6 +384,17 @@ func (applicationHandler *ApplicationHandler) UpdateApplication(writer http.Resp
 	writer.WriteHeader(http.StatusOK)
 }
 
+// DeleteApplication deletes an `application` matching input UUID
+//
+// @Summary Delete an application by ID
+// @Description Delete an `application` by ID
+// @Tags application
+// @Param id path string true "Application ID" format(uuid)
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/application/delete/{id} [delete]
 func (applicationHandler *ApplicationHandler) DeleteApplication(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	applicationIDStr := vars["id"]
