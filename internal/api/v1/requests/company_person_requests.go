@@ -9,8 +9,8 @@ import (
 )
 
 type AssociateCompanyPersonRequest struct {
-	CompanyID uuid.UUID `json:"company_id"`
-	PersonID  uuid.UUID `json:"person_id"`
+	CompanyID uuid.UUID `json:"company_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	PersonID  uuid.UUID `json:"person_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=1"`
 }
 
 // validate can return ValidationError
@@ -52,8 +52,8 @@ func (request *AssociateCompanyPersonRequest) ToModel() (*models.AssociateCompan
 }
 
 type DeleteCompanyPersonRequest struct {
-	CompanyID uuid.UUID `json:"company_id"`
-	PersonID  uuid.UUID `json:"person_id"`
+	CompanyID uuid.UUID `json:"company_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	PersonID  uuid.UUID `json:"person_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=1"`
 }
 
 // validate can return ValidationError

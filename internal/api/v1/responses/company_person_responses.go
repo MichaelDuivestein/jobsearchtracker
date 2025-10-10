@@ -8,9 +8,9 @@ import (
 )
 
 type CompanyPersonResponse struct {
-	CompanyID   uuid.UUID `json:"company_id"`
-	PersonID    uuid.UUID `json:"person_id"`
-	CreatedDate time.Time `json:"created_date"`
+	CompanyID   uuid.UUID `json:"company_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	PersonID    uuid.UUID `json:"person_id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=1"`
+	CreatedDate time.Time `json:"created_date" example:"2025-12-31T23:59Z" extensions:"x-order=2"`
 }
 
 func NewCompanyPersonResponse(model *models.CompanyPerson) *CompanyPersonResponse {
