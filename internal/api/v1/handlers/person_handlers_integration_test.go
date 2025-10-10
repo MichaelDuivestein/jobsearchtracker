@@ -234,6 +234,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	// Get the person by full name:
 
 	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
@@ -258,6 +259,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	// Get the person by partial name:
 
 	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder = httptest.NewRecorder()
 
 	vars = map[string]string{
@@ -316,6 +318,7 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 	// Get persons by name:
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{

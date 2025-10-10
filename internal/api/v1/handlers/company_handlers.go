@@ -254,8 +254,6 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 	}
 
 	slog.Info("v1.CompanyHandler.GetCompaniesByName: retrieved companies successfully", "name", companyName)
-
-	return
 }
 
 // GetAllCompanies retrieves all companies.
@@ -346,8 +344,6 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 	}
 
 	slog.Info("v1.CompanyHandler.GetAllCompanies: retrieved all companies successfully")
-
-	return
 }
 
 // UpdateCompany updates a company
@@ -413,7 +409,6 @@ func (companyHandler *CompanyHandler) UpdateCompany(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
 
 // DeleteCompany deletes a `company` matching input UUID
@@ -479,5 +474,4 @@ func (companyHandler *CompanyHandler) DeleteCompany(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }

@@ -9,6 +9,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// CreateApplicationRequest represents a request to create an application.
+//
+// Either CompanyID or RecruiterID (or both) must be provided.
 type CreateApplicationRequest struct {
 	ID                   *uuid.UUID       `json:"id,omitempty"`
 	CompanyID            *uuid.UUID       `json:"company_id,omitempty"`

@@ -160,8 +160,6 @@ func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, re
 	}
 
 	slog.Info("v1.PersonHandler.GetPersonByID: retrieved person successfully", "person.ID", person.ID.String())
-
-	return
 }
 
 func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter, request *http.Request) {
@@ -219,8 +217,6 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 	}
 
 	slog.Info("v1.PersonHandler.GetPersonsByName: retrieved persons successfully", "name", personName)
-
-	return
 }
 
 func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, request *http.Request) {
@@ -253,8 +249,6 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 	}
 
 	slog.Info("v1.PersonHandler.GetAllPersons: retrieved all persons successfully")
-
-	return
 }
 
 func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, request *http.Request) {
@@ -309,7 +303,6 @@ func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, req
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
 
 func (personHandler *PersonHandler) DeletePerson(writer http.ResponseWriter, request *http.Request) {
@@ -362,5 +355,4 @@ func (personHandler *PersonHandler) DeletePerson(writer http.ResponseWriter, req
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }

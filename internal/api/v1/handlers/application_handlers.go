@@ -325,7 +325,6 @@ func (applicationHandler *ApplicationHandler) UpdateApplication(writer http.Resp
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
 
 func (applicationHandler *ApplicationHandler) DeleteApplication(writer http.ResponseWriter, request *http.Request) {

@@ -171,8 +171,6 @@ func (handler *CompanyPersonHandler) GetCompanyPersonsByID(writer http.ResponseW
 	}
 
 	slog.Info("v1.CompanyPersonHandler.GetCompanyPersonsByID: retrieved all companies successfully")
-
-	return
 }
 
 func (handler *CompanyPersonHandler) GetAllCompanyPersons(writer http.ResponseWriter, request *http.Request) {
@@ -202,8 +200,6 @@ func (handler *CompanyPersonHandler) GetAllCompanyPersons(writer http.ResponseWr
 	}
 
 	slog.Info("v1.CompanyPersonHandler.GetAllCompanyPersons: retrieved all CompanyPersons successfully")
-
-	return
 }
 
 // DeleteCompanyPerson can return InternalServiceError, ValidationError
@@ -270,5 +266,4 @@ func (handler *CompanyPersonHandler) DeleteCompanyPerson(writer http.ResponseWri
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
