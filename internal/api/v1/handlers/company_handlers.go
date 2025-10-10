@@ -285,7 +285,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 		includeApplicationsType, err = requests.NewIncludeExtraDataType(includeApplicationsString)
 
 		if err != nil {
-			slog.Error("v1.CompanyHandler.CreateCompany: Could not parse include_applications param", "error", err)
+			slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_applications param", "error", err)
 
 			status := http.StatusBadRequest
 			writer.WriteHeader(status)
@@ -300,7 +300,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 	includeApplicationsTypeModel, err := includeApplicationsType.ToModel()
 	if err != nil {
 		slog.Error(
-			"v1.CompanyHandler.CreateCompany: For include_applications, unable to convert request to model",
+			"v1.CompanyHandler.GetAllCompanies: For include_applications, unable to convert request to model",
 			"error", err)
 
 		status := http.StatusInternalServerError
@@ -352,6 +352,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 // @Description update a `company`
 // @Tags company
 // @Accept json
+// @Produce json
 // @Param company body requests.UpdateCompanyRequest true "Update Company Request"
 // @Success 200
 // @Failure 400

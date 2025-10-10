@@ -6,6 +6,9 @@ import (
 	"log/slog"
 )
 
+// IncludeExtraDataType represents how much additional data to send. "all" will return all data, "ids" will return only IDs, "none" will return no extra data.
+//
+// @enum all,ids,none
 type IncludeExtraDataType string
 
 const (

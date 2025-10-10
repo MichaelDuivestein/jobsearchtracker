@@ -79,10 +79,10 @@ func TestCreateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {
 			responseRecorder := httptest.NewRecorder()
 
 			companyHandler.CreateCompany(responseRecorder, request)
-			assert.Equal(t, test.expectedResponseCode, responseRecorder.Code, "CreateCompany returned wrong status code")
+			assert.Equal(t, test.expectedResponseCode, responseRecorder.Code)
 
 			responseBodyString := responseRecorder.Body.String()
-			assert.Equal(t, test.expectedErrorMessage, responseBodyString, "Unexpected response body")
+			assert.Equal(t, test.expectedErrorMessage, responseBodyString)
 		})
 	}
 }
@@ -103,10 +103,10 @@ func TestGetCompanyById_ShouldReturnErrorIfIdIsEmpty(t *testing.T) {
 	request = mux.SetURLVars(request, vars)
 
 	companyHandler.GetCompanyById(responseRecorder, request)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code, "GetCompanyById returned wrong status code")
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
 	responseBodyString := responseRecorder.Body.String()
-	assert.Equal(t, "company ID is empty\n", responseBodyString, "CreateCompany returned wrong error message in body")
+	assert.Equal(t, "company ID is empty\n", responseBodyString)
 }
 
 func TestGetCompanyById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
@@ -123,10 +123,10 @@ func TestGetCompanyById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 	request = mux.SetURLVars(request, vars)
 
 	companyHandler.GetCompanyById(responseRecorder, request)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code, "GetCompanyById returned wrong status code")
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
 	responseBodyString := responseRecorder.Body.String()
-	assert.Equal(t, "company ID is not a valid UUID\n", responseBodyString, "CreateCompany returned wrong error message in body")
+	assert.Equal(t, "company ID is not a valid UUID\n", responseBodyString)
 }
 
 // -------- GetCompaniesByName tests: --------

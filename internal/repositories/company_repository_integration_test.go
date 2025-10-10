@@ -234,7 +234,7 @@ func TestGetAllByName_ShouldReturnCompany(t *testing.T) {
 	retrievedCompanies, err := companyRepository.GetAllByName(&insertedCompany.Name)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedCompanies)
-	assert.Equal(t, 1, len(retrievedCompanies))
+	assert.Len(t, retrievedCompanies, 1)
 
 	assert.Equal(t, "Company Bee", retrievedCompanies[0].Name)
 }
@@ -300,7 +300,7 @@ func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameName(t *testing.T) {
 	retrievedCompanies, err := companyRepository.GetAllByName(&ab)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedCompanies)
-	assert.Equal(t, 2, len(retrievedCompanies))
+	assert.Len(t, retrievedCompanies, 2)
 
 	foundCompany1 := retrievedCompanies[0]
 	assert.Equal(t, insertedCompany2.ID, foundCompany1.ID)
@@ -350,7 +350,7 @@ func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameNamePart(t *testing.T
 	retrievedCompanies, err := companyRepository.GetAllByName(&ab)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedCompanies)
-	assert.Equal(t, 3, len(retrievedCompanies))
+	assert.Len(t, retrievedCompanies, 3)
 
 	foundCompany1 := retrievedCompanies[0]
 	assert.Equal(t, insertedCompany2.ID, foundCompany1.ID)
@@ -411,7 +411,7 @@ func TestGetAll_ShouldReturnAllCompanies(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
-	assert.Equal(t, 2, len(results))
+	assert.Len(t, results, 2)
 
 	assert.Equal(t, company2Id, results[0].ID)
 	assert.Equal(t, company1Id, results[1].ID)
@@ -512,16 +512,16 @@ func TestGetAll_ShouldReturnApplicationIDsIfIncludeApplicationsIsSetToIDs(t *tes
 	assert.NoError(t, err)
 
 	assert.NotNil(t, companies)
-	assert.Equal(t, 3, len(companies))
+	assert.Len(t, companies, 3)
 
 	assert.Equal(t, company2ID, companies[0].ID)
-	assert.Equal(t, 3, len(*companies[0].Applications))
+	assert.Len(t, *companies[0].Applications, 3)
 
 	assert.Equal(t, company3ID, companies[1].ID)
 	assert.Nil(t, companies[1].Applications)
 
 	assert.Equal(t, company1ID, companies[2].ID)
-	assert.Equal(t, 1, len(*companies[2].Applications))
+	assert.Len(t, *companies[2].Applications, 1)
 
 	company2Application1 := (*companies[0].Applications)[0]
 	assert.Equal(t, application1ID, company2Application1.ID)
@@ -582,7 +582,7 @@ func TestGetAll_ShouldReturnNilApplicationsIfIncludeApplicationsIsSetToIDsAndThe
 	assert.NoError(t, err)
 
 	assert.NotNil(t, companies)
-	assert.Equal(t, 2, len(companies))
+	assert.Len(t, companies, 2)
 
 	assert.Equal(t, company2ID, companies[0].ID)
 	assert.Nil(t, companies[0].Applications)
@@ -681,16 +681,16 @@ func TestGetAll_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testi
 	assert.NoError(t, err)
 
 	assert.NotNil(t, companies)
-	assert.Equal(t, 3, len(companies))
+	assert.Len(t, companies, 3)
 
 	assert.Equal(t, company2ID, companies[0].ID)
-	assert.Equal(t, 3, len(*companies[0].Applications))
+	assert.Len(t, *companies[0].Applications, 3)
 
 	assert.Equal(t, company3ID, companies[1].ID)
 	assert.Nil(t, companies[1].Applications)
 
 	assert.Equal(t, company1ID, companies[2].ID)
-	assert.Equal(t, 1, len(*companies[2].Applications))
+	assert.Len(t, *companies[2].Applications, 1)
 
 	company2Application1 := (*companies[0].Applications)[0]
 	assert.Equal(t, application1ID, company2Application1.ID)
@@ -757,7 +757,7 @@ func TestGetAll_ShouldReturnNilApplicationsIfIncludeApplicationsIsSetToAllAndThe
 	assert.NoError(t, err)
 
 	assert.NotNil(t, companies)
-	assert.Equal(t, 2, len(companies))
+	assert.Len(t, companies, 2)
 
 	assert.Equal(t, company1ID, companies[0].ID)
 	assert.Nil(t, companies[0].Applications)

@@ -376,7 +376,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
 	var firstResponse []responses.ApplicationResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(firstResponse), 1)
+	assert.Len(t, firstResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
 	assert.Equal(t, requestBody.JobTitle, firstResponse[0].JobTitle)
@@ -401,7 +401,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
 	var secondResponse []responses.ApplicationResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(secondResponse), 1)
+	assert.Len(t, secondResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
 	assert.Equal(t, requestBody.JobTitle, secondResponse[0].JobTitle)
@@ -455,7 +455,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
 	var response []responses.ApplicationResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(response))
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
 	assert.Equal(t, firstRequestBody.JobTitle, response[0].JobTitle)
@@ -540,7 +540,7 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, len(response), 3)
+	assert.Len(t, response, 3)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
@@ -566,7 +566,7 @@ func TestGetAllApplications_ShouldReturnEmptyResponseIfNoApplicationsInDatabase(
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 // -------- UpdateApplication tests: --------

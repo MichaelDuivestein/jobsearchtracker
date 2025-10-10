@@ -123,7 +123,7 @@ func TestPersonTypeIsValid_ShouldReturnTrue(t *testing.T) {
 
 }
 
-func TestPersonType_IsValid_ShouldReturnFalseOnInvalidCompanyType(t *testing.T) {
+func TestPersonType_IsValid_ShouldReturnFalseOnInvalidPersonType(t *testing.T) {
 	empty := PersonType("")
 	assert.False(t, empty.IsValid())
 

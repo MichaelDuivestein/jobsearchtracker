@@ -30,7 +30,7 @@ func TestCreateCompanyValidate_ShouldReturnNilIfCompanyIsValid(t *testing.T) {
 	}
 
 	err := company.Validate()
-	assert.Nil(t, err, "error should be nil")
+	assert.NoError(t, err)
 }
 
 func TestCreateCompanyValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testing.T) {
@@ -40,7 +40,7 @@ func TestCreateCompanyValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testi
 	}
 
 	err := company.Validate()
-	assert.Nil(t, err, "error should be nil")
+	assert.NoError(t, err)
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {

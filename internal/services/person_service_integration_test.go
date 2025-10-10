@@ -179,7 +179,7 @@ func TestGetPersonsByName_ShouldReturnASinglePerson(t *testing.T) {
 	persons, err := personService.GetPersonsByName(&nameToGet)
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
-	assert.Equal(t, 1, len(persons))
+	assert.Len(t, persons, 1)
 
 	assert.Equal(t, id1, persons[0].ID)
 }
@@ -225,7 +225,7 @@ func TestGetPersonsByName_ShouldReturnMultiplePersons(t *testing.T) {
 	persons, err := personService.GetPersonsByName(&nameToGet)
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
-	assert.Equal(t, 2, len(persons))
+	assert.Len(t, persons, 2)
 
 	assert.Equal(t, id3, persons[0].ID)
 	assert.Equal(t, id1, persons[1].ID)
@@ -292,7 +292,7 @@ func TestGetAlLPersons_ShouldWork(t *testing.T) {
 	persons, err := personService.GetAllPersons()
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
-	assert.Equal(t, 2, len(persons))
+	assert.Len(t, persons, 2)
 
 	assert.Equal(t, name1, persons[0].Name)
 	assert.Equal(t, name2, persons[1].Name)

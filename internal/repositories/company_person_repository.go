@@ -49,10 +49,12 @@ func (repository *CompanyPersonRepository) AssociateCompanyPerson(
 	if row.Err() != nil {
 		if row.Err().Error() ==
 			"constraint failed: UNIQUE constraint failed: company_person.company_id, company_person.person_id (1555)" {
+
 			slog.Info(
 				"company_person_repository.associateToCompany: UNIQUE constraint failed",
 				"company_id", associateModel.CompanyID,
 				"person_id", associateModel.PersonID)
+
 			return nil, internalErrors.NewConflictError(
 				"CompanyID and PersonID combination already exists in database.")
 		} else if row.Err().Error() == "constraint failed: FOREIGN KEY constraint failed (787)" {

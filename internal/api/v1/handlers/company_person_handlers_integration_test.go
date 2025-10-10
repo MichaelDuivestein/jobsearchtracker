@@ -111,7 +111,7 @@ func TestGetCompanyPersonsByID_ShouldWork(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 1, len(response))
+	assert.Len(t, response, 1)
 
 	assert.Equal(t, company2ID, response[0].CompanyID)
 	assert.Equal(t, person1ID, response[0].PersonID)
@@ -142,7 +142,7 @@ func TestGetCompanyPersonsByID_ShouldReturnAllMatchingCompanies(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 2, len(response))
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, company2ID, response[0].CompanyID)
 	assert.Equal(t, person1ID, response[0].PersonID)
@@ -177,7 +177,7 @@ func TestGetCompanyPersonsByID_ShouldReturnAllMatchingPersons(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 2, len(response))
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, company2ID, response[0].CompanyID)
 	assert.Equal(t, person1ID, response[0].PersonID)
@@ -211,7 +211,7 @@ func TestGetCompanyPersonsByID_ShouldReturnEmptyResponseIfNoMatchingCompanyPerso
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 // -------- GetAllCompanyPersons tests: --------
@@ -238,7 +238,7 @@ func TestGetAllCompanyPersons_ShouldReturnAllCompanyPersons(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 3, len(response))
+	assert.Len(t, response, 3)
 
 	assert.Equal(t, company2ID, response[0].CompanyID)
 	assert.Equal(t, person1ID, response[0].PersonID)
@@ -272,7 +272,7 @@ func TestGetAllCompanyPersons_ShouldReturnNothingIfNothingInDatabase(t *testing.
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 // -------- DeleteCompanyPerson tests: --------

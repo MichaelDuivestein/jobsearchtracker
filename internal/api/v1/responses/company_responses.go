@@ -11,7 +11,7 @@ import (
 )
 
 type CompanyResponse struct {
-	ID           uuid.UUID               `json:"id" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	ID           uuid.UUID               `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
 	Name         string                  `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
 	CompanyType  requests.CompanyType    `json:"company_type" example:"employer" extensions:"x-order=2"`
 	Notes        *string                 `json:"notes" example:"Notes go here" extensions:"x-order=3"`

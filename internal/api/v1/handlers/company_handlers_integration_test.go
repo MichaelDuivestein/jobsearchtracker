@@ -222,7 +222,7 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 
 	var getCompanyResponse responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, getCompanyResponse.ID)
 	assert.Equal(t, requestBody.Name, getCompanyResponse.Name)
@@ -332,7 +332,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	var firstResponse []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(firstResponse), 1)
+	assert.Len(t, firstResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
 	assert.Equal(t, requestBody.Name, firstResponse[0].Name)
@@ -357,7 +357,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	var secondResponse []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, len(secondResponse), 1)
+	assert.Len(t, secondResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
 	assert.Equal(t, requestBody.Name, secondResponse[0].Name)
@@ -413,7 +413,7 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, len(response), 2)
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
 	assert.Equal(t, firstRequestBody.Name, response[0].Name)
@@ -493,7 +493,7 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 2, len(response))
+	assert.Len(t, response, 2)
 
 	assert.Equal(t, company2Id, response[0].ID)
 	assert.Equal(t, company1Id, response[1].ID)
@@ -515,10 +515,10 @@ func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *tes
 
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 0, len(response))
+	assert.Len(t, response, 0)
 }
 
 func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsIDs(t *testing.T) {
@@ -573,16 +573,16 @@ func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsI
 
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 1, len(response))
+	assert.Len(t, response, 1)
 
 	assert.Equal(t, companyId, response[0].ID)
 	retrievedCompany := response[0]
 
 	assert.NotNil(t, retrievedCompany.Applications)
-	assert.Equal(t, 2, len(*retrievedCompany.Applications))
+	assert.Len(t, *retrievedCompany.Applications, 2)
 
 	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[0].ID)
 	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
@@ -666,16 +666,16 @@ func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *t
 
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 1, len(response))
+	assert.Len(t, response, 1)
 
 	assert.Equal(t, companyId, response[0].ID)
 	retrievedCompany := response[0]
 
 	assert.NotNil(t, retrievedCompany.Applications)
-	assert.Equal(t, 2, len(*retrievedCompany.Applications))
+	assert.Len(t, *retrievedCompany.Applications, 2)
 
 	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[0].ID)
 	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
@@ -759,10 +759,10 @@ func TestGetAllCompanies_ShouldReturnNoApplicationsIfIncludeApplicationsIsNone(t
 
 	var response []responses.CompanyResponse
 	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, response)
-	assert.Equal(t, 1, len(response))
+	assert.Len(t, response, 1)
 
 	assert.Equal(t, companyId, response[0].ID)
 	retrievedCompany := response[0]

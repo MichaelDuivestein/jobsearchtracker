@@ -261,7 +261,7 @@ func TestGetAllByJobTitle_ShouldReturnApplication(t *testing.T) {
 	applications, err := applicationService.GetApplicationsByJobTitle(insertedApplication.JobTitle)
 	assert.NoError(t, err)
 	assert.NotNil(t, applications)
-	assert.Equal(t, 1, len(applications))
+	assert.Len(t, applications, 1)
 
 	assert.Equal(t, jobTitle, *applications[0].JobTitle)
 }
@@ -312,7 +312,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnMultipleApplications(t *testing.T
 	applications, err := applicationService.GetApplicationsByJobTitle(&jobTitleToGet)
 	assert.NoError(t, err)
 	assert.NotNil(t, applications)
-	assert.Equal(t, 2, len(applications))
+	assert.Len(t, applications, 2)
 
 	assert.Equal(t, id2, applications[1].ID)
 	assert.Equal(t, id1, applications[0].ID)
@@ -380,7 +380,7 @@ func TestGetAlLApplications_ShouldWork(t *testing.T) {
 	applications, err := applicationService.GetAllApplications()
 	assert.NoError(t, err)
 	assert.NotNil(t, applications)
-	assert.Equal(t, 2, len(applications))
+	assert.Len(t, applications, 2)
 
 	assert.Equal(t, jobTitle1, *applications[0].JobTitle)
 	assert.Equal(t, jobTitle2, *applications[1].JobTitle)

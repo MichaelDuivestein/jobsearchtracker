@@ -147,7 +147,7 @@ func TestGetById_ShouldGetPerson(t *testing.T) {
 	assert.NotNil(t, insertedPerson)
 
 	retrievedPerson, err := personRepository.GetById(&id)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, retrievedPerson)
 
 	assert.Equal(t, id, retrievedPerson.ID)
@@ -194,7 +194,7 @@ func TestGetAllByName_ShouldReturnPerson(t *testing.T) {
 	retrievedPersons, err := personRepository.GetAllByName(&insertedPerson.Name)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedPersons)
-	assert.Equal(t, 1, len(retrievedPersons))
+	assert.Len(t, retrievedPersons, 1)
 
 	person := retrievedPersons[0]
 	assert.Equal(t, id, person.ID)
@@ -266,7 +266,7 @@ func TestGetAllByName_ShouldReturnMultiplePersonsWithSameName(t *testing.T) {
 	retrievedPersons, err := personRepository.GetAllByName(&frankJohn)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedPersons)
-	assert.Equal(t, 2, len(retrievedPersons))
+	assert.Len(t, retrievedPersons, 2)
 
 	foundPerson1 := retrievedPersons[0]
 	assert.Equal(t, insertedPerson3.ID, foundPerson1.ID)
@@ -316,7 +316,7 @@ func TestGetAllByName_ShouldReturnMultiplePersonsWithSameNamePart(t *testing.T) 
 	retrievedPersons, err := personRepository.GetAllByName(&ann)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedPersons)
-	assert.Equal(t, 3, len(retrievedPersons))
+	assert.Len(t, retrievedPersons, 3)
 
 	foundPerson1 := retrievedPersons[0]
 	assert.Equal(t, insertedPerson2.ID, foundPerson1.ID)
@@ -359,7 +359,7 @@ func TestGetAll_ShouldReturnAllPersons(t *testing.T) {
 	persons, err := personRepository.GetAll()
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
-	assert.Equal(t, 2, len(persons))
+	assert.Len(t, persons, 2)
 
 	assert.Equal(t, person2ID, persons[0].ID)
 	assert.Equal(t, person1ID, persons[1].ID)
