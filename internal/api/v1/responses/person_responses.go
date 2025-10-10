@@ -11,9 +11,9 @@ import (
 )
 
 type PersonResponse struct {
-	ID          uuid.UUID           `json:"id" extensions:"x-order=0" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
-	Name        string              `json:"name" extensions:"x-order=1" example:"CompanyName AB" extensions:"x-order=1"`
-	PersonType  requests.PersonType `json:"person_type" extensions:"x-order=2" example:"internalRecruiter" extensions:"x-order=2"`
+	ID          uuid.UUID           `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name        string              `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
+	PersonType  requests.PersonType `json:"person_type" example:"internalRecruiter" extensions:"x-order=2"`
 	Email       *string             `json:"email,omitempty" example:"name@domain.com" extensions:"x-order=3"`
 	Phone       *string             `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
 	Notes       *string             `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
@@ -28,13 +28,9 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
 	}
 
-	var personType *requests.PersonType = nil
-	if personModel.PersonType != nil {
-		nonNilPersonType, err := requests.NewPersonType(personModel.PersonType)
-		if err != nil {
-			return nil, err
-		}
-		personType = &nonNilPersonType
+	personType, err := requests.NewPersonType(&personModel.PersonType)
+	if err != nil {
+		return nil, err
 	}
 
 	personResponse := PersonResponse{
