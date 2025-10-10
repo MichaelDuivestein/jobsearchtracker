@@ -40,3 +40,6 @@ __debug_bin
 
 # Exclude executable
 jobsearchtracker
+
+# exclude generated documentation
+/docs
