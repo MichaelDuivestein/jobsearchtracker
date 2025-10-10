@@ -22,6 +22,19 @@ func NewPersonHandler(personService *services.PersonService) *PersonHandler {
 	return &PersonHandler{personService: personService}
 }
 
+// CreatePerson creates a person and returns it
+//
+// @Summary create a person
+// @Description create a `person` and return it
+// @Tags person
+// @Accept json
+// @Produce json
+// @Param person body requests.CreatePersonRequest true "Create Person request"
+// @Success 201 {object} responses.PersonResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/person/new [post]
 func (personHandler *PersonHandler) CreatePerson(writer http.ResponseWriter, request *http.Request) {
 	var createPersonRequest requests.CreatePersonRequest
 	if err := json.NewDecoder(request.Body).Decode(&createPersonRequest); err != nil {
@@ -97,6 +110,18 @@ func (personHandler *PersonHandler) CreatePerson(writer http.ResponseWriter, req
 	}
 }
 
+// GetPersonByID retrieves a person matching input UUID
+//
+// @Summary Get a person by ID
+// @Description Get a `person` by ID
+// @Tags person
+// @Produce json
+// @Param id path string true "Person ID" format(uuid)
+// @Success 200 {object} responses.PersonResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/person/get/id/{id} [get]
 func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	personIDStr := vars["id"]
@@ -162,6 +187,18 @@ func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, re
 	slog.Info("v1.PersonHandler.GetPersonByID: retrieved person successfully", "person.ID", person.ID.String())
 }
 
+// GetPersonsByName retrieves `person`s which fully, or partially, match the input name
+//
+// @Summary Get persons by name
+// @Description Get `person`s which fully, or partially, match the input name
+// @Tags person
+// @Produce json
+// @Param name path string true "Person Name"
+// @Success 200 {array} responses.PersonResponse
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/person/get/name/{name} [get]
 func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	personName := vars["name"]
@@ -219,6 +256,16 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 	slog.Info("v1.PersonHandler.GetPersonsByName: retrieved persons successfully", "name", personName)
 }
 
+// GetAllPersons retrieves all persons.
+//
+// @Summary Get all persons
+// @Description Get all `person`s
+// @Tags person
+// @Produce json
+// @Success 200 {array} responses.PersonResponse
+// @Failure 400
+// @Failure 500
+// @Router /v1/person/get/all [get]
 func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, request *http.Request) {
 	// can return InternalServiceError
 	persons, err := personHandler.personService.GetAllPersons()
@@ -251,6 +298,19 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 	slog.Info("v1.PersonHandler.GetAllPersons: retrieved all persons successfully")
 }
 
+// UpdatePerson updates a person
+//
+// @Summary update a person
+// @Description update a `person`
+// @Tags person
+// @Accept json
+// @Produce json
+// @Param person body requests.UpdatePersonRequest true "Update Company Request"
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/person/update [post]
 func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, request *http.Request) {
 	var updatePersonRequest requests.UpdatePersonRequest
 	if err := json.NewDecoder(request.Body).Decode(&updatePersonRequest); err != nil {
@@ -305,6 +365,17 @@ func (personHandler *PersonHandler) UpdatePerson(writer http.ResponseWriter, req
 	writer.WriteHeader(http.StatusOK)
 }
 
+// DeletePerson deletes a `person` matching input UUID
+//
+// @Summary Delete a person by ID
+// @Description Delete a `person` by ID
+// @Tags person
+// @Param id path string true "Person ID" format(uuid)
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /v1/person/delete/{id} [delete]
 func (personHandler *PersonHandler) DeletePerson(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	personIDStr := vars["id"]
