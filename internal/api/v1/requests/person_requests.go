@@ -9,12 +9,12 @@ import (
 )
 
 type CreatePersonRequest struct {
-	ID         *uuid.UUID `json:"id,omitempty"`
-	Name       string     `json:"name"`
-	PersonType PersonType `json:"person_type"`
-	Email      *string    `json:"email,omitempty"`
-	Phone      *string    `json:"phone,omitempty"`
-	Notes      *string    `json:"notes,omitempty"`
+	ID         *uuid.UUID `json:"id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name       string     `json:"name" example:"Person Name" extensions:"x-order=1"`
+	PersonType PersonType `json:"person_type" example:"internalRecruiter" extensions:"x-order=2"`
+	Email      *string    `json:"email,omitempty" swaggertype:"string" format:"email" example:"name@domain.com" extensions:"x-order=3"`
+	Phone      *string    `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
+	Notes      *string    `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
 }
 
 // validate can return ValidationError
@@ -72,12 +72,12 @@ func (request *CreatePersonRequest) ToModel() (*models.CreatePerson, error) {
 }
 
 type UpdatePersonRequest struct {
-	ID         uuid.UUID   `json:"id"`
-	Name       *string     `json:"name"`
-	PersonType *PersonType `json:"person_type"`
-	Email      *string     `json:"email,omitempty"`
-	Phone      *string     `json:"phone,omitempty"`
-	Notes      *string     `json:"notes,omitempty"`
+	ID         uuid.UUID   `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name       *string     `json:"name,omitempty" example:"Person Name" extensions:"x-order=1"`
+	PersonType *PersonType `json:"person_type,omitempty" example:"internalRecruiter" extensions:"x-order=2"`
+	Email      *string     `json:"email,omitempty" example:"name@domain.com" extensions:"x-order=3"`
+	Phone      *string     `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
+	Notes      *string     `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
 }
 
 // Validate can return ValidationError
@@ -151,6 +151,9 @@ func (request *UpdatePersonRequest) ToModel() (*models.UpdatePerson, error) {
 	return &updateModel, nil
 }
 
+// PersonType represents the type of person.
+//
+// @enum CEO,CTO,developer,externalRecruiter,internalRecruiter,HR,jobAdvertiser,jobContact,other,unknown
 type PersonType string
 
 const (
