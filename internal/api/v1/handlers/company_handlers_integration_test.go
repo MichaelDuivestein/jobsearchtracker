@@ -315,6 +315,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	// Get the company by full name:
 
 	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
@@ -339,6 +340,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	// Get the company by partial name:
 
 	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder = httptest.NewRecorder()
 
 	vars = map[string]string{
@@ -394,6 +396,7 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 	// Get companies by name:
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/name", nil)
+	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{

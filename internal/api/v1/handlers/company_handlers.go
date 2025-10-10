@@ -185,8 +185,6 @@ func (companyHandler *CompanyHandler) GetCompanyById(writer http.ResponseWriter,
 	}
 
 	slog.Info("v1.CompanyHandler.GetCompanyById: retrieved company successfully", "company.ID", company.ID.String())
-
-	return
 }
 
 // GetCompaniesByName retrieves `company`s which fully, or partially, match the input name

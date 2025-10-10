@@ -48,7 +48,7 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 }
 
 func NewPersonsResponse(persons []*models.Person) ([]*PersonResponse, error) {
-	if persons == nil || len(persons) == 0 {
+	if len(persons) == 0 {
 		return []*PersonResponse{}, nil
 	}
 

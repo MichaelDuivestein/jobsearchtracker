@@ -436,7 +436,10 @@ func TestUpdate_ShouldReturnValidationErrorIfNoPersonFieldsToUpdate(t *testing.T
 
 	err := personRepository.Update(&personToUpdate)
 	assert.Error(t, err)
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 func TestUpdate_ShouldNotReturnErrorIfPersonDoesNotExist(t *testing.T) {
@@ -481,7 +484,10 @@ func TestDelete_ShouldReturnValidationErrorIfPersonIDIsNil(t *testing.T) {
 
 	err := personRepository.Delete(nil)
 	assert.Error(t, err)
-	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'ID': ID is nil", validationError.Error())
 }
 
 func TestDelete_ShouldReturnNotFoundErrorIfPersonIdDoesNotExist(t *testing.T) {

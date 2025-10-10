@@ -380,5 +380,4 @@ func (applicationHandler *ApplicationHandler) DeleteApplication(writer http.Resp
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
