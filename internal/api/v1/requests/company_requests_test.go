@@ -15,18 +15,13 @@ import (
 // -------- CreateCompanyRequest tests: --------
 
 func TestCreateCompanyRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	notes := "No notes here!"
-	lastContact := time.Now().AddDate(0, 0, -3)
-
 	request := CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "A random company",
 		CompanyType: CompanyTypeEmployer,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("No notes here!"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
-
 	err := request.Validate()
 	assert.NoError(t, err)
 }
@@ -60,16 +55,12 @@ func TestCreateCompanyRequestValidate_ShouldReturnValidationError(t *testing.T) 
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			id := uuid.New()
-			notes := "No notes here!"
-			lastContact := time.Now().AddDate(0, 0, -3)
-
 			request := CreateCompanyRequest{
-				ID:          &id,
+				ID:          testutil.ToPtr(uuid.New()),
 				Name:        test.companyName,
 				CompanyType: test.companyType,
-				Notes:       &notes,
-				LastContact: &lastContact,
+				Notes:       testutil.ToPtr("No notes here!"),
+				LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 			}
 
 			err := request.Validate()
@@ -77,23 +68,18 @@ func TestCreateCompanyRequestValidate_ShouldReturnValidationError(t *testing.T) 
 
 			var validationErr *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationErr))
-
 			assert.Equal(t, test.expectedErrorMessage, err.Error())
 		})
 	}
 }
 
 func TestCreateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
-	id := uuid.New()
-	notes := "No notes here!"
-	lastContact := time.Now().AddDate(0, 0, -3)
-
 	request := CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "A random company",
 		CompanyType: CompanyTypeEmployer,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("No notes here!"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 
 	model, err := request.ToModel()
@@ -104,17 +90,12 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.Equal(t, request.Name, model.Name)
 	assert.Equal(t, request.CompanyType.String(), model.CompanyType.String())
 	assert.Equal(t, request.Notes, model.Notes)
-
-	modelLastContact := model.LastContact.Format(time.RFC3339)
-	requestLastContact := request.LastContact.Format(time.RFC3339)
-	assert.Equal(t, requestLastContact, modelLastContact)
-
+	testutil.AssertEqualFormattedDateTimes(t, model.LastContact, request.LastContact)
 	assert.Nil(t, model.CreatedDate)
 	assert.Nil(t, model.UpdatedDate)
 }
 
 func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
-
 	request := CreateCompanyRequest{
 		Name:        "Another company",
 		CompanyType: CompanyTypeEmployer,
@@ -137,31 +118,23 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testin
 // -------- UpdateCompanyRequest tests: --------
 
 func TestUpdateCompanyRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	name := "Some big corp"
 	var companyType CompanyType = CompanyTypeConsultancy
-	notes := "The quick brown fox"
-	lastContact := time.Now().AddDate(0, 0, -3)
 
 	request := UpdateCompanyRequest{
-		ID:          id,
-		Name:        &name,
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Some big corp"),
 		CompanyType: &companyType,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("The quick brown fox"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
-
 	err := request.Validate()
 	assert.NoError(t, err)
 }
 
 func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
-	id := uuid.New()
-
 	request := UpdateCompanyRequest{
-		ID: id,
+		ID: uuid.New(),
 	}
-
 	err := request.Validate()
 	assert.NotNil(t, err)
 
@@ -172,14 +145,12 @@ func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfNothingToUpda
 }
 
 func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfCompanyTypeIsInvalid(t *testing.T) {
-	id := uuid.New()
 	var fakeCompanyType CompanyType = "something that should never happen"
 
 	request := UpdateCompanyRequest{
-		ID:          id,
+		ID:          uuid.New(),
 		CompanyType: &fakeCompanyType,
 	}
-
 	err := request.Validate()
 	assert.NotNil(t, err)
 
@@ -267,20 +238,15 @@ func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) 
 }
 
 func TestUpdateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
-	name := "Nameless"
 	var companyType CompanyType = CompanyTypeRecruiter
-
-	notes := "Something unimportant"
-	lastContact := time.Now().AddDate(-1, 0, 0)
 
 	updateRequest := UpdateCompanyRequest{
 		ID:          uuid.New(),
-		Name:        &name,
+		Name:        testutil.ToPtr("Nameless"),
 		CompanyType: &companyType,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Something unimportant"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
 	}
-
 	model, err := updateRequest.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
@@ -293,13 +259,10 @@ func TestUpdateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
 }
 
 func TestUpdateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
-	lastContact := time.Now().AddDate(0, -2, 0)
-
 	updateRequest := UpdateCompanyRequest{
 		ID:          uuid.New(),
-		LastContact: &lastContact,
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, -2, 0)),
 	}
-
 	model, err := updateRequest.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
@@ -315,7 +278,6 @@ func TestUpdateCompanyRequestToModel_ShouldReturnValidationErrorIfNothingToUpdat
 	updateRequest := UpdateCompanyRequest{
 		ID: uuid.New(),
 	}
-
 	model, err := updateRequest.ToModel()
 	assert.Nil(t, model)
 	assert.NotNil(t, err)

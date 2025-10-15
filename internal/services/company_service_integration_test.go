@@ -45,21 +45,15 @@ func TestCreateCompany_ShouldWork(t *testing.T) {
 	companyService, _ := setupCompanyService(t)
 
 	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, -3)
-
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
-
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
@@ -68,18 +62,9 @@ func TestCreateCompany_ShouldWork(t *testing.T) {
 	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
 	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
 	assert.Equal(t, companyToInsert.Notes, insertedCompany.Notes)
-
-	insertedCompanyLastContact := insertedCompany.LastContact.Format(time.RFC3339)
-	companyToInsertLastContact := companyToInsert.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, insertedCompanyLastContact)
-
-	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate)
-
-	insertedCompanyUpdatedDate := insertedCompany.UpdatedDate.Format(time.RFC3339)
-	companyToInsertUpdatedDate := companyToInsert.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, insertedCompanyUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.LastContact, companyToInsert.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, &insertedCompany.CreatedDate, companyToInsert.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.UpdatedDate, companyToInsert.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
@@ -90,9 +75,8 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 		CompanyType: models.CompanyTypeEmployer,
 	}
 
-	insertedDateApproximation := time.Now().Format(time.RFC3339)
+	insertedDateApproximation := time.Now()
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
-
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
@@ -100,10 +84,7 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-
-	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate)
-
+	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, &insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -116,9 +97,8 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 		CreatedDate: &time.Time{},
 	}
 
-	insertedDateApproximation := time.Now().Format(time.RFC3339)
+	insertedDateApproximation := time.Now()
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
-
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
@@ -126,17 +106,12 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-
-	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedDateApproximation, insertedCompanyCreatedDate)
-
+	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, &insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
 func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
 	companyService, _ := setupCompanyService(t)
-
-	createdDate := time.Now().AddDate(0, 0, -2)
 
 	companyToInsert := models.CreateCompany{
 		ID:          nil,
@@ -144,26 +119,18 @@ func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
 		CompanyType: models.CompanyTypeEmployer,
 		Notes:       nil,
 		LastContact: &time.Time{},
-		CreatedDate: &createdDate,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 		UpdatedDate: nil,
 	}
-
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
-
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
 	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
 	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
 	assert.Nil(t, insertedCompany.Notes)
-
-	insertedCompanyCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, insertedCompanyCreatedDate)
-
-	insertedCompanyLastContact := insertedCompany.LastContact.Format(time.RFC3339)
-	assert.Equal(t, insertedCompanyCreatedDate, insertedCompanyLastContact)
-
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, insertedCompany.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, &insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -173,21 +140,15 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 	companyService, _ := setupCompanyService(t)
 
 	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now()
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, 2)
-
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now()),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 	}
-
 	_, err := companyService.CreateCompany(&companyToInsert)
 	assert.NoError(t, err)
 
@@ -199,18 +160,9 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name)
 	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType)
 	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes)
-
-	retrievedCompanyLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
-	companyToInsertLastContact := companyToInsert.LastContact.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertLastContact, retrievedCompanyLastContact)
-
-	retrievedCompanyCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
-	companyToInsertCreatedDate := companyToInsert.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertCreatedDate, retrievedCompanyCreatedDate)
-
-	retrievedCompanyUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
-	companyToInsertUpdatedDate := companyToInsert.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, companyToInsertUpdatedDate, retrievedCompanyUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, retrievedCompany.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, &retrievedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, retrievedCompany.UpdatedDate)
 }
 
 func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testing.T) {
@@ -226,21 +178,15 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *test
 	assert.Equal(t, "error: object not found: ID: '"+nonExistingId.String()+"'", notFoundError.Error())
 
 	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now()
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, 2)
-
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now()),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 	}
-
 	_, err = companyService.CreateCompany(&companyToInsert)
 	assert.NoError(t, err)
 
@@ -259,20 +205,18 @@ func TestGetCompaniesByName_ShouldReturnASingleCompany(t *testing.T) {
 
 	// insert companies
 	id1 := uuid.New()
-	name1 := "Software House"
 	companyToInsert1 := models.CreateCompany{
 		ID:          &id1,
-		Name:        name1,
+		Name:        "Software House",
 		CompanyType: models.CompanyTypeConsultancy,
 	}
 	_, err := companyService.CreateCompany(&companyToInsert1)
 	assert.NoError(t, err)
 
 	id2 := uuid.New()
-	name2 := "Development Corp"
 	companyToInsert2 := models.CreateCompany{
 		ID:          &id2,
-		Name:        name2,
+		Name:        "Development Corp",
 		CompanyType: models.CompanyTypeRecruiter,
 	}
 	_, err = companyService.CreateCompany(&companyToInsert2)
@@ -294,30 +238,27 @@ func TestGetCompaniesByName_ShouldReturnMultipleCompanies(t *testing.T) {
 	// insert companies
 
 	id1 := uuid.New()
-	name1 := "Sunday Developers"
 	companyToInsert1 := models.CreateCompany{
 		ID:          &id1,
-		Name:        name1,
+		Name:        "Sunday Developers",
 		CompanyType: models.CompanyTypeEmployer,
 	}
 	_, err := companyService.CreateCompany(&companyToInsert1)
 	assert.NoError(t, err)
 
 	id2 := uuid.New()
-	name2 := "Brand AB"
 	companyToInsert2 := models.CreateCompany{
 		ID:          &id2,
-		Name:        name2,
+		Name:        "Brand AB",
 		CompanyType: models.CompanyTypeEmployer,
 	}
 	_, err = companyService.CreateCompany(&companyToInsert2)
 	assert.NoError(t, err)
 
 	id3 := uuid.New()
-	name3 := "Day Workers"
 	companyToInsert3 := models.CreateCompany{
 		ID:          &id3,
-		Name:        name3,
+		Name:        "Day Workers",
 		CompanyType: models.CompanyTypeRecruiter,
 	}
 	_, err = companyService.CreateCompany(&companyToInsert3)
@@ -340,20 +281,18 @@ func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T
 
 	// insert companies
 	id1 := uuid.New()
-	name1 := "Trickery AB"
 	companyToInsert1 := models.CreateCompany{
 		ID:          &id1,
-		Name:        name1,
+		Name:        "Trickery AB",
 		CompanyType: models.CompanyTypeConsultancy,
 	}
 	_, err := companyService.CreateCompany(&companyToInsert1)
 	assert.NoError(t, err)
 
 	id2 := uuid.New()
-	name2 := "Offshoring Inc."
 	companyToInsert2 := models.CreateCompany{
 		ID:          &id2,
-		Name:        name2,
+		Name:        "Offshoring Inc.",
 		CompanyType: models.CompanyTypeEmployer,
 	}
 	_, err = companyService.CreateCompany(&companyToInsert2)
@@ -378,49 +317,39 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	// insert companies
 
 	company1Id := uuid.New()
-	company1LastContact := time.Now().AddDate(-1, 0, 0)
-	company1CreatedDate := time.Now().AddDate(0, -5, 0)
-	company1UpdatedDate := time.Now().AddDate(0, 0, -3)
-
 	company1ToInsert := models.CreateCompany{
 		ID:          &company1Id,
 		Name:        "company1Name",
 		CompanyType: models.CompanyTypeRecruiter,
 		Notes:       testutil.ToPtr("company 1 notes"),
-		LastContact: &company1LastContact,
-		CreatedDate: &company1CreatedDate,
-		UpdatedDate: &company1UpdatedDate,
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
-
 	insertedCompany1, err := companyService.CreateCompany(&company1ToInsert)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany1)
 
 	company2Id := uuid.New()
-	company2LastContact := time.Now().AddDate(-1, 0, 0)
-	company2CreatedDate := time.Now().AddDate(0, -4, 22)
-	company2UpdatedDate := time.Now().AddDate(0, 0, -3)
-
 	company2ToInsert := models.CreateCompany{
 		ID:          &company2Id,
 		Name:        "company2Name",
 		CompanyType: models.CompanyTypeConsultancy,
 		Notes:       testutil.ToPtr("company 2 notes"),
-		LastContact: &company2LastContact,
-		CreatedDate: &company2CreatedDate,
-		UpdatedDate: &company2UpdatedDate,
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -4, 22)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 	insertedCompany2, err := companyService.CreateCompany(&company2ToInsert)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany2)
 
 	company3Id := uuid.New()
-	company3CreatedDate := time.Now().AddDate(0, 0, 4)
 	company3ToInsert := models.CreateCompany{
 		ID:          &company3Id,
 		Name:        "company3Name",
 		CompanyType: models.CompanyTypeEmployer,
-		CreatedDate: &company3CreatedDate,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
 	}
 	insertedCompany3, err := companyService.CreateCompany(&company3ToInsert)
 	assert.NoError(t, err)
@@ -1003,41 +932,30 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 
 	// insert a company:
 	id := uuid.New()
-	notes := "Notes about an AB"
-	lastContact := time.Now().AddDate(0, 0, -3)
-	createdDate := time.Now().AddDate(0, 0, -2)
-	updatedDate := time.Now().AddDate(0, 0, -1)
-
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "Some Stockholm-based AB",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("Notes about an AB"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
-
 	insertedCompany, err := companyService.CreateCompany(&companyToInsert)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
 	// update a company:
 
-	nameToUpdate := "Updated Name"
 	var companyTypeToUpdate models.CompanyType = models.CompanyTypeConsultancy
-	notesToUpdate := "Updated Notes"
-	lastContactToUpdate := time.Now().AddDate(0, 1, 0)
-
 	updateModel := models.UpdateCompany{
 		ID:          id,
-		Name:        &nameToUpdate,
+		Name:        testutil.ToPtr("Updated Name"),
 		CompanyType: &companyTypeToUpdate,
-		Notes:       &notesToUpdate,
-		LastContact: &lastContactToUpdate,
+		Notes:       testutil.ToPtr("Updated Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
-
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	err = companyService.UpdateCompany(&updateModel)
 	assert.NoError(t, err)
 
@@ -1047,37 +965,24 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 
 	assert.NotNil(t, retrievedCompany)
 	assert.Equal(t, id, retrievedCompany.ID)
-	assert.Equal(t, nameToUpdate, retrievedCompany.Name)
+	assert.Equal(t, *updateModel.Name, retrievedCompany.Name)
 	assert.Equal(t, companyTypeToUpdate, retrievedCompany.CompanyType)
-
-	updatedLastContact := lastContactToUpdate.Format(time.RFC3339)
-	retrievedLastContact := retrievedCompany.LastContact.Format(time.RFC3339)
-	assert.Equal(t, updatedLastContact, retrievedLastContact)
-
-	insertedCreatedDate := insertedCompany.CreatedDate.Format(time.RFC3339)
-	retrievedCreatedDate := retrievedCompany.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedCreatedDate, retrievedCreatedDate)
-
-	retrievedUpdatedDate := retrievedCompany.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, retrievedUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, updateModel.LastContact, retrievedCompany.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, &insertedCompany.CreatedDate, &retrievedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedCompany.UpdatedDate)
 }
 
 func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
 	companyService, _ := setupCompanyService(t)
 
-	nameToUpdate := "Updated Name"
 	var companyTypeToUpdate models.CompanyType = models.CompanyTypeConsultancy
-	notesToUpdate := "Updated Notes"
-	lastContactToUpdate := time.Now().AddDate(0, 1, 0)
-
 	updateModel := models.UpdateCompany{
 		ID:          uuid.New(),
-		Name:        &nameToUpdate,
+		Name:        testutil.ToPtr("Updated Name"),
 		CompanyType: &companyTypeToUpdate,
-		Notes:       &notesToUpdate,
-		LastContact: &lastContactToUpdate,
+		Notes:       testutil.ToPtr("Updated Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
-
 	err := companyService.UpdateCompany(&updateModel)
 	assert.NoError(t, err)
 }
@@ -1090,19 +995,14 @@ func TestDeleteCompany_ShouldWork(t *testing.T) {
 	// create a company:
 
 	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now()
-	createdDate := time.Now().AddDate(0, 0, 0)
-	updatedDate := time.Now().AddDate(0, 0, 0)
-
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now()),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 	}
 
 	_, err := companyService.CreateCompany(&companyToInsert)

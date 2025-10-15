@@ -29,7 +29,7 @@ func (repository *CompanyPersonRepository) AssociateCompanyPerson(
 				company_id, person_id, created_date
 			) VALUES (
 				?, ?, ?
-		  	) RETURNING company_id, person_id, created_date;
+			) RETURNING company_id, person_id, created_date;
 		`
 
 	var createdDate string

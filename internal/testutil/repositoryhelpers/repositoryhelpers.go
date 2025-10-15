@@ -3,6 +3,7 @@ package repositoryhelpers
 import (
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/repositories"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -27,6 +28,28 @@ func CreateCompany(
 	assert.NoError(t, err)
 
 	return insertedCompany
+}
+
+func CreateApplication(
+	t *testing.T,
+	applicationRepository *repositories.ApplicationRepository,
+	applicationID *uuid.UUID,
+	companyID *uuid.UUID,
+	recruiterID *uuid.UUID,
+	createdDate *time.Time) *models.Application {
+
+	application := models.CreateApplication{
+		ID:               applicationID,
+		CompanyID:        companyID,
+		RecruiterID:      recruiterID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: models.RemoteStatusTypeHybrid,
+		CreatedDate:      createdDate,
+	}
+	insertedApplication, err := applicationRepository.Create(&application)
+	assert.NoError(t, err)
+
+	return insertedApplication
 }
 
 func CreatePerson(
