@@ -73,8 +73,8 @@ func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, personResponse.ID)
-	assert.Equal(t, requestBody.Name, personResponse.Name)
-	assert.Equal(t, requestBody.PersonType, personResponse.PersonType)
+	assert.Equal(t, requestBody.Name, *personResponse.Name)
+	assert.Equal(t, requestBody.PersonType.String(), personResponse.PersonType.String())
 	assert.Equal(t, requestBody.Email, personResponse.Email)
 	assert.Equal(t, requestBody.Phone, personResponse.Phone)
 	assert.Equal(t, requestBody.Notes, personResponse.Notes)
@@ -178,8 +178,8 @@ func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, response.ID)
-	assert.Equal(t, requestBody.Name, response.Name)
-	assert.Equal(t, requestBody.PersonType, response.PersonType)
+	assert.Equal(t, requestBody.Name, *response.Name)
+	assert.Equal(t, requestBody.PersonType.String(), response.PersonType.String())
 	assert.Equal(t, requestBody.Email, response.Email)
 	assert.Equal(t, requestBody.Phone, response.Phone)
 	assert.Equal(t, requestBody.Notes, response.Notes)
@@ -254,7 +254,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	assert.Len(t, firstResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
-	assert.Equal(t, requestBody.Name, firstResponse[0].Name)
+	assert.Equal(t, requestBody.Name, *firstResponse[0].Name)
 
 	// Get the person by partial name:
 
@@ -279,7 +279,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 	assert.Len(t, secondResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
-	assert.Equal(t, requestBody.Name, secondResponse[0].Name)
+	assert.Equal(t, requestBody.Name, *secondResponse[0].Name)
 }
 
 func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
@@ -338,10 +338,10 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 	assert.Len(t, response, 2)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
-	assert.Equal(t, firstRequestBody.Name, response[0].Name)
+	assert.Equal(t, firstRequestBody.Name, *response[0].Name)
 
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
-	assert.Equal(t, secondRequestBody.Name, response[1].Name)
+	assert.Equal(t, secondRequestBody.Name, *response[1].Name)
 
 }
 
@@ -532,8 +532,8 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, getPersonResponse.ID)
-	assert.Equal(t, updatedName, getPersonResponse.Name)
-	assert.Equal(t, updatedPersonType, getPersonResponse.PersonType)
+	assert.Equal(t, updatedName, *getPersonResponse.Name)
+	assert.Equal(t, updatedPersonType.String(), getPersonResponse.PersonType.String())
 	assert.Equal(t, updatedEmail, *getPersonResponse.Email)
 	assert.Equal(t, updatedPhone, *getPersonResponse.Phone)
 	assert.Equal(t, updatedNotes, *getPersonResponse.Notes)

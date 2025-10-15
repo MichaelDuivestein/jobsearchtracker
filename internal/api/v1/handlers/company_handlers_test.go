@@ -170,6 +170,24 @@ func TestGetAllCompanies_ShouldReturnErrorIfIncludeApplicationsIsInvalid(t *test
 		responseBodyString)
 }
 
+func TestGetAllCompanies_ShouldReturnErrorIfIncludePersonsIsInvalid(t *testing.T) {
+	companyHandler := v1.NewCompanyHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_persons=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	companyHandler.GetAllCompanies(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_persons. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdateCompany tests: --------
 
 func TestUpdateCompany_ShouldRespondWithBadRequestStatus(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"jobsearchtracker/internal/api/v1/requests"
 	"jobsearchtracker/internal/api/v1/responses"
 	internalErrors "jobsearchtracker/internal/errors"
+	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/services"
 	"log/slog"
 	"net/http"
@@ -263,9 +264,13 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 // @Description - include_applications=all: Returns `application`s with all fields
 // @Description - include_applications=ids: Returns `application`s with only `id`, `application_id`, and `recruiter_id`
 // @Description - include_applications=none: No `application` data included (default)
+// @Description - include_persons=all: Returns `person`s with all fields
+// @Description - include_persons=ids: Returns `person`s with only `id`
+// @Description - include_persons=none: No `person` data included (default)
 // @Tags company
 // @Produce json
 // @Param include_applications query string false "string enums" Enums(all, ids, none)
+// @Param include_persons query string false "string enums" Enums(all, ids, none)
 // @Success 200 {array} responses.CompanyResponse
 // @Failure 400
 // @Failure 500
@@ -273,44 +278,35 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter, request *http.Request) {
 
 	query := request.URL.Query()
-	includeApplicationsString := query.Get("include_applications")
 
-	var includeApplicationsType requests.IncludeExtraDataType
-	if includeApplicationsString == "" {
-		includeApplicationsType = requests.IncludeExtraDataTypeNone
-	} else {
-		var err error
+	includeApplications, err := getExtraDataTypeParam(query.Get("include_applications"))
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_applications param", "error", err)
 
-		// can return ValidationError
-		includeApplicationsType, err = requests.NewIncludeExtraDataType(includeApplicationsString)
-
-		if err != nil {
-			slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_applications param", "error", err)
-
-			status := http.StatusBadRequest
-			writer.WriteHeader(status)
-			http.Error(
-				writer,
-				"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'",
-				status)
-			return
-		}
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
 	}
 
-	includeApplicationsTypeModel, err := includeApplicationsType.ToModel()
+	includePersons, err := getExtraDataTypeParam(query.Get("include_persons"))
 	if err != nil {
-		slog.Error(
-			"v1.CompanyHandler.GetAllCompanies: For include_applications, unable to convert request to model",
-			"error", err)
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_persons param", "error", err)
 
-		status := http.StatusInternalServerError
+		status := http.StatusBadRequest
 		writer.WriteHeader(status)
-		http.Error(writer, "For include_applications, unable to convert request to model", status)
+		http.Error(
+			writer,
+			"Invalid value for include_persons. Accepted params are 'all', 'ids', and 'none'",
+			status)
 		return
 	}
 
 	// can return InternalServiceError
-	companies, err := companyHandler.companyService.GetAllCompanies(includeApplicationsTypeModel)
+	companies, err := companyHandler.companyService.GetAllCompanies(*includeApplications, *includePersons)
 	if err != nil {
 		errorMessage := "Internal service error while getting all companies"
 		slog.Error("v1.CompanyHandler.GetAllCompanies: "+errorMessage, "error", err)
@@ -475,4 +471,25 @@ func (companyHandler *CompanyHandler) DeleteCompany(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
+}
+
+func getExtraDataTypeParam(urlParamValue string) (*models.IncludeExtraDataType, error) {
+
+	var includeExtraDataType requests.IncludeExtraDataType
+	if urlParamValue == "" {
+		includeExtraDataType = requests.IncludeExtraDataTypeNone
+	} else {
+		var err error
+
+		// can return ValidationError
+		includeExtraDataType, err = requests.NewIncludeExtraDataType(urlParamValue)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	includeApplicationsTypeModel, err := includeExtraDataType.ToModel()
+
+	return &includeApplicationsTypeModel, err
 }

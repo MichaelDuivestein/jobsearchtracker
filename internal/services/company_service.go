@@ -116,10 +116,11 @@ func (companyService *CompanyService) GetCompaniesByName(companyName *string) ([
 
 // GetAllCompanies can return InternalServiceError
 func (companyService *CompanyService) GetAllCompanies(
-	includeApplications models.IncludeExtraDataType) ([]*models.Company, error) {
+	includeApplications models.IncludeExtraDataType,
+	includePersons models.IncludeExtraDataType) ([]*models.Company, error) {
 
 	// can return InternalServiceError
-	companies, err := companyService.companyRepository.GetAll(includeApplications)
+	companies, err := companyService.companyRepository.GetAll(includeApplications, includePersons)
 	if err != nil {
 		return nil, err
 	}

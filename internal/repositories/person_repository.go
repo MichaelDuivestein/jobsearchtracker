@@ -332,7 +332,7 @@ func (repository *PersonRepository) mapRow(
 				"error", err.Error())
 			return nil, internalErrors.NewInternalServiceError("Error parsing createdDate: " + err.Error())
 		}
-		result.CreatedDate = timestamp
+		result.CreatedDate = &timestamp
 	}
 
 	if updatedDate.Valid {
