@@ -4,6 +4,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -14,20 +15,17 @@ import (
 // -------- NewPersonResponse tests: --------
 
 func TestNewPersonResponse_ShouldWork(t *testing.T) {
-	email := "e@m.ai"
-	phone := "2345"
-	notes := "sdfgkljherwkl"
-	updatedDate := time.Now().AddDate(0, 0, 27)
+	var personType models.PersonType = models.PersonTypeJobContact
 
 	model := models.Person{
 		ID:          uuid.New(),
-		Name:        "Blah blah",
-		PersonType:  models.PersonTypeJobContact,
-		Email:       &email,
-		Phone:       &phone,
-		Notes:       &notes,
-		CreatedDate: time.Now().AddDate(0, -1, 0),
-		UpdatedDate: &updatedDate,
+		Name:        testutil.ToPtr("Blah blah"),
+		PersonType:  &personType,
+		Email:       testutil.ToPtr("e@m.ai"),
+		Phone:       testutil.ToPtr("2345"),
+		Notes:       testutil.ToPtr("sdfgkljherwkl"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -1, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 27)),
 	}
 
 	response, err := NewPersonResponse(&model)
@@ -45,11 +43,12 @@ func TestNewPersonResponse_ShouldWork(t *testing.T) {
 }
 
 func TestNewPersonResponse_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
+	var personType models.PersonType = models.PersonTypeUnknown
 	model := models.Person{
 		ID:          uuid.New(),
-		Name:        "Anker",
-		PersonType:  models.PersonTypeUnknown,
-		CreatedDate: time.Now().AddDate(0, 3, 0),
+		Name:        testutil.ToPtr("Anker"),
+		PersonType:  &personType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 3, 0)),
 	}
 
 	response, err := NewPersonResponse(&model)
@@ -77,12 +76,13 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testi
 	assert.Equal(t, err.Error(), "internal service error: Error building response: Person is nil")
 }
 
-func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t *testing.T) {
+func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *testing.T) {
+	var personTypeEmpty models.PersonType = ""
 	emptyPersonType := models.Person{
 		ID:          uuid.New(),
-		Name:        "Dave",
-		PersonType:  "",
-		CreatedDate: time.Now().AddDate(0, 0, 16),
+		Name:        testutil.ToPtr("Dave"),
+		PersonType:  &personTypeEmpty,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	emptyResponse, err := NewPersonResponse(&emptyPersonType)
 	assert.Nil(t, emptyResponse)
@@ -96,11 +96,12 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvali
 		"internal service error: Error converting internal PersonType to external PersonType: ''",
 		err.Error())
 
+	var personTypeBlah models.PersonType = "Blah"
 	invalidPersonType := models.Person{
 		ID:          uuid.New(),
-		Name:        "Dave",
-		PersonType:  "Blah",
-		CreatedDate: time.Now().AddDate(0, 0, 16),
+		Name:        testutil.ToPtr("Dave"),
+		PersonType:  &personTypeBlah,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	invalidResponse, err := NewPersonResponse(&invalidPersonType)
 	assert.Nil(t, invalidResponse)
@@ -117,18 +118,20 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvali
 // -------- NewPersonsResponse tests: --------
 
 func TestNewPersonsResponse_ShouldWork(t *testing.T) {
+	var personTypeUnknown models.PersonType = models.PersonTypeUnknown
+	var personTypeCTO models.PersonType = models.PersonTypeCTO
 	personModels := []*models.Person{
 		{
 			ID:          uuid.New(),
-			Name:        "Aaron",
-			PersonType:  models.PersonTypeUnknown,
-			CreatedDate: time.Now().AddDate(0, 0, 3),
+			Name:        testutil.ToPtr("Aaron"),
+			PersonType:  &personTypeUnknown,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 		},
 		{
 			ID:          uuid.New(),
-			Name:        "Bru",
-			PersonType:  models.PersonTypeCTO,
-			CreatedDate: time.Now().AddDate(0, 0, 1),
+			Name:        testutil.ToPtr("Bru"),
+			PersonType:  &personTypeCTO,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 		},
 	}
 
@@ -154,18 +157,21 @@ func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 }
 
 func TestNewPersonsResponse_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {
+	var personTypeJobAdvertiser models.PersonType = models.PersonTypeJobAdvertiser
+	var personTypeEmpty models.PersonType = ""
+
 	personModels := []*models.Person{
 		{
 			ID:          uuid.New(),
-			Name:        "Sammy",
-			PersonType:  models.PersonTypeJobAdvertiser,
-			CreatedDate: time.Now().AddDate(0, 0, 7),
+			Name:        testutil.ToPtr("Sammy"),
+			PersonType:  &personTypeJobAdvertiser,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
 		},
 		{
 			ID:          uuid.New(),
-			Name:        "Britt",
-			PersonType:  "",
-			CreatedDate: time.Now().AddDate(0, 0, 0),
+			Name:        testutil.ToPtr("Britt"),
+			PersonType:  &personTypeEmpty,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
 		},
 	}
 

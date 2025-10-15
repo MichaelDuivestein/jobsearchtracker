@@ -180,6 +180,154 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, application2.UpdatedDate, returnedApplication2.UpdatedDate)
 }
 
+func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
+	companyID := uuid.New()
+
+	person1 := models.Person{
+		ID: uuid.New(),
+	}
+
+	var person2Type models.PersonType = models.PersonTypeHR
+	person2 := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Person2Name"),
+		PersonType:  &person2Type,
+		Email:       testutil.ToPtr("Person2Email"),
+		Phone:       testutil.ToPtr("Person2Phone"),
+		Notes:       testutil.ToPtr("Person2Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
+	}
+
+	persons := []*models.Person{
+		&person1,
+		&person2,
+	}
+
+	model := models.Company{
+		ID:          companyID,
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: time.Now().AddDate(0, 0, 4),
+		Persons:     &persons,
+	}
+
+	response, err := NewCompanyResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID, response.ID)
+	assert.Equal(t, model.Name, response.Name)
+	assert.Equal(t, model.CompanyType.String(), response.CompanyType.String())
+	assert.Nil(t, response.Notes)
+	assert.Nil(t, response.LastContact)
+	assert.Equal(t, model.CreatedDate, response.CreatedDate)
+	assert.Nil(t, response.UpdatedDate)
+	assert.Len(t, *response.Applications, 0)
+	assert.Len(t, *response.Persons, 2)
+
+	assert.Equal(t, person1.ID, (*response.Persons)[0].ID)
+
+	assert.Equal(t, person2.ID, (*response.Persons)[1].ID)
+	assert.Equal(t, "Person2Name", *(*response.Persons)[1].Name)
+	assert.Equal(t, person2Type.String(), (*response.Persons)[1].PersonType.String())
+	assert.Equal(t, "Person2Email", *(*response.Persons)[1].Email)
+	assert.Equal(t, "Person2Phone", *(*response.Persons)[1].Phone)
+	assert.Equal(t, "Person2Notes", *(*response.Persons)[1].Notes)
+	testutil.AssertEqualFormattedDateTimes(t, person2.CreatedDate, (*response.Persons)[1].CreatedDate)
+}
+
+func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
+	companyId := uuid.New()
+
+	application1 := models.Application{
+		ID:        uuid.New(),
+		CompanyID: &companyId,
+	}
+
+	var application2RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeOffice
+	application2 := models.Application{
+		ID:                   uuid.New(),
+		RecruiterID:          &companyId,
+		JobTitle:             testutil.ToPtr("Application2JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
+		Country:              testutil.ToPtr("Application2Country"),
+		Area:                 testutil.ToPtr("Application2Area"),
+		RemoteStatusType:     &application2RemoteStatusType,
+		WeekdaysInOffice:     testutil.ToPtr(3),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(1),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+	}
+	applications := []*models.Application{
+		&application1,
+		&application2,
+	}
+
+	person1ID := uuid.New()
+	person1 := models.Person{
+		ID: person1ID,
+	}
+
+	person2ID := uuid.New()
+	var person2Type models.PersonType = models.PersonTypeHR
+	person2 := models.Person{
+		ID:          person2ID,
+		Name:        testutil.ToPtr("Person2Name"),
+		PersonType:  &person2Type,
+		Email:       testutil.ToPtr("Person2Email"),
+		Phone:       testutil.ToPtr("Person2Phone"),
+		Notes:       testutil.ToPtr("Person2Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
+	}
+
+	persons := []*models.Person{
+		&person1,
+		&person2,
+	}
+
+	model := models.Company{
+		ID:           companyId,
+		Name:         "Randomized Company",
+		CompanyType:  models.CompanyTypeEmployer,
+		Notes:        testutil.ToPtr("some notes"),
+		LastContact:  testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+		CreatedDate:  time.Now().AddDate(0, 0, -4),
+		UpdatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		Applications: &applications,
+		Persons:      &persons,
+	}
+
+	response, err := NewCompanyResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID, response.ID)
+	assert.Equal(t, model.Name, response.Name)
+	assert.Equal(t, model.CompanyType.String(), response.CompanyType.String())
+	assert.Equal(t, model.Notes, response.Notes)
+	assert.Equal(t, model.LastContact, response.LastContact)
+	assert.Equal(t, model.CreatedDate, response.CreatedDate)
+	assert.Equal(t, model.UpdatedDate, response.UpdatedDate)
+	assert.Len(t, *response.Applications, 2)
+	assert.Len(t, *response.Persons, 2)
+
+	assert.Equal(t, application1.ID, (*response.Applications)[0].ID)
+	assert.Equal(t, companyId, *(*response.Applications)[0].CompanyID)
+	assert.Nil(t, (*response.Applications)[0].RecruiterID)
+
+	application := (*response.Applications)[1]
+	assert.Equal(t, application2.ID, application.ID)
+	assert.Nil(t, application.CompanyID)
+	assert.Equal(t, companyId, *application.RecruiterID)
+
+	assert.Equal(t, person1ID, (*response.Persons)[0].ID)
+	assert.Equal(t, person2ID, (*response.Persons)[1].ID)
+}
+
 // -------- NewCompaniesResponse tests: --------
 
 func TestNewCompaniesResponse_ShouldWork(t *testing.T) {

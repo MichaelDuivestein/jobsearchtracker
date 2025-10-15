@@ -51,7 +51,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDa
 					'ID', a.id,
 					'CompanyID', a.company_id,
 					'RecruiterID', a.recruiter_id
-				)
+				) ORDER BY a.created_date DESC
 			) FILTER (WHERE a.id IS NOT NULL),
 			JSON_ARRAY()
 		) as applications
@@ -85,11 +85,74 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtr
 					'ApplicationDate', a.application_date,
 					'CreatedDate', a.created_date,
 					'UpdatedDate', a.updated_date
-				)
+				) ORDER BY a.created_date DESC
 			) FILTER (WHERE a.id IS NOT NULL),
 			JSON_ARRAY()
 		) as applications
 	`
+
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+// -------- buildPersonsCoalesceAndJoin tests: --------
+
+func TestBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+	assert.Equal(t, "", coalesce)
+	assert.Equal(t, "", join)
+
+}
+
+func TestBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	assert.Equal(
+		t,
+		"LEFT JOIN company_person cp ON (cp.company_id = c.id)\n\t\tLEFT JOIN person p ON (cp.person_id = p.id)\n",
+		join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', p.id
+				) ORDER BY p.created_date DESC
+			) FILTER (WHERE p.id IS NOT NULL),
+			JSON_ARRAY()
+		) as persons
+`
+
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+func TestBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	assert.Equal(t, "LEFT JOIN company_person cp ON (cp.company_id = c.id)\n\t\tLEFT JOIN person p ON (cp.person_id = p.id)\n", join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', p.id,
+					'Name', p.name,
+					'PersonType', p.person_type,
+					'Email', p.email,
+					'Phone', p.phone,
+					'Notes', p.notes,
+					'CreatedDate', p.created_date,
+					'UpdatedDate', p.updated_date
+				) ORDER BY p.created_date DESC
+			) FILTER (WHERE p.id IS NOT NULL),
+			JSON_ARRAY()
+		) as persons
+`
 
 	assert.Equal(t, expectedCoalesce, coalesce)
 }

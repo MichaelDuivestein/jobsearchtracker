@@ -19,6 +19,7 @@ type CompanyResponse struct {
 	CreatedDate  time.Time               `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=5"`
 	UpdatedDate  *time.Time              `json:"updated_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
 	Applications *[]*ApplicationResponse `json:"applications" extensions:"x-order=7"`
+	Persons      *[]*PersonResponse      `json:"persons" extensions:"x-order=8"`
 }
 
 // NewCompanyResponse can return InternalServiceError
@@ -42,6 +43,14 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 		}
 	}
 
+	var persons []*PersonResponse = nil
+	if companyModel.Persons != nil {
+		persons, err = NewPersonsResponse(*companyModel.Persons)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	companyResponse := CompanyResponse{
 		ID:           companyModel.ID,
 		Name:         companyModel.Name,
@@ -51,6 +60,7 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 		CreatedDate:  companyModel.CreatedDate,
 		UpdatedDate:  companyModel.UpdatedDate,
 		Applications: &applications,
+		Persons:      &persons,
 	}
 
 	return &companyResponse, nil

@@ -11,14 +11,14 @@ import (
 )
 
 type PersonResponse struct {
-	ID          uuid.UUID           `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
-	Name        string              `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
-	PersonType  requests.PersonType `json:"person_type" example:"internalRecruiter" extensions:"x-order=2"`
-	Email       *string             `json:"email,omitempty" example:"name@domain.com" extensions:"x-order=3"`
-	Phone       *string             `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
-	Notes       *string             `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
-	CreatedDate time.Time           `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
-	UpdatedDate *time.Time          `json:"updated_date,omitempty" example:"2025-12-31T23:59Z"  extensions:"x-order=7"`
+	ID          uuid.UUID            `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name        *string              `json:"name,omitempty" example:"CompanyName AB" extensions:"x-order=1"`
+	PersonType  *requests.PersonType `json:"person_type,omitempty" example:"internalRecruiter" extensions:"x-order=2"`
+	Email       *string              `json:"email,omitempty" example:"name@domain.com" extensions:"x-order=3"`
+	Phone       *string              `json:"phone,omitempty" example:"+46123456789" extensions:"x-order=4"`
+	Notes       *string              `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=5"`
+	CreatedDate *time.Time           `json:"created_date,omitempty" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
+	UpdatedDate *time.Time           `json:"updated_date,omitempty" example:"2025-12-31T23:59Z"  extensions:"x-order=7"`
 }
 
 // NewPersonResponse can return InternalServerError
@@ -28,9 +28,13 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
 	}
 
-	personType, err := requests.NewPersonType(&personModel.PersonType)
-	if err != nil {
-		return nil, err
+	var personType *requests.PersonType = nil
+	if personModel.PersonType != nil {
+		nonNilPersonType, err := requests.NewPersonType(personModel.PersonType)
+		if err != nil {
+			return nil, err
+		}
+		personType = &nonNilPersonType
 	}
 
 	personResponse := PersonResponse{

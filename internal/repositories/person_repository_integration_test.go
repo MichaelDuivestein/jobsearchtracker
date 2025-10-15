@@ -59,8 +59,8 @@ func TestCreate_ShouldInsertPerson(t *testing.T) {
 	assert.NotNil(t, insertedPerson)
 
 	assert.Equal(t, *person.ID, insertedPerson.ID)
-	assert.Equal(t, person.Name, insertedPerson.Name)
-	assert.Equal(t, person.PersonType, insertedPerson.PersonType)
+	assert.Equal(t, person.Name, *insertedPerson.Name)
+	assert.Equal(t, person.PersonType.String(), insertedPerson.PersonType.String())
 	assert.Equal(t, person.Email, insertedPerson.Email)
 	assert.Equal(t, person.Phone, insertedPerson.Phone)
 	assert.Equal(t, person.Notes, insertedPerson.Notes)
@@ -191,14 +191,14 @@ func TestGetAllByName_ShouldReturnPerson(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedPerson)
 
-	retrievedPersons, err := personRepository.GetAllByName(&insertedPerson.Name)
+	retrievedPersons, err := personRepository.GetAllByName(insertedPerson.Name)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedPersons)
 	assert.Len(t, retrievedPersons, 1)
 
 	person := retrievedPersons[0]
 	assert.Equal(t, id, person.ID)
-	assert.Equal(t, "John Smith", person.Name)
+	assert.Equal(t, "John Smith", *person.Name)
 
 }
 
@@ -416,8 +416,8 @@ func TestUpdate_ShouldUpdatePerson(t *testing.T) {
 	assert.NotNil(t, retrievedPerson)
 
 	assert.Equal(t, id, retrievedPerson.ID)
-	assert.Equal(t, name, retrievedPerson.Name)
-	assert.Equal(t, personType, retrievedPerson.PersonType)
+	assert.Equal(t, name, *retrievedPerson.Name)
+	assert.Equal(t, personType.String(), retrievedPerson.PersonType.String())
 	assert.Equal(t, email, *retrievedPerson.Email)
 	assert.Equal(t, phone, *retrievedPerson.Phone)
 	assert.Equal(t, notes, *retrievedPerson.Notes)

@@ -16,6 +16,7 @@ type Company struct {
 	CreatedDate  time.Time
 	UpdatedDate  *time.Time
 	Applications *[]*Application
+	Persons      *[]*Person
 }
 
 type CreateCompany struct {

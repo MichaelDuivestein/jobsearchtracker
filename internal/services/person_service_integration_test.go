@@ -60,8 +60,8 @@ func TestCreatePerson_ShouldWork(t *testing.T) {
 	assert.NotNil(t, insertedPerson)
 
 	assert.Equal(t, id, insertedPerson.ID)
-	assert.Equal(t, name, insertedPerson.Name)
-	assert.Equal(t, personToInsert.PersonType, insertedPerson.PersonType)
+	assert.Equal(t, name, *insertedPerson.Name)
+	assert.Equal(t, personToInsert.PersonType.String(), insertedPerson.PersonType.String())
 	assert.Equal(t, &email, insertedPerson.Email)
 	assert.Equal(t, &phone, insertedPerson.Phone)
 
@@ -90,8 +90,8 @@ func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
 	assert.NotNil(t, insertedPerson)
 
 	assert.NotNil(t, insertedPerson.ID)
-	assert.Equal(t, name, insertedPerson.Name)
-	assert.Equal(t, personToInsert.PersonType, insertedPerson.PersonType)
+	assert.Equal(t, name, *insertedPerson.Name)
+	assert.Equal(t, personToInsert.PersonType.String(), insertedPerson.PersonType.String())
 	assert.Nil(t, insertedPerson.Email)
 	assert.Nil(t, insertedPerson.Phone)
 
@@ -294,8 +294,8 @@ func TestGetAlLPersons_ShouldWork(t *testing.T) {
 	assert.NotNil(t, persons)
 	assert.Len(t, persons, 2)
 
-	assert.Equal(t, name1, persons[0].Name)
-	assert.Equal(t, name2, persons[1].Name)
+	assert.Equal(t, name1, *persons[0].Name)
+	assert.Equal(t, name2, *persons[1].Name)
 }
 
 func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
@@ -357,7 +357,7 @@ func TestUpdatePerson_ShouldWork(t *testing.T) {
 	assert.NotNil(t, retrievedPerson)
 
 	assert.Equal(t, id, retrievedPerson.ID)
-	assert.Equal(t, newName, retrievedPerson.Name)
+	assert.Equal(t, newName, *retrievedPerson.Name)
 	assert.Equal(t, newEmail, *retrievedPerson.Email)
 	assert.Equal(t, newPhone, *retrievedPerson.Phone)
 	assert.Equal(t, newNotes, *retrievedPerson.Notes)

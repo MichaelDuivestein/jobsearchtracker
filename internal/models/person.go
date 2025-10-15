@@ -9,12 +9,12 @@ import (
 
 type Person struct {
 	ID          uuid.UUID
-	Name        string
-	PersonType  PersonType
+	Name        *string
+	PersonType  *PersonType
 	Email       *string
 	Phone       *string
 	Notes       *string
-	CreatedDate time.Time
+	CreatedDate *time.Time
 	UpdatedDate *time.Time
 }
 
