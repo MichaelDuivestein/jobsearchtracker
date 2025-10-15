@@ -1,11 +1,32 @@
 package repositories
 
 import (
+	"errors"
+	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+// -------- Update tests: --------
+
+func TestUpdate_ShouldReturnValidationErrorIfNoCompanyFieldsToUpdate(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	updateModel := models.UpdateCompany{
+		ID: uuid.New(),
+	}
+	err := companyRepository.Update(&updateModel)
+	assert.NotNil(t, err)
+
+	var validationErr *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationErr))
+	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+}
+
+// -------- buildApplicationsCoalesceAndJoin tests: --------
 
 func TestBuildApplicationsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
@@ -16,7 +37,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtra
 
 }
 
-func TestBuildCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
@@ -39,7 +60,7 @@ func TestBuildCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(
 	assert.Equal(t, expectedCoalesce, coalesce)
 }
 
-func TestBuildCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeAll)

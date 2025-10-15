@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -13,20 +14,14 @@ import (
 // -------- CreateCompany.Validate tests: --------
 
 func TestCreateCompanyValidate_ShouldReturnNilIfCompanyIsValid(t *testing.T) {
-	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, -3)
-
 	company := CreateCompany{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Something should be here",
 		CompanyType: CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 
 	err := company.Validate()
@@ -44,24 +39,18 @@ func TestCreateCompanyValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testi
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
-	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, -3)
-
 	company := &CreateCompany{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "",
 		CompanyType: CompanyTypeRecruiter,
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("some notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err, "error should not be nil")
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
@@ -69,49 +58,36 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.T) {
-	id := uuid.New()
-	notes := "More stuff"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, -3)
-
 	company := &CreateCompany{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "A random person",
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("More stuff"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err, "error should not be nil")
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
-
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t *testing.T) {
-	id := uuid.New()
-	notes := "Noted"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-	updatedDate := time.Now().AddDate(0, 0, -3)
-
 	company := &CreateCompany{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Jan Janssen",
 		CompanyType: "Nothing",
-		Notes:       &notes,
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Notes:       testutil.ToPtr("Noted"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err, "error should not be nil")
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
@@ -119,23 +95,18 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
-	id := uuid.New()
-	notes := "some notes"
-	lastContact := time.Now().AddDate(-1, 0, 0)
-	createdDate := time.Now().AddDate(0, -5, 0)
-
 	company := &CreateCompany{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Pick one",
 		CompanyType: CompanyTypeEmployer,
-		Notes:       &notes,
+		Notes:       testutil.ToPtr("some notes"),
 		UpdatedDate: &time.Time{},
-		LastContact: &lastContact,
-		CreatedDate: &createdDate,
+		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err, "error should not be nil")
+	assert.NotNil(t, err)
 
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))

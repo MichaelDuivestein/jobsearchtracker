@@ -11,6 +11,7 @@ import (
 	"jobsearchtracker/internal/repositories"
 	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
+	"jobsearchtracker/internal/testutil/repositoryhelpers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -49,18 +50,13 @@ func setupCompanyHandler(t *testing.T) (*handlers.CompanyHandler, *repositories.
 func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
 	companyHandler, _ := setupCompanyHandler(t)
 
-	id := uuid.New()
-	notes := "Not a lot of notes for this company"
-	lastContact := time.Now().AddDate(0, 0, -1)
-
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "random company name",
 		CompanyType: requests.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Not a lot of notes for this company"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
-
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
 
@@ -69,6 +65,7 @@ func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
+	createdDateApproximation := time.Now()
 	companyHandler.CreateCompany(responseRecorder, request)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
@@ -83,15 +80,8 @@ func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
 	assert.Equal(t, requestBody.Name, companyResponse.Name)
 	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
 	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
-
-	companyResponseLastContact := companyResponse.LastContact.Format(time.RFC3339)
-	requestBodyToInsertLastContact := requestBody.LastContact.Format(time.RFC3339)
-	assert.Equal(t, requestBodyToInsertLastContact, companyResponseLastContact)
-
-	companyResponseCreatedDate := companyResponse.CreatedDate.Format(time.RFC3339)
-	now := time.Now().Format(time.RFC3339)
-	assert.Equal(t, now, companyResponseCreatedDate)
-
+	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, &companyResponse.CreatedDate)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -111,7 +101,7 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	companyHandler.CreateCompany(responseRecorder, request)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
@@ -127,10 +117,7 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 
 	assert.Nil(t, companyResponse.Notes)
 	assert.Nil(t, companyResponse.LastContact)
-
-	insertedCompanyCreatedDate := companyResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate)
-
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, &companyResponse.CreatedDate)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -144,7 +131,6 @@ func TestCreateCompany_ShouldReturnStatusConflict_IfCompanyIDIsDuplicate(t *test
 		Name:        "First Company",
 		CompanyType: requests.CompanyTypeRecruiter,
 	}
-
 	firstRequestBytes, err := json.Marshal(firstRequestBody)
 	assert.NoError(t, err)
 
@@ -189,15 +175,12 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 
 	// Insert the company:
 
-	id := uuid.New()
-	notes := "Not a lot of notes for this company"
-	lastContact := time.Now().AddDate(0, 0, -1)
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "random company name",
 		CompanyType: requests.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Not a lot of notes for this company"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
 	_, createdDateApproximation := insertCompany(t, companyHandler, requestBody)
@@ -210,7 +193,7 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": requestBody.ID.String(),
 	}
 	getRequest = mux.SetURLVars(getRequest, vars)
 
@@ -220,23 +203,17 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 	responseBodyString := responseRecorder.Body.String()
 	assert.NotEmpty(t, responseBodyString)
 
-	var getCompanyResponse responses.CompanyResponse
-	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
+	var companyResponse responses.CompanyResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&companyResponse)
 	assert.NoError(t, err)
 
-	assert.Equal(t, *requestBody.ID, getCompanyResponse.ID)
-	assert.Equal(t, requestBody.Name, getCompanyResponse.Name)
-	assert.Equal(t, requestBody.CompanyType, getCompanyResponse.CompanyType)
-	assert.Equal(t, requestBody.Notes, getCompanyResponse.Notes)
-
-	companyResponseLastContact := getCompanyResponse.LastContact.Format(time.RFC3339)
-	requestBodyToInsertLastContact := requestBody.LastContact.Format(time.RFC3339)
-	assert.Equal(t, requestBodyToInsertLastContact, companyResponseLastContact)
-
-	companyResponseCreatedDate := getCompanyResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, companyResponseCreatedDate)
-
-	assert.Nil(t, getCompanyResponse.UpdatedDate)
+	assert.Equal(t, *requestBody.ID, companyResponse.ID)
+	assert.Equal(t, requestBody.Name, companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
+	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, &companyResponse.CreatedDate)
+	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
 func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) {
@@ -262,15 +239,12 @@ func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) 
 
 	// Insert a company
 
-	id := uuid.New()
-	notes := "Not a lot of notes for this company"
-	lastContact := time.Now().AddDate(0, 0, -1)
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "random company name",
 		CompanyType: requests.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Not a lot of notes for this company"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 	insertCompany(t, companyHandler, requestBody)
 
@@ -300,15 +274,12 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 
 	// Insert a company:
 
-	id := uuid.New()
-	notes := "Notes appeared here"
-	lastContact := time.Now().AddDate(0, 1, 0)
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "CompanyName",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Notes appeared here"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
 	insertCompany(t, companyHandler, requestBody)
 
@@ -368,28 +339,21 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 
 	// Insert two companies:
 
-	firstID := uuid.New()
-	firstNotes := "Noteworthy stuff"
-	firstLastContact := time.Now().AddDate(0, 1, 0)
-
 	firstRequestBody := requests.CreateCompanyRequest{
-		ID:          &firstID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Duck Watchers",
 		CompanyType: models.CompanyTypeEmployer,
-		Notes:       &firstNotes,
-		LastContact: &firstLastContact,
+		Notes:       testutil.ToPtr("Noteworthy stuff"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
 	insertCompany(t, companyHandler, firstRequestBody)
 
-	secondID := uuid.New()
-	secondNotes := "More Noteworthy stuff"
-	secondLastContact := time.Now().AddDate(0, 1, 0)
 	secondRequestBody := requests.CreateCompanyRequest{
-		ID:          &secondID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Duck farm",
 		CompanyType: models.CompanyTypeEmployer,
-		Notes:       &secondNotes,
-		LastContact: &secondLastContact,
+		Notes:       testutil.ToPtr("More Noteworthy stuff"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
 	insertCompany(t, companyHandler, secondRequestBody)
 
@@ -420,7 +384,6 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
 	assert.Equal(t, secondRequestBody.Name, response[1].Name)
-
 }
 
 func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *testing.T) {
@@ -441,7 +404,7 @@ func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *tes
 
 	responseBodyString := responseRecorder.Body.String()
 	assert.NotEmpty(t, responseBodyString)
-	assert.Equal(t, "No people [partially] matching this name found\n", responseBodyString)
+	assert.Equal(t, "No companies [partially] matching this name found\n", responseBodyString)
 }
 
 // -------- GetAllCompanies tests: --------
@@ -451,9 +414,8 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 
 	// create 2 companies
 
-	company1Id := uuid.New()
 	request1Body := requests.CreateCompanyRequest{
-		ID:          &company1Id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "company1Name",
 		CompanyType: models.CompanyTypeConsultancy,
 		Notes:       testutil.ToPtr("First Company Notes"),
@@ -465,9 +427,8 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 	//There needs to be a minimum of 1 second between inserts.
 	time.Sleep(1000 * time.Millisecond)
 
-	company2Id := uuid.New()
 	request2Body := requests.CreateCompanyRequest{
-		ID:          &company2Id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "company2Name",
 		CompanyType: models.CompanyTypeConsultancy,
 		Notes:       testutil.ToPtr("Second Company notes"),
@@ -495,8 +456,8 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Len(t, response, 2)
 
-	assert.Equal(t, company2Id, response[0].ID)
-	assert.Equal(t, company1Id, response[1].ID)
+	assert.Equal(t, *request2Body.ID, response[0].ID)
+	assert.Equal(t, *request1Body.ID, response[1].ID)
 }
 
 func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *testing.T) {
@@ -521,7 +482,7 @@ func TestGetAllCompanies_ShouldReturnEmptyResponseIfNoCompaniesInDatabase(t *tes
 	assert.Len(t, response, 0)
 }
 
-func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsIDs(t *testing.T) {
+func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplicationsIsIDs(t *testing.T) {
 	companyHandler, applicationRepository := setupCompanyHandler(t)
 
 	// setup company
@@ -537,26 +498,24 @@ func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsI
 	// setup applications
 
 	application1ID := uuid.New()
-	application1 := models.CreateApplication{
-		ID:               testutil.ToPtr(application1ID),
-		CompanyID:        &companyId,
-		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
-		RemoteStatusType: models.RemoteStatusTypeUnknown,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	}
-	_, err := applicationRepository.Create(&application1)
-	assert.NoError(t, err)
+	repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		&application1ID,
+		&companyId,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	)
 
 	application2ID := uuid.New()
-	application2 := models.CreateApplication{
-		ID:               testutil.ToPtr(application2ID),
-		RecruiterID:      &companyId,
-		JobAdURL:         testutil.ToPtr("Application2JobAdURL"),
-		RemoteStatusType: models.RemoteStatusTypeRemote,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
-	}
-	_, err = applicationRepository.Create(&application2)
-	assert.NoError(t, err)
+	repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		&application2ID,
+		nil,
+		&companyId,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	)
 
 	// get all companies
 
@@ -606,7 +565,7 @@ func TestGetAllCompanies_ShouldReturnApplicationsWithIDsIfIncludeApplicationsIsI
 
 }
 
-func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *testing.T) {
+func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationsIfIncludeApplicationsIsAll(t *testing.T) {
 	companyHandler, applicationRepository := setupCompanyHandler(t)
 
 	// setup company
@@ -622,15 +581,14 @@ func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *t
 	// setup applications
 
 	application1ID := uuid.New()
-	application1 := models.CreateApplication{
-		ID:               testutil.ToPtr(application1ID),
-		CompanyID:        &companyId,
-		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
-		RemoteStatusType: models.RemoteStatusTypeUnknown,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
-	}
-	_, err := applicationRepository.Create(&application1)
-	assert.NoError(t, err)
+	repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		&application1ID,
+		&companyId,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	)
 
 	application2ID := uuid.New()
 	application2 := models.CreateApplication{
@@ -648,7 +606,7 @@ func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *t
 		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 	}
-	_, err = applicationRepository.Create(&application2)
+	_, err := applicationRepository.Create(&application2)
 	assert.NoError(t, err)
 
 	// get all companies
@@ -681,33 +639,24 @@ func TestGetAllCompanies_ShouldReturnApplicationsIfIncludeApplicationsIsAll(t *t
 	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
 	assert.Nil(t, (*retrievedCompany.Applications)[0].RecruiterID)
 
-	application := (*retrievedCompany.Applications)[1]
-	assert.Equal(t, application2ID, application.ID)
-	assert.Nil(t, application.CompanyID)
-	assert.Equal(t, companyId, *application.RecruiterID)
-	assert.Equal(t, "Application2JobTitle", *application.JobTitle)
-	assert.Equal(t, "Application2JobAdURL", *application.JobAdURL)
-	assert.Equal(t, "Application2Country", *application.Country)
-	assert.Equal(t, "Application2Area", *application.Area)
-	assert.Equal(t, models.RemoteStatusTypeRemote, application.RemoteStatusType.String())
-	assert.Equal(t, 1, *application.WeekdaysInOffice)
-	assert.Equal(t, 2, *application.EstimatedCycleTime)
-	assert.Equal(t, 3, *application.EstimatedCommuteTime)
-
-	applicationToInsertApplicationDate := application2.ApplicationDate.Format(time.RFC3339)
-	applicationResponseApplicationDate := application.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, applicationToInsertApplicationDate, applicationResponseApplicationDate)
-
-	applicationToInsertCreatedDate := application2.CreatedDate.Format(time.RFC3339)
-	applicationResponseCreatedDate := application.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, applicationToInsertCreatedDate, applicationResponseCreatedDate)
-
-	applicationToInsertUpdatedDate := application2.UpdatedDate.Format(time.RFC3339)
-	applicationResponseUpdatedDate := application.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, applicationToInsertUpdatedDate, applicationResponseUpdatedDate)
+	retrievedApplication2 := (*retrievedCompany.Applications)[1]
+	assert.Equal(t, application2ID, retrievedApplication2.ID)
+	assert.Nil(t, retrievedApplication2.CompanyID)
+	assert.Equal(t, companyId, *retrievedApplication2.RecruiterID)
+	assert.Equal(t, "Application2JobTitle", *retrievedApplication2.JobTitle)
+	assert.Equal(t, "Application2JobAdURL", *retrievedApplication2.JobAdURL)
+	assert.Equal(t, "Application2Country", *retrievedApplication2.Country)
+	assert.Equal(t, "Application2Area", *retrievedApplication2.Area)
+	assert.Equal(t, models.RemoteStatusTypeRemote, retrievedApplication2.RemoteStatusType.String())
+	assert.Equal(t, 1, *retrievedApplication2.WeekdaysInOffice)
+	assert.Equal(t, 2, *retrievedApplication2.EstimatedCycleTime)
+	assert.Equal(t, 3, *retrievedApplication2.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, application2.ApplicationDate, retrievedApplication2.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, application2.CreatedDate, retrievedApplication2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, application2.UpdatedDate, retrievedApplication2.UpdatedDate)
 }
 
-func TestGetAllCompanies_ShouldReturnNoApplicationsIfIncludeApplicationsIsNone(t *testing.T) {
+func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplicationsIsNone(t *testing.T) {
 	companyHandler, applicationRepository := setupCompanyHandler(t)
 
 	// setup company
@@ -723,26 +672,24 @@ func TestGetAllCompanies_ShouldReturnNoApplicationsIfIncludeApplicationsIsNone(t
 	// setup applications
 
 	application1ID := uuid.New()
-	application1 := models.CreateApplication{
-		ID:               testutil.ToPtr(application1ID),
-		CompanyID:        &companyId,
-		JobAdURL:         testutil.ToPtr("Application1JobAdURL"),
-		RemoteStatusType: models.RemoteStatusTypeUnknown,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	}
-	_, err := applicationRepository.Create(&application1)
-	assert.NoError(t, err)
+	repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		&application1ID,
+		&companyId,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	)
 
 	application2ID := uuid.New()
-	application2 := models.CreateApplication{
-		ID:               testutil.ToPtr(application2ID),
-		RecruiterID:      &companyId,
-		JobAdURL:         testutil.ToPtr("Application2JobAdURL"),
-		RemoteStatusType: models.RemoteStatusTypeRemote,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
-	}
-	_, err = applicationRepository.Create(&application2)
-	assert.NoError(t, err)
+	repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		&application2ID,
+		nil,
+		&companyId,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	)
 
 	// get all companies
 
@@ -791,16 +738,13 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 
 	// update the company
 
-	updatedName := "Updated Name"
-	var updatedCompanyType requests.CompanyType = models.CompanyTypeConsultancy
-	updatedNotes := "Updated Notes"
-	updatedLastContact := time.Now().AddDate(0, 0, -4)
+	var updatedCompanyType requests.CompanyType = requests.CompanyTypeConsultancy
 	updateBody := requests.UpdateCompanyRequest{
 		ID:          id,
-		Name:        &updatedName,
+		Name:        testutil.ToPtr("Updated Name"),
 		CompanyType: &updatedCompanyType,
-		Notes:       &updatedNotes,
-		LastContact: &updatedLastContact,
+		Notes:       testutil.ToPtr("Updated Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
 	}
 
 	requestBytes, err := json.Marshal(updateBody)
@@ -811,7 +755,7 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	companyHandler.UpdateCompany(responseRecorder, updateRequest)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
@@ -836,19 +780,12 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, getCompanyResponse.ID)
-	assert.Equal(t, updatedName, getCompanyResponse.Name)
+	assert.Equal(t, *updateBody.Name, getCompanyResponse.Name)
 	assert.Equal(t, updatedCompanyType, getCompanyResponse.CompanyType)
-	assert.Equal(t, updatedNotes, *getCompanyResponse.Notes)
-
-	companyResponseLastContact := getCompanyResponse.LastContact.Format(time.RFC3339)
-	updatedLastContactString := updatedLastContact.Format(time.RFC3339)
-	assert.Equal(t, updatedLastContactString, companyResponseLastContact)
-
-	companyResponseCreatedDate := getCompanyResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, companyResponseCreatedDate)
-
-	companyResponseUpdatedDate := getCompanyResponse.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, companyResponseUpdatedDate)
+	assert.Equal(t, *updateBody.Notes, *getCompanyResponse.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, updateBody.LastContact, getCompanyResponse.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, &getCompanyResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, getCompanyResponse.UpdatedDate)
 }
 
 func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
@@ -857,14 +794,12 @@ func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 	// create a company
 
 	id := uuid.New()
-	notes := "Notes"
-	lastContact := time.Now().AddDate(0, 0, -1)
 	createRequest := requests.CreateCompanyRequest{
 		ID:          &id,
 		Name:        "Nameless Company",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 	insertCompany(t, companyHandler, createRequest)
 
@@ -901,14 +836,12 @@ func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
 	// insert the company
 
 	id := uuid.New()
-	notes := "Noting things"
-	lastContact := time.Now().AddDate(0, 0, 0)
 	requestBody := requests.CreateCompanyRequest{
 		ID:          &id,
 		Name:        "Keeping company",
 		CompanyType: requests.CompanyTypeConsultancy,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Noting things"),
+		LastContact: testutil.ToPtr(time.Now()),
 	}
 	insertCompany(t, companyHandler, requestBody)
 
@@ -961,8 +894,10 @@ func TestDeleteCompany_ShouldReturnStatusNotFoundIfCompanyDoesNotExist(t *testin
 // -------- Test helpers: --------
 
 func insertCompany(
-	t *testing.T, companyHandler *handlers.CompanyHandler, requestBody requests.CreateCompanyRequest) (
-	*responses.CompanyResponse, *string) {
+	t *testing.T,
+	companyHandler *handlers.CompanyHandler,
+	requestBody requests.CreateCompanyRequest) (*responses.CompanyResponse, *time.Time) {
+
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
 
@@ -971,7 +906,7 @@ func insertCompany(
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	companyHandler.CreateCompany(responseRecorder, createRequest)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 

@@ -223,7 +223,7 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 			status = http.StatusInternalServerError
 			slog.Error("v1.CompanyHandler.GetCompaniesByName: "+errorMessage, "error", err)
 		} else if errors.As(err, &notFoundError) {
-			errorMessage = "No people [partially] matching this name found"
+			errorMessage = "No companies [partially] matching this name found"
 			status = http.StatusNotFound
 			slog.Info("v1.CompanyHandler.GetCompaniesByName: "+errorMessage, "error", err)
 		} else if errors.As(err, &validationErr) {

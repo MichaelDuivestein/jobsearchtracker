@@ -152,7 +152,7 @@ func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 }
 
 // -------- GetAllCompanies tests: --------
-func TestGetAllCompanies_ShouldReturnErrorIfIncludeAllCompaniesIsInvalid(t *testing.T) {
+func TestGetAllCompanies_ShouldReturnErrorIfIncludeApplicationsIsInvalid(t *testing.T) {
 	companyHandler := v1.NewCompanyHandler(nil)
 
 	request, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/all?include_applications=maybe", nil)
