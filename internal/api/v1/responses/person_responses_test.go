@@ -12,6 +12,182 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// -------- NewPersonDTO tests: --------
+
+func TestNewPersonDTO_ShouldWork(t *testing.T) {
+	var personType models.PersonType = models.PersonTypeJobContact
+
+	model := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Blah blah"),
+		PersonType:  &personType,
+		Email:       testutil.ToPtr("e@m.ai"),
+		Phone:       testutil.ToPtr("2345"),
+		Notes:       testutil.ToPtr("sdfgkljherwkl"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -1, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 27)),
+	}
+
+	personDTO, err := NewPersonDTO(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, personDTO)
+
+	assert.Equal(t, model.ID.String(), personDTO.ID.String())
+	assert.Equal(t, model.Name, personDTO.Name)
+	assert.Equal(t, model.PersonType.String(), personDTO.PersonType.String())
+	assert.Equal(t, model.Email, personDTO.Email)
+	assert.Equal(t, model.Phone, personDTO.Phone)
+	assert.Equal(t, model.Notes, personDTO.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, model.CreatedDate, personDTO.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, model.UpdatedDate, personDTO.UpdatedDate)
+}
+
+func TestNewPersonDTO_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
+	var personType models.PersonType = models.PersonTypeUnknown
+	model := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Anker"),
+		PersonType:  &personType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 3, 0)),
+	}
+
+	personDTO, err := NewPersonDTO(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, personDTO)
+
+	assert.Equal(t, model.ID.String(), personDTO.ID.String())
+	assert.Equal(t, model.Name, personDTO.Name)
+	assert.Equal(t, model.PersonType.String(), personDTO.PersonType.String())
+	assert.Nil(t, personDTO.Email)
+	assert.Nil(t, personDTO.Phone)
+	assert.Nil(t, personDTO.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, model.CreatedDate, personDTO.CreatedDate)
+	assert.Nil(t, personDTO.UpdatedDate)
+}
+
+func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
+	nilDTO, err := NewPersonDTO(nil)
+	assert.Nil(t, nilDTO)
+	assert.NotNil(t, err)
+
+	var internalServiceErr *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(t, err.Error(), "internal service error: Error building DTO: Person is nil")
+}
+
+func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *testing.T) {
+	var personTypeEmpty models.PersonType = ""
+	emptyPersonType := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Dave"),
+		PersonType:  &personTypeEmpty,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
+	}
+	nilDTO, err := NewPersonDTO(&emptyPersonType)
+	assert.Nil(t, nilDTO)
+	assert.NotNil(t, err)
+
+	var internalServiceErr *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal PersonType to external PersonType: ''",
+		err.Error())
+
+	var personTypeBlah models.PersonType = "Blah"
+	invalidPersonType := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Dave"),
+		PersonType:  &personTypeBlah,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
+	}
+	invalidDTO, err := NewPersonDTO(&invalidPersonType)
+	assert.Nil(t, invalidDTO)
+	assert.NotNil(t, err)
+
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal PersonType to external PersonType: 'Blah'",
+		err.Error())
+}
+
+// -------- NewPersonDTO tests: --------
+
+func TestNewPersonDTOs_ShouldWork(t *testing.T) {
+	var personTypeUnknown models.PersonType = models.PersonTypeUnknown
+	var personTypeCTO models.PersonType = models.PersonTypeCTO
+	personModels := []*models.Person{
+		{
+			ID:          uuid.New(),
+			Name:        testutil.ToPtr("Aaron"),
+			PersonType:  &personTypeUnknown,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		},
+		{
+			ID:          uuid.New(),
+			Name:        testutil.ToPtr("Bru"),
+			PersonType:  &personTypeCTO,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		},
+	}
+
+	personDTOs, err := NewPersonDTOs(personModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, personDTOs)
+	assert.Len(t, personDTOs, 2)
+}
+
+func TestNewPersonDTOs_ShouldReturnEmptySliceIfModelIsNil(t *testing.T) {
+	emptyDTOs, err := NewPersonDTOs(nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, emptyDTOs)
+	assert.Len(t, emptyDTOs, 0)
+}
+
+func TestNewPersonDTOs_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
+	var personModels []*models.Person
+	emptyDTOs, err := NewPersonDTOs(personModels)
+	assert.NoError(t, err)
+	assert.NotNil(t, emptyDTOs)
+	assert.Len(t, emptyDTOs, 0)
+}
+
+func TestNewPersonDTOs_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {
+	var personTypeJobAdvertiser models.PersonType = models.PersonTypeJobAdvertiser
+	var personTypeEmpty models.PersonType = ""
+
+	personModels := []*models.Person{
+		{
+			ID:          uuid.New(),
+			Name:        testutil.ToPtr("Sammy"),
+			PersonType:  &personTypeJobAdvertiser,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
+		},
+		{
+			ID:          uuid.New(),
+			Name:        testutil.ToPtr("Britt"),
+			PersonType:  &personTypeEmpty,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
+		},
+	}
+
+	persons, err := NewPersonDTOs(personModels)
+	assert.Nil(t, persons)
+	assert.NotNil(t, err)
+
+	var internalServiceErr *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceErr))
+
+	assert.Equal(
+		t,
+		"internal service error: Error converting internal PersonType to external PersonType: ''",
+		err.Error())
+}
+
 // -------- NewPersonResponse tests: --------
 
 func TestNewPersonResponse_ShouldWork(t *testing.T) {
@@ -76,45 +252,6 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testi
 	assert.Equal(t, err.Error(), "internal service error: Error building response: Person is nil")
 }
 
-func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *testing.T) {
-	var personTypeEmpty models.PersonType = ""
-	emptyPersonType := models.Person{
-		ID:          uuid.New(),
-		Name:        testutil.ToPtr("Dave"),
-		PersonType:  &personTypeEmpty,
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
-	}
-	emptyResponse, err := NewPersonResponse(&emptyPersonType)
-	assert.Nil(t, emptyResponse)
-	assert.NotNil(t, err)
-
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(
-		t,
-		"internal service error: Error converting internal PersonType to external PersonType: ''",
-		err.Error())
-
-	var personTypeBlah models.PersonType = "Blah"
-	invalidPersonType := models.Person{
-		ID:          uuid.New(),
-		Name:        testutil.ToPtr("Dave"),
-		PersonType:  &personTypeBlah,
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
-	}
-	invalidResponse, err := NewPersonResponse(&invalidPersonType)
-	assert.Nil(t, invalidResponse)
-	assert.NotNil(t, err)
-
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(
-		t,
-		"internal service error: Error converting internal PersonType to external PersonType: 'Blah'",
-		err.Error())
-}
-
 // -------- NewPersonsResponse tests: --------
 
 func TestNewPersonsResponse_ShouldWork(t *testing.T) {
@@ -154,36 +291,4 @@ func TestNewPersonsResponse_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
 	assert.Len(t, response, 0)
-}
-
-func TestNewPersonsResponse_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {
-	var personTypeJobAdvertiser models.PersonType = models.PersonTypeJobAdvertiser
-	var personTypeEmpty models.PersonType = ""
-
-	personModels := []*models.Person{
-		{
-			ID:          uuid.New(),
-			Name:        testutil.ToPtr("Sammy"),
-			PersonType:  &personTypeJobAdvertiser,
-			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
-		},
-		{
-			ID:          uuid.New(),
-			Name:        testutil.ToPtr("Britt"),
-			PersonType:  &personTypeEmpty,
-			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
-		},
-	}
-
-	persons, err := NewPersonsResponse(personModels)
-	assert.Nil(t, persons)
-	assert.NotNil(t, err)
-
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(
-		t,
-		"internal service error: Error converting internal PersonType to external PersonType: ''",
-		err.Error())
 }
