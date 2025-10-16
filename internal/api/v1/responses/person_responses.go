@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type PersonResponse struct {
+type PersonDTO struct {
 	ID          uuid.UUID            `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
 	Name        *string              `json:"name,omitempty" example:"CompanyName AB" extensions:"x-order=1"`
 	PersonType  *requests.PersonType `json:"person_type,omitempty" example:"internalRecruiter" extensions:"x-order=2"`
@@ -21,11 +21,11 @@ type PersonResponse struct {
 	UpdatedDate *time.Time           `json:"updated_date,omitempty" example:"2025-12-31T23:59Z"  extensions:"x-order=7"`
 }
 
-// NewPersonResponse can return InternalServerError
-func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
+// NewPersonDTO can return InternalServerError
+func NewPersonDTO(personModel *models.Person) (*PersonDTO, error) {
 	if personModel == nil {
-		slog.Error("responses.NewPersonResponse: Person is nil")
-		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
+		slog.Error("responses.NewPersonDTO: Person is nil")
+		return nil, internalErrors.NewInternalServiceError("Error building DTO: Person is nil")
 	}
 
 	var personType *requests.PersonType = nil
@@ -37,7 +37,7 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		personType = &nonNilPersonType
 	}
 
-	personResponse := PersonResponse{
+	personDTO := PersonDTO{
 		ID:          personModel.ID,
 		Name:        personModel.Name,
 		PersonType:  personType,
@@ -46,6 +46,45 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		Notes:       personModel.Notes,
 		CreatedDate: personModel.CreatedDate,
 		UpdatedDate: personModel.UpdatedDate,
+	}
+
+	return &personDTO, nil
+}
+
+func NewPersonDTOs(persons []*models.Person) ([]*PersonDTO, error) {
+	if len(persons) == 0 {
+		return []*PersonDTO{}, nil
+	}
+
+	var personDTOs = make([]*PersonDTO, len(persons))
+	for index := range persons {
+		personDTO, err := NewPersonDTO(persons[index])
+		if err != nil {
+			return nil, err
+		}
+		personDTOs[index] = personDTO
+	}
+	return personDTOs, nil
+}
+
+type PersonResponse struct {
+	PersonDTO
+}
+
+// NewPersonResponse can return InternalServerError
+func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
+	if personModel == nil {
+		slog.Error("responses.NewPersonResponse: Person is nil")
+		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
+	}
+
+	personDTO, err := NewPersonDTO(personModel)
+	if err != nil {
+		return nil, err
+	}
+
+	personResponse := PersonResponse{
+		PersonDTO: *personDTO,
 	}
 
 	return &personResponse, nil

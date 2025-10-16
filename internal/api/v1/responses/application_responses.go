@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// ApplicationResponse represents a job application
-type ApplicationResponse struct {
+// ApplicationDTO represents an application
+type ApplicationDTO struct {
 	ID                   uuid.UUID                  `json:"id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=00"`
 	CompanyID            *uuid.UUID                 `json:"company_id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=01"`
 	RecruiterID          *uuid.UUID                 `json:"recruiter_id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=02"`
@@ -28,11 +28,11 @@ type ApplicationResponse struct {
 	UpdatedDate          *time.Time                 `json:"updated_date" example:"2025-12-31T23:59Z" extensions:"x-order=13"`
 }
 
-// NewApplicationResponse can return InternalServerError
-func NewApplicationResponse(applicationModel *models.Application) (*ApplicationResponse, error) {
+// NewApplicationDTO can return InternalServerError
+func NewApplicationDTO(applicationModel *models.Application) (*ApplicationDTO, error) {
 	if applicationModel == nil {
-		slog.Error("responses.NewApplicationResponse: Application is nil")
-		return nil, internalErrors.NewInternalServiceError("Error building response: Application is nil")
+		slog.Error("responses.NewApplicationDTO: Application is nil")
+		return nil, internalErrors.NewInternalServiceError("Error building DTO: Application is nil")
 	}
 
 	var remoteStatusType *requests.RemoteStatusType = nil
@@ -44,7 +44,7 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		remoteStatusType = &nonNilRemoteStatusType
 	}
 
-	applicationResponse := ApplicationResponse{
+	applicationDTO := ApplicationDTO{
 		ID:                   applicationModel.ID,
 		CompanyID:            applicationModel.CompanyID,
 		RecruiterID:          applicationModel.RecruiterID,
@@ -61,6 +61,47 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		UpdatedDate:          applicationModel.UpdatedDate,
 	}
 
+	return &applicationDTO, nil
+}
+
+// NewApplicationDTOs can return InternalServerError
+func NewApplicationDTOs(applications []*models.Application) ([]*ApplicationDTO, error) {
+	if len(applications) == 0 {
+		return []*ApplicationDTO{}, nil
+	}
+
+	var applicationDTOs = make([]*ApplicationDTO, len(applications))
+	for index := range applications {
+		dto, err := NewApplicationDTO(applications[index])
+		if err != nil {
+			return nil, err
+		}
+		applicationDTOs[index] = dto
+	}
+	return applicationDTOs, nil
+}
+
+// ApplicationResponse represents an application with additional metadata
+type ApplicationResponse struct {
+	ApplicationDTO
+}
+
+// NewApplicationResponse can return InternalServerError
+func NewApplicationResponse(applicationModel *models.Application) (*ApplicationResponse, error) {
+	if applicationModel == nil {
+		slog.Error("responses.NewApplicationResponse: Application is nil")
+		return nil, internalErrors.NewInternalServiceError("Error building response: Application is nil")
+	}
+
+	applicationDTO, err := NewApplicationDTO(applicationModel)
+	if err != nil {
+		return nil, err
+	}
+
+	applicationResponse := ApplicationResponse{
+		ApplicationDTO: *applicationDTO,
+	}
+
 	return &applicationResponse, nil
 }
 
@@ -70,13 +111,13 @@ func NewApplicationsResponse(applications []*models.Application) ([]*Application
 		return []*ApplicationResponse{}, nil
 	}
 
-	var applicationResponses = make([]*ApplicationResponse, len(applications))
+	var applicationsResponse = make([]*ApplicationResponse, len(applications))
 	for index := range applications {
 		applicationResponse, err := NewApplicationResponse(applications[index])
 		if err != nil {
 			return nil, err
 		}
-		applicationResponses[index] = applicationResponse
+		applicationsResponse[index] = applicationResponse
 	}
-	return applicationResponses, nil
+	return applicationsResponse, nil
 }
