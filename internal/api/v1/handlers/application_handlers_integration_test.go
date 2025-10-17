@@ -9,7 +9,9 @@ import (
 	configPackage "jobsearchtracker/internal/config"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/repositories"
+	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
+	"jobsearchtracker/internal/testutil/repositoryhelpers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -48,34 +50,23 @@ func setupApplicationHandler(t *testing.T) (*handlers.ApplicationHandler, *repos
 func TestCreateApplication_ShouldInsertAndReturnApplication(t *testing.T) {
 	applicationHandler, companyRepository := setupApplicationHandler(t)
 
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
-
-	id := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
-	weekdaysInOffice := 9
-	estimatedCycleTime := 8
-	estimatedCommuteTime := 7
-	applicationDate := time.Now().AddDate(0, 0, -9)
+	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	requestBody := requests.CreateApplicationRequest{
-		ID:                   &id,
-		CompanyID:            companyID,
-		RecruiterID:          recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            testutil.ToPtr(company.ID),
+		RecruiterID:          testutil.ToPtr(recruiter.ID),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
 		RemoteStatusType:     requests.RemoteStatusTypeHybrid,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		WeekdaysInOffice:     testutil.ToPtr(9),
+		EstimatedCycleTime:   testutil.ToPtr(8),
+		EstimatedCommuteTime: testutil.ToPtr(7),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -9)),
 	}
-
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
 
@@ -84,7 +75,7 @@ func TestCreateApplication_ShouldInsertAndReturnApplication(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	applicationHandler.CreateApplication(responseRecorder, request)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
@@ -96,24 +87,18 @@ func TestCreateApplication_ShouldInsertAndReturnApplication(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, applicationResponse.ID)
-	assert.Equal(t, *requestBody.CompanyID, *applicationResponse.CompanyID)
-	assert.Equal(t, *requestBody.RecruiterID, *applicationResponse.RecruiterID)
-	assert.Equal(t, *requestBody.JobTitle, *applicationResponse.JobTitle)
-	assert.Equal(t, *requestBody.JobAdURL, *applicationResponse.JobAdURL)
-	assert.Equal(t, *requestBody.Country, *applicationResponse.Country)
-	assert.Equal(t, *requestBody.Area, *applicationResponse.Area)
-	assert.Equal(t, requests.RemoteStatusTypeHybrid, applicationResponse.RemoteStatusType.String())
-	assert.Equal(t, *requestBody.WeekdaysInOffice, *applicationResponse.WeekdaysInOffice)
-	assert.Equal(t, *requestBody.EstimatedCycleTime, *applicationResponse.EstimatedCycleTime)
-	assert.Equal(t, *requestBody.EstimatedCommuteTime, *applicationResponse.EstimatedCommuteTime)
-
-	applicationToInsertApplicationDate := applicationDate.Format(time.RFC3339)
-	applicationResponseApplicationDate := applicationResponse.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, applicationToInsertApplicationDate, applicationResponseApplicationDate)
-
-	applicationResponseCreatedDate := applicationResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, applicationResponseCreatedDate)
-
+	assert.Equal(t, requestBody.CompanyID, applicationResponse.CompanyID)
+	assert.Equal(t, requestBody.RecruiterID, applicationResponse.RecruiterID)
+	assert.Equal(t, requestBody.JobTitle, applicationResponse.JobTitle)
+	assert.Equal(t, requestBody.JobAdURL, applicationResponse.JobAdURL)
+	assert.Equal(t, requestBody.Country, applicationResponse.Country)
+	assert.Equal(t, requestBody.Area, applicationResponse.Area)
+	assert.Equal(t, requestBody.RemoteStatusType.String(), applicationResponse.RemoteStatusType.String())
+	assert.Equal(t, requestBody.WeekdaysInOffice, applicationResponse.WeekdaysInOffice)
+	assert.Equal(t, requestBody.EstimatedCycleTime, applicationResponse.EstimatedCycleTime)
+	assert.Equal(t, requestBody.EstimatedCommuteTime, applicationResponse.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, requestBody.ApplicationDate, applicationResponse.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, applicationResponse.CreatedDate)
 	assert.Nil(t, applicationResponse.UpdatedDate)
 }
 
@@ -121,16 +106,14 @@ func TestCreateApplication_ShouldReturnStatusConflictIfApplicationIDIsDuplicate(
 	applicationHandler, companyRepository := setupApplicationHandler(t)
 
 	applicationID := uuid.New()
-	recruiterID := createCompany(t, companyRepository)
-	firstJobTitle := "First Job Title"
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	firstRequestBody := requests.CreateApplicationRequest{
 		ID:               &applicationID,
-		RecruiterID:      recruiterID,
-		JobTitle:         &firstJobTitle,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("First Job Title"),
 		RemoteStatusType: requests.RemoteStatusTypeHybrid,
 	}
-
 	firstRequestBytes, err := json.Marshal(firstRequestBody)
 	assert.NoError(t, err)
 
@@ -149,14 +132,12 @@ func TestCreateApplication_ShouldReturnStatusConflictIfApplicationIDIsDuplicate(
 
 	assert.Equal(t, applicationID, firstApplicationResponse.ID)
 
-	secondJobTitle := "Second Job Title"
 	secondRequestBody := requests.CreateApplicationRequest{
 		ID:               &applicationID,
-		RecruiterID:      recruiterID,
-		JobTitle:         &secondJobTitle,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("Second Job Title"),
 		RemoteStatusType: models.RemoteStatusTypeRemote,
 	}
-
 	secondRequestBytes, err := json.Marshal(secondRequestBody)
 	assert.NoError(t, err)
 
@@ -176,18 +157,13 @@ func TestCreateApplication_ShouldReturnStatusConflictIfApplicationIDIsDuplicate(
 func TestCreateApplication_ShouldReturnErrorIfCompanyIDDoesNotExistInCompany(t *testing.T) {
 	applicationHandler, companyRepository := setupApplicationHandler(t)
 
-	applicationID := uuid.New()
-	companyID := uuid.New()
-	recruiterID := createCompany(t, companyRepository)
-	jobTitle := "Job Title"
-
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	requestBody := requests.CreateApplicationRequest{
-		ID:          &applicationID,
-		CompanyID:   &companyID,
-		RecruiterID: recruiterID,
-		JobTitle:    &jobTitle,
+		ID:          testutil.ToPtr(uuid.New()),
+		CompanyID:   testutil.ToPtr(uuid.New()),
+		RecruiterID: testutil.ToPtr(recruiter.ID),
+		JobTitle:    testutil.ToPtr("Job Title"),
 	}
-
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
 
@@ -209,18 +185,13 @@ func TestCreateApplication_ShouldReturnErrorIfCompanyIDDoesNotExistInCompany(t *
 func TestCreateApplication_ShouldReturnErrorIfRecruiterIDDoesNotExistInCompany(t *testing.T) {
 	applicationHandler, companyRepository := setupApplicationHandler(t)
 
-	applicationID := uuid.New()
-	companyID := createCompany(t, companyRepository)
-	recruiterID := uuid.New()
-	jobTitle := "Job Title"
-
+	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	requestBody := requests.CreateApplicationRequest{
-		ID:          &applicationID,
-		CompanyID:   companyID,
-		RecruiterID: &recruiterID,
-		JobTitle:    &jobTitle,
+		ID:          testutil.ToPtr(uuid.New()),
+		CompanyID:   testutil.ToPtr(company.ID),
+		RecruiterID: testutil.ToPtr(uuid.New()),
+		JobTitle:    testutil.ToPtr("Job Title"),
 	}
-
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
 
@@ -247,29 +218,22 @@ func TestGetApplicationById_ShouldReturnApplication(t *testing.T) {
 	// Insert an application:
 
 	id := uuid.New()
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
-	jobTitle := "Job Title"
-	jobAdURL := "job Ad URL"
-	country := "country"
-	area := "area"
-	weekdaysInOffice := 6
-	estimatedCycleTime := 7
-	estimatedCommuteTime := 8
-	applicationDate := time.Now().AddDate(0, 0, -20)
+	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
+
 	requestBody := requests.CreateApplicationRequest{
 		ID:                   &id,
-		CompanyID:            companyID,
-		RecruiterID:          recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
-		RemoteStatusType:     requests.RemoteStatusTypeOffice,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		CompanyID:            testutil.ToPtr(company.ID),
+		RecruiterID:          testutil.ToPtr(recruiter.ID),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("country"),
+		Area:                 testutil.ToPtr("area"),
+		RemoteStatusType:     requests.RemoteStatusTypeHybrid,
+		WeekdaysInOffice:     testutil.ToPtr(6),
+		EstimatedCycleTime:   testutil.ToPtr(7),
+		EstimatedCommuteTime: testutil.ToPtr(8),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -20)),
 	}
 	_, createdDateApproximation := insertApplication(t, applicationHandler, requestBody)
 
@@ -302,18 +266,12 @@ func TestGetApplicationById_ShouldReturnApplication(t *testing.T) {
 	assert.Equal(t, *requestBody.JobAdURL, *response.JobAdURL)
 	assert.Equal(t, *requestBody.Country, *response.Country)
 	assert.Equal(t, *requestBody.Area, *response.Area)
-	assert.Equal(t, requests.RemoteStatusTypeOffice, response.RemoteStatusType.String())
+	assert.Equal(t, requestBody.RemoteStatusType.String(), response.RemoteStatusType.String())
 	assert.Equal(t, *requestBody.WeekdaysInOffice, *response.WeekdaysInOffice)
 	assert.Equal(t, *requestBody.EstimatedCycleTime, *response.EstimatedCycleTime)
 	assert.Equal(t, *requestBody.EstimatedCommuteTime, *response.EstimatedCommuteTime)
-
-	applicationToInsertApplicationDate := applicationDate.Format(time.RFC3339)
-	responseApplicationDate := response.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, applicationToInsertApplicationDate, responseApplicationDate)
-
-	responseCreatedDate := response.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, responseCreatedDate)
-
+	testutil.AssertEqualFormattedDateTimes(t, requestBody.ApplicationDate, response.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, response.CreatedDate)
 	assert.Nil(t, response.UpdatedDate)
 }
 
@@ -344,14 +302,12 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplication(t *testing.T) {
 
 	// Insert an application:
 
-	id := uuid.New()
-	recruiterID := createCompany(t, companyRepository)
-	jobTitle := "Software Engineer"
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	requestBody := requests.CreateApplicationRequest{
-		ID:               &id,
-		RecruiterID:      recruiterID,
-		JobTitle:         &jobTitle,
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("Software Engineer"),
 		RemoteStatusType: requests.RemoteStatusTypeOffice,
 	}
 	insertApplication(t, applicationHandler, requestBody)
@@ -412,25 +368,21 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
 
 	// insert two applications:
 
-	firstID := uuid.New()
-	firstCompanyID := createCompany(t, companyRepository)
-	firstJobTitle := "GoLang Software Engineer"
+	firstCompany := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	firstRequestBody := requests.CreateApplicationRequest{
-		ID:               &firstID,
-		CompanyID:        firstCompanyID,
-		JobTitle:         &firstJobTitle,
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        testutil.ToPtr(firstCompany.ID),
+		JobTitle:         testutil.ToPtr("GoLang Software Engineer"),
 		RemoteStatusType: requests.RemoteStatusTypeHybrid,
 	}
 	insertApplication(t, applicationHandler, firstRequestBody)
 
-	secondID := uuid.New()
-	secondRecruiterID := createCompany(t, companyRepository)
-	secondJobTitle := "Backend Developer (golang)"
+	secondRecruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	secondRequestBody := requests.CreateApplicationRequest{
-		ID:               &secondID,
-		RecruiterID:      secondRecruiterID,
-		JobTitle:         &secondJobTitle,
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      testutil.ToPtr(secondRecruiter.ID),
+		JobTitle:         testutil.ToPtr("Backend Developer (golang)"),
 		RemoteStatusType: requests.RemoteStatusTypeUnknown,
 	}
 	insertApplication(t, applicationHandler, secondRequestBody)
@@ -493,14 +445,13 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 
 	// insert applications
 
-	recruiterID := createCompany(t, companyRepository)
-	jobTitle := "Software Engineer"
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	firstID := uuid.New()
 	firstRequestBody := requests.CreateApplicationRequest{
 		ID:               &firstID,
-		RecruiterID:      recruiterID,
-		JobTitle:         &jobTitle,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("Software Engineer 1"),
 		RemoteStatusType: requests.RemoteStatusTypeOffice,
 	}
 	insertApplication(t, applicationHandler, firstRequestBody)
@@ -508,8 +459,8 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 	secondID := uuid.New()
 	secondRequestBody := requests.CreateApplicationRequest{
 		ID:               &secondID,
-		RecruiterID:      recruiterID,
-		JobTitle:         &jobTitle,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("Software Engineer 2"),
 		RemoteStatusType: requests.RemoteStatusTypeRemote,
 	}
 	insertApplication(t, applicationHandler, secondRequestBody)
@@ -517,8 +468,8 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 	thirdID := uuid.New()
 	thirdRequestBody := requests.CreateApplicationRequest{
 		ID:               &thirdID,
-		RecruiterID:      recruiterID,
-		JobTitle:         &jobTitle,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobTitle:         testutil.ToPtr("Software Engineer 3"),
 		RemoteStatusType: requests.RemoteStatusTypeHybrid,
 	}
 	insertApplication(t, applicationHandler, thirdRequestBody)
@@ -576,62 +527,45 @@ func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
 
 	// create an application
 
-	companyID := createCompany(t, companyRepository)
-	recruiterID := createCompany(t, companyRepository)
+	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	id := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
-	weekdaysInOffice := 9
-	estimatedCycleTime := 8
-	estimatedCommuteTime := 7
-	applicationDate := time.Now().AddDate(0, 0, 6)
 	createRequest := requests.CreateApplicationRequest{
 		ID:                   &id,
-		CompanyID:            companyID,
-		RecruiterID:          recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
+		CompanyID:            testutil.ToPtr(company.ID),
+		RecruiterID:          testutil.ToPtr(recruiter.ID),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
 		RemoteStatusType:     requests.RemoteStatusTypeHybrid,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		WeekdaysInOffice:     testutil.ToPtr(9),
+		EstimatedCycleTime:   testutil.ToPtr(8),
+		EstimatedCommuteTime: testutil.ToPtr(7),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 6)),
 	}
 	_, createdDateApproximation := insertApplication(t, applicationHandler, createRequest)
 
 	// update the application
 
-	newCompanyID := createCompany(t, companyRepository)
-	newRecruiterID := createCompany(t, companyRepository)
+	newCompany := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
+	newRecruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
-	newJobTitle := "New Job Title"
-	newJobAdURL := "New Job Ad URL"
-	newCountry := "New Country"
-	newArea := "New Area"
 	var newRemoteStatusType requests.RemoteStatusType = requests.RemoteStatusTypeOffice
-	newWeekdaysInOffice := 1
-	newEstimatedCycleTime := 2
-	newEstimatedCommuteTime := 3
-	newApplicationDate := time.Now().AddDate(0, 0, 40)
-
 	updateBody := requests.UpdateApplicationRequest{
 		ID:                   id,
-		CompanyID:            newCompanyID,
-		RecruiterID:          newRecruiterID,
-		JobTitle:             &newJobTitle,
-		JobAdURL:             &newJobAdURL,
-		Country:              &newCountry,
-		Area:                 &newArea,
+		CompanyID:            testutil.ToPtr(newCompany.ID),
+		RecruiterID:          testutil.ToPtr(newRecruiter.ID),
+		JobTitle:             testutil.ToPtr("New Job Title"),
+		JobAdURL:             testutil.ToPtr("New Job Ad URL"),
+		Country:              testutil.ToPtr("New Country"),
+		Area:                 testutil.ToPtr("New Area"),
 		RemoteStatusType:     &newRemoteStatusType,
-		WeekdaysInOffice:     &newWeekdaysInOffice,
-		EstimatedCycleTime:   &newEstimatedCycleTime,
-		EstimatedCommuteTime: &newEstimatedCommuteTime,
-		ApplicationDate:      &newApplicationDate,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 40)),
 	}
 
 	requestBytes, err := json.Marshal(updateBody)
@@ -642,7 +576,7 @@ func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	applicationHandler.UpdateApplication(responseRecorder, updateRequest)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
@@ -667,40 +601,33 @@ func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, getApplicationResponse.ID)
-	assert.Equal(t, newCompanyID.String(), getApplicationResponse.CompanyID.String())
-	assert.Equal(t, newRecruiterID.String(), getApplicationResponse.RecruiterID.String())
-	assert.Equal(t, newJobTitle, *getApplicationResponse.JobTitle)
-	assert.Equal(t, newJobAdURL, *getApplicationResponse.JobAdURL)
-	assert.Equal(t, newCountry, *getApplicationResponse.Country)
-	assert.Equal(t, newArea, *getApplicationResponse.Area)
-	assert.Equal(t, newRemoteStatusType, *getApplicationResponse.RemoteStatusType)
-	assert.Equal(t, newWeekdaysInOffice, *getApplicationResponse.WeekdaysInOffice)
-	assert.Equal(t, newEstimatedCycleTime, *getApplicationResponse.EstimatedCycleTime)
-	assert.Equal(t, newEstimatedCommuteTime, *getApplicationResponse.EstimatedCommuteTime)
-
-	retrievedApplicationDate := getApplicationResponse.ApplicationDate.Format(time.RFC3339)
-	expectedApplicationDate := newApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, expectedApplicationDate, retrievedApplicationDate)
-
-	applicationResponseCreatedDate := getApplicationResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, applicationResponseCreatedDate)
-
-	applicationResponseUpdatedDate := getApplicationResponse.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, applicationResponseUpdatedDate)
+	assert.Equal(t, newCompany.ID, *getApplicationResponse.CompanyID)
+	assert.Equal(t, newRecruiter.ID, *getApplicationResponse.RecruiterID)
+	assert.Equal(t, updateBody.JobTitle, getApplicationResponse.JobTitle)
+	assert.Equal(t, updateBody.JobAdURL, getApplicationResponse.JobAdURL)
+	assert.Equal(t, updateBody.Country, getApplicationResponse.Country)
+	assert.Equal(t, updateBody.Area, getApplicationResponse.Area)
+	assert.Equal(t, updateBody.RemoteStatusType.String(), getApplicationResponse.RemoteStatusType.String())
+	assert.Equal(t, updateBody.WeekdaysInOffice, getApplicationResponse.WeekdaysInOffice)
+	assert.Equal(t, updateBody.EstimatedCycleTime, getApplicationResponse.EstimatedCycleTime)
+	assert.Equal(t, updateBody.EstimatedCommuteTime, getApplicationResponse.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, updateBody.ApplicationDate, getApplicationResponse.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, getApplicationResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, getApplicationResponse.UpdatedDate)
 }
 
 func TestUpdateApplication_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 	applicationHandler, companyRepository := setupApplicationHandler(t)
 
 	// create an application
+
 	id := uuid.New()
-	recruiterID := createCompany(t, companyRepository)
-	jobAdURL := "Job Ad URL"
+	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
 	createRequest := requests.CreateApplicationRequest{
 		ID:               &id,
-		RecruiterID:      recruiterID,
-		JobAdURL:         &jobAdURL,
+		RecruiterID:      testutil.ToPtr(recruiter.ID),
+		JobAdURL:         testutil.ToPtr("Job Ad URL"),
 		RemoteStatusType: requests.RemoteStatusTypeOffice,
 	}
 	insertApplication(t, applicationHandler, createRequest)
@@ -738,12 +665,11 @@ func TestDeleteApplication_ShouldDeleteApplication(t *testing.T) {
 	// insert an application
 
 	id := uuid.New()
-	companyID := createCompany(t, companyRepository)
-	jobTitle := "JobTitle"
+	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	requestBody := requests.CreateApplicationRequest{
 		ID:               &id,
-		CompanyID:        companyID,
-		JobTitle:         &jobTitle,
+		CompanyID:        testutil.ToPtr(company.ID),
+		JobTitle:         testutil.ToPtr("JobTitle"),
 		RemoteStatusType: requests.RemoteStatusTypeHybrid,
 	}
 
@@ -796,24 +722,9 @@ func TestDeleteApplication_ShouldReturnStatusNotFoundIfApplicationDoesNotExist(t
 
 // -------- Test helpers: --------
 
-func createCompany(t *testing.T, companyRepository *repositories.CompanyRepository) *uuid.UUID {
-
-	id := uuid.New()
-	company := models.CreateCompany{
-		ID:          &id,
-		Name:        "Example Company Name",
-		CompanyType: models.CompanyTypeEmployer,
-	}
-
-	insertedCompany, err := companyRepository.Create(&company)
-	assert.NoError(t, err)
-
-	return &insertedCompany.ID
-}
-
 func insertApplication(
 	t *testing.T, applicationHandler *handlers.ApplicationHandler, requestBody requests.CreateApplicationRequest) (
-	*responses.ApplicationResponse, *string) {
+	*responses.ApplicationResponse, *time.Time) {
 
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
@@ -823,7 +734,7 @@ func insertApplication(
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	applicationHandler.CreateApplication(responseRecorder, createRequest)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 

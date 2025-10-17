@@ -29,11 +29,10 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilApplication(t *testin
 func TestCreateApplication_ShouldReturnValidationErrorOnNilCompanyIDAndRecruiterID(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
-	jobTitle := "JobTitle"
 	application := models.CreateApplication{
 		CompanyID:        nil,
 		RecruiterID:      nil,
-		JobTitle:         &jobTitle,
+		JobTitle:         testutil.ToPtr("JobTitle"),
 		RemoteStatusType: models.RemoteStatusTypeRemote,
 	}
 
@@ -83,15 +82,13 @@ func TestCreateApplication_ShouldReturnValidationErrorOnEmptyCompanyIDAndEmptyJo
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			companyID := uuid.New()
 
 			application := models.CreateApplication{
-				CompanyID:        &companyID,
+				CompanyID:        testutil.ToPtr(uuid.New()),
 				JobTitle:         test.jobTitle,
 				JobAdURL:         test.jobAdURL,
 				RemoteStatusType: models.RemoteStatusTypeRemote,
 			}
-
 			nilApplication, err := applicationService.CreateApplication(&application)
 			assert.Nil(t, nilApplication)
 			assert.NotNil(t, err)
@@ -106,15 +103,12 @@ func TestCreateApplication_ShouldReturnValidationErrorOnEmptyCompanyIDAndEmptyJo
 func TestCreateApplication_ShouldReturnValidationErrorOnInvalidApplicationType(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
-	recruiterID := uuid.New()
-	jobAdURL := "jobAdURL"
 	var remoteStatusType models.RemoteStatusType = "Not Valid"
 	application := models.CreateApplication{
-		RecruiterID:      &recruiterID,
-		JobAdURL:         &jobAdURL,
+		RecruiterID:      testutil.ToPtr(uuid.New()),
+		JobAdURL:         testutil.ToPtr("jobAdURL"),
 		RemoteStatusType: remoteStatusType,
 	}
-
 	nilApplication, err := applicationService.CreateApplication(&application)
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
@@ -127,18 +121,16 @@ func TestCreateApplication_ShouldReturnValidationErrorOnInvalidApplicationType(t
 func TestCreateApplication_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
-	companyID := uuid.New()
-	jobTitle := "JobTitle"
 	application := models.CreateApplication{
-		CompanyID:        &companyID,
-		JobTitle:         &jobTitle,
+		CompanyID:        testutil.ToPtr(uuid.New()),
+		JobTitle:         testutil.ToPtr("JobTitle"),
 		RemoteStatusType: models.RemoteStatusTypeRemote,
 		UpdatedDate:      &time.Time{},
 	}
-
 	nilApplication, err := applicationService.CreateApplication(&application)
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
+
 	var validationErr *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(
@@ -176,8 +168,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameI
 func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsEmpty(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
-	jobTitle := ""
-	nilApplication, err := applicationService.GetApplicationsByJobTitle(&jobTitle)
+	nilApplication, err := applicationService.GetApplicationsByJobTitle(testutil.ToPtr(""))
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
 	var validationErr *internalErrors.ValidationError
@@ -200,9 +191,8 @@ func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationIsNil(t *test
 func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationContainsNothingToUpdate(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
-	id := uuid.New()
 	application := models.UpdateApplication{
-		ID: id,
+		ID: uuid.New(),
 	}
 
 	err := applicationService.UpdateApplication(&application)
