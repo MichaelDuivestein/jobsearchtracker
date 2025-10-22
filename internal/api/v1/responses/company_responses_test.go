@@ -15,13 +15,14 @@ import (
 // -------- NewCompanyDTO tests: --------
 
 func TestNewCompanyDTO_ShouldWork(t *testing.T) {
+	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:          uuid.New(),
-		Name:        "Randomized Company",
-		CompanyType: models.CompanyTypeEmployer,
+		Name:        testutil.ToPtr("Randomized Company"),
+		CompanyType: &companyType,
 		Notes:       testutil.ToPtr("some notes"),
 		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
-		CreatedDate: time.Now().AddDate(0, 0, -4),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 	}
 
@@ -39,11 +40,12 @@ func TestNewCompanyDTO_ShouldWork(t *testing.T) {
 }
 
 func TestNewCompanyDTO_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
+	var companyType models.CompanyType = models.CompanyTypeConsultancy
 	model := models.Company{
 		ID:          uuid.New(),
-		Name:        "Yet another company name",
-		CompanyType: models.CompanyTypeConsultancy,
-		CreatedDate: time.Now().AddDate(0, 0, 1),
+		Name:        testutil.ToPtr("Yet another company name"),
+		CompanyType: &companyType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 	}
 
 	dto, err := NewCompanyDTO(&model)
@@ -71,14 +73,15 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T
 }
 
 func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t *testing.T) {
-	emptyCompanyType := models.Company{
+	var emptyCompanyType models.CompanyType = ""
+	emptyCompanyTypeModel := models.Company{
 		ID:          uuid.New(),
-		Name:        "Randomized Company",
-		CompanyType: models.CompanyType(""),
-		CreatedDate: time.Now().AddDate(0, 0, 3),
+		Name:        testutil.ToPtr("Randomized Company"),
+		CompanyType: &emptyCompanyType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 
-	nilDTO, err := NewCompanyDTO(&emptyCompanyType)
+	nilDTO, err := NewCompanyDTO(&emptyCompanyTypeModel)
 	assert.Nil(t, nilDTO)
 	assert.NotNil(t, err)
 
@@ -89,14 +92,15 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 		"internal service error: Error converting internal CompanyType to external CompanyType: ''",
 		internalServiceErr.Error())
 
-	badCompanyType := models.Company{
+	var badCompanyType models.CompanyType = "BadData"
+	badCompanyTypeModel := models.Company{
 		ID:          uuid.New(),
-		Name:        "Randomized Company",
-		CompanyType: models.CompanyType("BadData"),
-		CreatedDate: time.Now().AddDate(0, 0, 3),
+		Name:        testutil.ToPtr("Randomized Company"),
+		CompanyType: &badCompanyType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 
-	badDataResponse, err := NewCompanyResponse(&badCompanyType)
+	badDataResponse, err := NewCompanyResponse(&badCompanyTypeModel)
 	assert.Nil(t, badDataResponse)
 	assert.NotNil(t, err)
 
@@ -110,18 +114,20 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 // -------- NewCompaniesDTO tests: --------
 
 func TestNewCompaniesDTO_ShouldWork(t *testing.T) {
+	var companyTypeOne models.CompanyType = models.CompanyTypeConsultancy
+	var companyTypeTwo models.CompanyType = models.CompanyTypeEmployer
 	companyModels := []*models.Company{
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyOne",
-			CompanyType: models.CompanyTypeConsultancy,
-			CreatedDate: time.Now().AddDate(0, 0, -1),
+			Name:        testutil.ToPtr("CompanyOne"),
+			CompanyType: &companyTypeOne,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 		},
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyTwo",
-			CompanyType: models.CompanyTypeEmployer,
-			CreatedDate: time.Now().AddDate(0, 0, -2),
+			Name:        testutil.ToPtr("CompanyTwo"),
+			CompanyType: &companyTypeTwo,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 		},
 	}
 
@@ -147,18 +153,20 @@ func TestNewCompaniesDTO_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 }
 
 func TestNewCompaniesDTO_ShouldReturnInternalServiceErrorIfOneCompanyTypeIsInvalid(t *testing.T) {
+	var companyTypeOne models.CompanyType = models.CompanyTypeEmployer
+	var emptyCompanyType models.CompanyType = ""
 	companyModels := []*models.Company{
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyOne",
-			CompanyType: models.CompanyTypeEmployer,
-			CreatedDate: time.Now().AddDate(0, 0, 0),
+			Name:        testutil.ToPtr("CompanyOne"),
+			CompanyType: &companyTypeOne,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
 		},
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyTwo",
-			CompanyType: "",
-			CreatedDate: time.Now().AddDate(0, 0, 0),
+			Name:        testutil.ToPtr("CompanyTwo"),
+			CompanyType: &emptyCompanyType,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
 		},
 	}
 
@@ -177,13 +185,14 @@ func TestNewCompaniesDTO_ShouldReturnInternalServiceErrorIfOneCompanyTypeIsInval
 // -------- NewCompanyResponse tests: --------
 
 func TestNewCompanyResponse_ShouldWork(t *testing.T) {
+	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:          uuid.New(),
-		Name:        "Randomized Company",
-		CompanyType: models.CompanyTypeEmployer,
+		Name:        testutil.ToPtr("Randomized Company"),
+		CompanyType: &companyType,
 		Notes:       testutil.ToPtr("some notes"),
 		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
-		CreatedDate: time.Now().AddDate(0, 0, -4),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 	}
 
@@ -240,14 +249,15 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 		&application2,
 	}
 
+	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:           companyId,
-		Name:         "Randomized Company",
-		CompanyType:  models.CompanyTypeEmployer,
+		Name:         testutil.ToPtr("Randomized Company"),
+		CompanyType:  &companyType,
 		Notes:        testutil.ToPtr("some notes"),
 		LastContact:  testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 		Applications: &applications,
-		CreatedDate:  time.Now().AddDate(0, 0, -4),
+		CreatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
 		UpdatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 	}
 
@@ -308,11 +318,12 @@ func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
 		&person2,
 	}
 
+	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:          companyID,
-		Name:        "CompanyName",
-		CompanyType: models.CompanyTypeEmployer,
-		CreatedDate: time.Now().AddDate(0, 0, 4),
+		Name:        testutil.ToPtr("CompanyName"),
+		CompanyType: &companyType,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
 		Persons:     &persons,
 	}
 
@@ -393,13 +404,14 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 		&person2,
 	}
 
+	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:           companyId,
-		Name:         "Randomized Company",
-		CompanyType:  models.CompanyTypeEmployer,
+		Name:         testutil.ToPtr("Randomized Company"),
+		CompanyType:  &companyType,
 		Notes:        testutil.ToPtr("some notes"),
 		LastContact:  testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
-		CreatedDate:  time.Now().AddDate(0, 0, -4),
+		CreatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
 		UpdatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 		Applications: &applications,
 		Persons:      &persons,
@@ -435,18 +447,20 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 // -------- NewCompaniesResponse tests: --------
 
 func TestNewCompaniesResponse_ShouldWork(t *testing.T) {
+	var companyTypeOne models.CompanyType = models.CompanyTypeConsultancy
+	var companyTypeTwo models.CompanyType = models.CompanyTypeEmployer
 	companyModels := []*models.Company{
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyOne",
-			CompanyType: models.CompanyTypeConsultancy,
-			CreatedDate: time.Now().AddDate(0, 0, -1),
+			Name:        testutil.ToPtr("CompanyOne"),
+			CompanyType: &companyTypeOne,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 		},
 		{
 			ID:          uuid.New(),
-			Name:        "CompanyTwo",
-			CompanyType: models.CompanyTypeEmployer,
-			CreatedDate: time.Now().AddDate(0, 0, -2),
+			Name:        testutil.ToPtr("CompanyTwo"),
+			CompanyType: &companyTypeTwo,
+			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 		},
 	}
 

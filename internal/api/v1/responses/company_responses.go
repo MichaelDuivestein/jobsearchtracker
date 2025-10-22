@@ -12,13 +12,13 @@ import (
 
 // CompanyDTO represents a company
 type CompanyDTO struct {
-	ID          uuid.UUID            `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
-	Name        string               `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
-	CompanyType requests.CompanyType `json:"company_type" example:"employer" extensions:"x-order=2"`
-	Notes       *string              `json:"notes" example:"Notes go here" extensions:"x-order=3"`
-	LastContact *time.Time           `json:"last_contact" example:"2025-12-31T23:59Z"  extensions:"x-order=4"`
-	CreatedDate time.Time            `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=5"`
-	UpdatedDate *time.Time           `json:"updated_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
+	ID          uuid.UUID             `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	Name        *string               `json:"name" example:"CompanyName AB" extensions:"x-order=1"`
+	CompanyType *requests.CompanyType `json:"company_type" example:"employer" extensions:"x-order=2"`
+	Notes       *string               `json:"notes" example:"Notes go here" extensions:"x-order=3"`
+	LastContact *time.Time            `json:"last_contact" example:"2025-12-31T23:59Z"  extensions:"x-order=4"`
+	CreatedDate *time.Time            `json:"created_date" example:"2025-12-31T23:59Z"  extensions:"x-order=5"`
+	UpdatedDate *time.Time            `json:"updated_date" example:"2025-12-31T23:59Z"  extensions:"x-order=6"`
 }
 
 // NewCompanyDTO can return InternalServiceError
@@ -28,10 +28,14 @@ func NewCompanyDTO(companyModel *models.Company) (*CompanyDTO, error) {
 		return nil, internalErrors.NewInternalServiceError("Error building DTO: Company is nil")
 	}
 
-	// can return InternalServerError
-	companyType, err := requests.NewCompanyType(&companyModel.CompanyType)
-	if err != nil {
-		return nil, err
+	var companyType *requests.CompanyType = nil
+	if companyModel.CompanyType != nil {
+		// can return InternalServerError
+		nonNilCompanyType, err := requests.NewCompanyType(companyModel.CompanyType)
+		if err != nil {
+			return nil, err
+		}
+		companyType = &nonNilCompanyType
 	}
 
 	companyDTO := CompanyDTO{

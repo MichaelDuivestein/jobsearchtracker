@@ -152,6 +152,7 @@ func TestGetCompaniesByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 }
 
 // -------- GetAllCompanies tests: --------
+
 func TestGetAllCompanies_ShouldReturnErrorIfIncludeApplicationsIsInvalid(t *testing.T) {
 	companyHandler := v1.NewCompanyHandler(nil)
 

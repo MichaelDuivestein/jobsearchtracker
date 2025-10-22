@@ -75,11 +75,11 @@ func TestCreateCompany_ShouldWork(t *testing.T) {
 	assert.NotNil(t, insertedCompany)
 
 	assert.Equal(t, *companyToInsert.ID, id)
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Equal(t, companyToInsert.Notes, insertedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.LastContact, companyToInsert.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedCompany.CreatedDate, companyToInsert.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.CreatedDate, companyToInsert.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.UpdatedDate, companyToInsert.UpdatedDate)
 }
 
@@ -96,11 +96,11 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, &insertedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -118,11 +118,11 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, &insertedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -142,11 +142,11 @@ func TestCreateCompany_ShouldSetUnsetLastContactToCreatedDate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, companyToInsert.Name, insertedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *insertedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, &insertedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -173,11 +173,11 @@ func TestGetCompanyById_ShouldWork(t *testing.T) {
 	assert.NotNil(t, retrievedCompany)
 
 	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID)
-	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *retrievedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), retrievedCompany.CompanyType.String())
 	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, retrievedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, &retrievedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, retrievedCompany.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, retrievedCompany.UpdatedDate)
 }
 
@@ -380,27 +380,27 @@ func TestGetAllCompanies_ShouldWork(t *testing.T) {
 	assert.Len(t, results, 3)
 
 	assert.Equal(t, company3Id, results[0].ID)
-	assert.Equal(t, "company3Name", results[0].Name)
-	assert.Equal(t, company3ToInsert.CompanyType, results[0].CompanyType)
+	assert.Equal(t, company3ToInsert.Name, *results[0].Name)
+	assert.Equal(t, company3ToInsert.CompanyType.String(), results[0].CompanyType.String())
 	assert.Nil(t, results[0].Notes)
 	assert.Nil(t, results[0].LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, company3ToInsert.CreatedDate, &insertedCompany3.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company3ToInsert.CreatedDate, insertedCompany3.CreatedDate)
 	assert.Nil(t, results[0].UpdatedDate)
 
 	assert.Equal(t, company2Id, results[1].ID)
-	assert.Equal(t, "company2Name", results[1].Name)
-	assert.Equal(t, company2ToInsert.CompanyType, results[1].CompanyType)
-	assert.Equal(t, "company 2 notes", *results[1].Notes)
+	assert.Equal(t, company2ToInsert.Name, *results[1].Name)
+	assert.Equal(t, company2ToInsert.CompanyType.String(), results[1].CompanyType.String())
+	assert.Equal(t, company2ToInsert.Notes, results[1].Notes)
 	testutil.AssertEqualFormattedDateTimes(t, company2ToInsert.LastContact, insertedCompany2.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, company2ToInsert.CreatedDate, &insertedCompany2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company2ToInsert.CreatedDate, insertedCompany2.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, company2ToInsert.UpdatedDate, insertedCompany2.UpdatedDate)
 
 	assert.Equal(t, company1Id, results[2].ID)
-	assert.Equal(t, "company1Name", results[2].Name)
-	assert.Equal(t, company1ToInsert.CompanyType, results[2].CompanyType)
-	assert.Equal(t, "company 1 notes", *results[2].Notes)
+	assert.Equal(t, company1ToInsert.Name, *results[2].Name)
+	assert.Equal(t, company1ToInsert.CompanyType.String(), results[2].CompanyType.String())
+	assert.Equal(t, company1ToInsert.Notes, results[2].Notes)
 	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.LastContact, insertedCompany1.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.CreatedDate, &insertedCompany1.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.CreatedDate, insertedCompany1.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.UpdatedDate, insertedCompany1.UpdatedDate)
 }
 
@@ -1240,10 +1240,10 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 
 	assert.NotNil(t, retrievedCompany)
 	assert.Equal(t, id, retrievedCompany.ID)
-	assert.Equal(t, *updateModel.Name, retrievedCompany.Name)
-	assert.Equal(t, companyTypeToUpdate, retrievedCompany.CompanyType)
+	assert.Equal(t, updateModel.Name, retrievedCompany.Name)
+	assert.Equal(t, companyTypeToUpdate.String(), retrievedCompany.CompanyType.String())
 	testutil.AssertEqualFormattedDateTimes(t, updateModel.LastContact, retrievedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedCompany.CreatedDate, &retrievedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.CreatedDate, retrievedCompany.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedCompany.UpdatedDate)
 }
 
