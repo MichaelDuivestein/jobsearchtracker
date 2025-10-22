@@ -396,7 +396,7 @@ func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
 		testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
 	)
 
-	results, err := applicationRepository.GetAll()
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -423,9 +423,321 @@ func TestGetAll_ShouldReturnAllApplications(t *testing.T) {
 func TestGetAll_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
 	applicationRepository, _ := setupApplicationRepository(t)
 
-	applications, err := applicationRepository.GetAll()
+	applications, err := applicationRepository.GetAll(models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.Nil(t, applications)
+}
+
+func TestGetAll_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// Create Application
+
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            companyToInsert.ID,
+		RecruiterID:          recruiterID,
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.CompanyID)
+	assert.Equal(t, recruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, *applicationToInsert.JobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, *applicationToInsert.Country, *retrievedApplication.Country)
+	assert.Equal(t, *applicationToInsert.Area, *retrievedApplication.Area)
+	assert.Equal(t, applicationToInsert.RemoteStatusType, *retrievedApplication.RemoteStatusType)
+	assert.Equal(t, *applicationToInsert.WeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, *applicationToInsert.EstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, *applicationToInsert.EstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.ApplicationDate, retrievedApplication.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.CreatedDate, retrievedApplication.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.UpdatedDate, retrievedApplication.UpdatedDate)
+	assert.NotNil(t, retrievedApplication.Company)
+
+	assert.Equal(t, retrievedApplication.Company.ID, *retrievedApplication.CompanyID)
+	assert.Equal(t, companyToInsert.Name, *retrievedApplication.Company.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), retrievedApplication.Company.CompanyType.String())
+	assert.Equal(t, companyToInsert.Notes, retrievedApplication.Company.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, retrievedApplication.Company.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, retrievedApplication.Company.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, retrievedApplication.Company.UpdatedDate)
+}
+
+func TestGetAll_ShouldReturnNoCompanyIfIncludeCompanyIsSetToAllAndThereIsNoCompany(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// Create Application
+
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            nil,
+		RecruiterID:          recruiterID,
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.CompanyID)
+	assert.Equal(t, recruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, *applicationToInsert.JobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, *applicationToInsert.Country, *retrievedApplication.Country)
+	assert.Equal(t, *applicationToInsert.Area, *retrievedApplication.Area)
+	assert.Equal(t, applicationToInsert.RemoteStatusType, *retrievedApplication.RemoteStatusType)
+	assert.Equal(t, *applicationToInsert.WeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, *applicationToInsert.EstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, *applicationToInsert.EstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.ApplicationDate, retrievedApplication.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.CreatedDate, retrievedApplication.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.UpdatedDate, retrievedApplication.UpdatedDate)
+	assert.Nil(t, retrievedApplication.Company)
+}
+
+func TestGetAll_ShouldReturnCompanyWithOnlyIDIfIncludeCompanyIsSetToIDs(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// Create Application
+
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            companyToInsert.ID,
+		RecruiterID:          recruiterID,
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.CompanyID)
+	assert.Equal(t, recruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, *applicationToInsert.JobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, *applicationToInsert.Country, *retrievedApplication.Country)
+	assert.Equal(t, *applicationToInsert.Area, *retrievedApplication.Area)
+	assert.Equal(t, applicationToInsert.RemoteStatusType, *retrievedApplication.RemoteStatusType)
+	assert.Equal(t, *applicationToInsert.WeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, *applicationToInsert.EstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, *applicationToInsert.EstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.ApplicationDate, retrievedApplication.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.CreatedDate, retrievedApplication.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.UpdatedDate, retrievedApplication.UpdatedDate)
+	assert.NotNil(t, retrievedApplication.Company)
+
+	assert.Equal(t, retrievedApplication.Company.ID, *retrievedApplication.CompanyID)
+	assert.Nil(t, retrievedApplication.Company.Name)
+	assert.Nil(t, retrievedApplication.Company.CompanyType)
+	assert.Nil(t, retrievedApplication.Company.Notes)
+	assert.Nil(t, retrievedApplication.Company.LastContact)
+	assert.Nil(t, retrievedApplication.Company.CreatedDate)
+	assert.Nil(t, retrievedApplication.Company.UpdatedDate)
+}
+
+func TestGetAll_ShouldReturnNoCompanyIncludeCompanyIsSetToIDsAndThereIsNoCompany(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// Create Application
+
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            nil,
+		RecruiterID:          recruiterID,
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+	}
+	insertedApplication, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.CompanyID)
+	assert.Equal(t, recruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, *applicationToInsert.JobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, *applicationToInsert.Country, *retrievedApplication.Country)
+	assert.Equal(t, *applicationToInsert.Area, *retrievedApplication.Area)
+	assert.Equal(t, applicationToInsert.RemoteStatusType, *retrievedApplication.RemoteStatusType)
+	assert.Equal(t, *applicationToInsert.WeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, *applicationToInsert.EstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, *applicationToInsert.EstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.ApplicationDate, retrievedApplication.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.CreatedDate, retrievedApplication.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.UpdatedDate, retrievedApplication.UpdatedDate)
+	assert.Nil(t, retrievedApplication.Company)
+}
+
+func TestGetAll_ShouldReturnNoCompanyIfIncludeCompanyIsSetToNone(t *testing.T) {
+	applicationRepository, companyRepository := setupApplicationRepository(t)
+
+	// Create Application
+
+	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            companyToInsert.ID,
+		RecruiterID:          recruiterID,
+		JobTitle:             testutil.ToPtr("Job Title1"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL1"),
+		Country:              testutil.ToPtr("Some Country1"),
+		Area:                 testutil.ToPtr("Some Area1"),
+		RemoteStatusType:     models.RemoteStatusTypeUnknown,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
+	}
+	insertedApplication1, err := applicationRepository.Create(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication1)
+
+	// get all applications
+
+	results, err := applicationRepository.GetAll(models.IncludeExtraDataTypeNone)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.CompanyID)
+	assert.Equal(t, recruiterID, retrievedApplication.RecruiterID)
+	assert.Equal(t, *applicationToInsert.JobAdURL, *retrievedApplication.JobAdURL)
+	assert.Equal(t, *applicationToInsert.Country, *retrievedApplication.Country)
+	assert.Equal(t, *applicationToInsert.Area, *retrievedApplication.Area)
+	assert.Equal(t, applicationToInsert.RemoteStatusType, *retrievedApplication.RemoteStatusType)
+	assert.Equal(t, *applicationToInsert.WeekdaysInOffice, *retrievedApplication.WeekdaysInOffice)
+	assert.Equal(t, *applicationToInsert.EstimatedCycleTime, *retrievedApplication.EstimatedCycleTime)
+	assert.Equal(t, *applicationToInsert.EstimatedCommuteTime, *retrievedApplication.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.ApplicationDate, retrievedApplication.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.CreatedDate, retrievedApplication.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, applicationToInsert.UpdatedDate, retrievedApplication.UpdatedDate)
+	assert.Nil(t, retrievedApplication.Company)
 }
 
 // -------- Update tests: --------
@@ -437,6 +749,7 @@ func TestUpdate_ShouldUpdateApplication(t *testing.T) {
 	recruiterID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
 
 	// create an application
+
 	id := uuid.New()
 	jobTitle := "Old Job Title"
 	jobAdURL := "Old Job Ad URL"

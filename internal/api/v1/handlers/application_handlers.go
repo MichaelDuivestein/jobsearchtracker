@@ -276,13 +276,31 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 //
 // @Summary Get all applications
 // @Description Get all `application`s
+// @Description - include_company=all: Returns associated `company` with all fields
+// @Description - include_company=ids: Returns associated `company` with only `id`. Note: this will also return the `company_id` in the main response, resulting in duplicated data.
+// @Description - include_company=none: No associated `company` included (default). Note: this will still return the `company_id` in the main response.
 // @Tags application
 // @Produce json
 // @Success 200 {array} responses.ApplicationResponse
 // @Router /v1/application/get/all [get]
-func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, _ *http.Request) {
+func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+
+	includeCompany, err := GetExtraDataTypeParam(query.Get("include_company"))
+	if err != nil {
+		slog.Error("v1.applicationHandler.GetAllApplications: Could not parse include_company param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_company. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	applications, err := applicationHandler.applicationService.GetAllApplications()
+	applications, err := applicationHandler.applicationService.GetAllApplications(*includeCompany)
 	if err != nil {
 		errorMessage := "Internal service error while getting all applications"
 		status := http.StatusInternalServerError
