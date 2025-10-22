@@ -320,6 +320,66 @@ func TestNewApplicationResponse_ShouldHandleCompany(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, model.Company.UpdatedDate, response.Company.UpdatedDate)
 }
 
+func TestNewApplicationResponse_ShouldHandleRecruiter(t *testing.T) {
+	var companyType models.CompanyType = models.CompanyTypeEmployer
+	recruiter := models.Company{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Recruiter Name"),
+		CompanyType: &companyType,
+		Notes:       testutil.ToPtr("Recruiter Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 6)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 8)),
+	}
+
+	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
+	model := models.Application{
+		ID:                   uuid.New(),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Job Country"),
+		Area:                 testutil.ToPtr("Job Area"),
+		RemoteStatusType:     &remoteStatusType,
+		WeekdaysInOffice:     testutil.ToPtr(2),
+		EstimatedCycleTime:   testutil.ToPtr(30),
+		EstimatedCommuteTime: testutil.ToPtr(40),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		Recruiter:            &recruiter,
+	}
+
+	response, err := NewApplicationResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID, response.ID)
+	assert.Equal(t, model.CompanyID, response.CompanyID)
+	assert.Equal(t, model.RecruiterID, response.RecruiterID)
+	assert.Equal(t, model.JobTitle, response.JobTitle)
+	assert.Equal(t, model.JobAdURL, response.JobAdURL)
+	assert.Equal(t, model.Country, response.Country)
+	assert.Equal(t, model.Area, response.Area)
+	assert.Equal(t, model.RemoteStatusType.String(), response.RemoteStatusType.String())
+	assert.Equal(t, model.WeekdaysInOffice, response.WeekdaysInOffice)
+	assert.Equal(t, model.EstimatedCycleTime, response.EstimatedCycleTime)
+	assert.Equal(t, model.EstimatedCommuteTime, response.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, model.ApplicationDate, response.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, model.CreatedDate, response.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, model.UpdatedDate, response.UpdatedDate)
+	assert.NotNil(t, response.Recruiter)
+
+	assert.Equal(t, recruiter.ID, response.Recruiter.ID)
+	assert.Equal(t, recruiter.Name, response.Recruiter.Name)
+	assert.Equal(t, recruiter.CompanyType.String(), response.Recruiter.CompanyType.String())
+	assert.Equal(t, recruiter.Notes, response.Recruiter.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, model.Recruiter.LastContact, response.Recruiter.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, model.Recruiter.CreatedDate, response.Recruiter.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, model.Recruiter.UpdatedDate, response.Recruiter.UpdatedDate)
+}
+
 // -------- NewApplicationsResponse tests: --------
 
 func TestNewApplicationsResponseShouldWork(t *testing.T) {

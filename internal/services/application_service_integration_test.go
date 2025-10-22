@@ -344,7 +344,10 @@ func TestGetAlLApplications_ShouldWork(t *testing.T) {
 
 	// getAll
 
-	applications, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeNone)
+	applications, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 	assert.NotNil(t, applications)
 	assert.Len(t, applications, 2)
@@ -371,7 +374,10 @@ func TestGetAlLApplications_ShouldWork(t *testing.T) {
 func TestGetAlLApplications_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
 	applicationService, _ := setupApplicationService(t)
 
-	applications, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeNone)
+	applications, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 	assert.Nil(t, applications)
 }
@@ -417,7 +423,10 @@ func TestGetAllApplications_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *tes
 
 	// get all applications
 
-	results, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeAll)
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -477,7 +486,10 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToAllAndTh
 
 	// get all applications
 
-	results, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeAll)
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -541,7 +553,10 @@ func TestGetAllApplications_ShouldReturnCompanyWithOnlyIDIfIncludeCompanyIsSetTo
 
 	// get all applications
 
-	results, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeIDs)
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -601,7 +616,10 @@ func TestGetAllApplications_ShouldReturnNoCompanyIncludeCompanyIsSetToIDsAndTher
 
 	// get all applications
 
-	results, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeIDs)
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -665,7 +683,10 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToNone(t *
 
 	// get all applications
 
-	results, err := applicationService.GetAllApplications(models.IncludeExtraDataTypeNone)
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)

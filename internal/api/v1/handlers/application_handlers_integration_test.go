@@ -770,6 +770,349 @@ func TestGetAllApplications_ShouldReturnApplicationsWithCompanyIfIncludeCompanyI
 	assert.Nil(t, response[0].Company)
 }
 
+func TestGetAllApplications_ShouldReturnApplicationsWithRecruiterIfIncludeRecruiterIsAll(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	recruiterToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&recruiterToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      recruiterToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all?include_recruiter=all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+	assert.NotNil(t, response[0].Recruiter)
+
+	assert.Equal(t, *recruiterToInsert.ID, response[0].Recruiter.ID)
+	assert.Equal(t, recruiterToInsert.Name, *response[0].Recruiter.Name)
+	assert.Equal(t, recruiterToInsert.CompanyType.String(), response[0].Recruiter.CompanyType.String())
+	assert.Equal(t, recruiterToInsert.Notes, response[0].Recruiter.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.LastContact, response[0].Recruiter.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.CreatedDate, response[0].Recruiter.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.UpdatedDate, response[0].Recruiter.UpdatedDate)
+}
+
+func TestGetAllApplications_ShouldReturnApplicationsWithNoRecruiterIfIncludeRecruiterIsAllAndThereIsNoRecruiter(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        companyToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all?include_recruiter=all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+	assert.Nil(t, response[0].Recruiter)
+}
+
+func TestGetAllApplications_ShouldReturnApplicationsWithRecruiterIfIncludeRecruiterIsIDs(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	recruiterToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&recruiterToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      recruiterToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all?include_recruiter=ids", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+	assert.NotNil(t, response[0].Recruiter)
+
+	assert.Equal(t, *recruiterToInsert.ID, response[0].Recruiter.ID)
+	assert.Nil(t, response[0].Recruiter.Name)
+	assert.Nil(t, response[0].Recruiter.CompanyType)
+	assert.Nil(t, response[0].Recruiter.Notes)
+	assert.Nil(t, response[0].Recruiter.LastContact)
+	assert.Nil(t, response[0].Recruiter.CreatedDate)
+	assert.Nil(t, response[0].Recruiter.UpdatedDate)
+}
+
+func TestGetAllApplications_ShouldReturnApplicationsWithNoCompanyIfIncludeRecruiterIsIDsAndThereIsNoRecruiter(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        companyToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all?include_recruiter=ids", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+	assert.Nil(t, response[0].Recruiter)
+}
+
+func TestGetAllApplications_ShouldReturnApplicationsWithNoRecruiterIfIncludeRecruiterIsNone(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	recruiterToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&recruiterToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      recruiterToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/application/get/all?include_recruiter=none", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+	assert.Nil(t, response[0].Recruiter)
+}
+
+func TestGetAllApplications_ShouldReturnApplicationsWithCompanyAndRecruiterIfIncludeCompanyIsAllAndIncludeRecruiterIsAll(t *testing.T) {
+	applicationHandler, companyRepository := setupApplicationHandler(t)
+
+	// insert application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 9)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 10)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 11)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	recruiterToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 13)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 14)),
+	}
+	_, err = companyRepository.Create(&recruiterToInsert)
+	assert.NoError(t, err)
+
+	applicationRequest := requests.CreateApplicationRequest{
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        companyToInsert.ID,
+		RecruiterID:      recruiterToInsert.ID,
+		JobTitle:         testutil.ToPtr("JobTitle"),
+		RemoteStatusType: requests.RemoteStatusTypeOffice,
+	}
+	insertApplication(t, applicationHandler, applicationRequest)
+
+	// GetAllApplications:
+
+	getRequest, err := http.NewRequest(
+		http.MethodGet,
+		"/api/v1/application/get/all?include_company=all&include_recruiter=all",
+		nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.ApplicationResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	assert.Equal(t, *applicationRequest.ID, response[0].ID)
+
+	assert.NotNil(t, response[0].Company)
+	assert.Equal(t, *companyToInsert.ID, response[0].Company.ID)
+	assert.Equal(t, companyToInsert.Name, *response[0].Company.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), response[0].Company.CompanyType.String())
+	assert.Equal(t, companyToInsert.Notes, response[0].Company.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, response[0].Company.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, response[0].Company.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, response[0].Company.UpdatedDate)
+
+	assert.NotNil(t, response[0].Recruiter)
+	assert.Equal(t, *recruiterToInsert.ID, response[0].Recruiter.ID)
+	assert.Equal(t, recruiterToInsert.Name, *response[0].Recruiter.Name)
+	assert.Equal(t, recruiterToInsert.CompanyType.String(), response[0].Recruiter.CompanyType.String())
+	assert.Equal(t, recruiterToInsert.Notes, response[0].Recruiter.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.LastContact, response[0].Recruiter.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.CreatedDate, response[0].Recruiter.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, recruiterToInsert.UpdatedDate, response[0].Recruiter.UpdatedDate)
+}
+
 // -------- UpdateApplication tests: --------
 
 func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
