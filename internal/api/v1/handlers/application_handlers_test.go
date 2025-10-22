@@ -159,6 +159,26 @@ func TestGetApplicationsByJobTitle_ShouldReturnErrorIfNameIsEmpty(t *testing.T) 
 	assert.Equal(t, "job title is empty\n", responseBodyString)
 }
 
+// -------- GetAllApplications tests: --------
+
+func TestGetAllApplications_ShouldReturnErrorIfIncludeCompanyIsInvalid(t *testing.T) {
+	applicationHandler := v1.NewApplicationHandler(nil)
+
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/application/get/all?include_company=names", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_company. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdateApplication tests: --------
 
 func TestUpdateApplication_ShouldRespondWithBadRequestStatus(t *testing.T) {

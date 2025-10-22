@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
@@ -30,7 +32,7 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 		"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
 		"RETURNING id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
 		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date"
+		"updated_date, null "
 
 	var applicationID uuid.UUID
 	if application.ID != nil {
@@ -85,6 +87,12 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 		} else if err.Error() == "constraint failed: CHECK constraint failed: job_title_job_url_not_null (275)" {
 			slog.Error("application_repository.Create: CHECK constraint failed: job_title_job_url_not_null")
 			return nil, internalErrors.NewValidationError(nil, "JobTitle and JobAdURL cannot both be empty")
+		} else if err.Error() == "constraint failed: UNIQUE constraint failed: application.id (1555)" {
+			slog.Info(
+				"application_repository.createApplication: UNIQUE constraint failed",
+				"ID", applicationID.String())
+			return nil, internalErrors.NewConflictError(
+				"ID already exists in database: '" + applicationID.String() + "'")
 		} else if err.Error() == "constraint failed: FOREIGN KEY constraint failed (787)" {
 			// TODO: Use foreign key constraint names (in 0003_add_application.up.sql) once modernc.org/sqlite
 			// supports it.
@@ -106,7 +114,7 @@ func (repository *ApplicationRepository) GetById(id *uuid.UUID) (*models.Applica
 
 	sqlSelect := "SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
 		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date " +
+		"updated_date, null " +
 		"FROM application " +
 		"WHERE id = ?"
 
@@ -134,7 +142,7 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 
 	sqlSelect := "SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
 		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date " +
+		"updated_date, null " +
 		"FROM application " +
 		"WHERE job_title LIKE ? " +
 		"ORDER BY updated_Date DESC"
@@ -174,13 +182,23 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 }
 
 // GetAll can return InternalServiceError
-func (repository *ApplicationRepository) GetAll() ([]*models.Application, error) {
-	sqlSelect :=
-		"SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
-			"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-			"updated_date " +
-			"FROM application " +
-			"ORDER BY created_date DESC"
+func (repository *ApplicationRepository) GetAll(
+	includeCompany models.IncludeExtraDataType) ([]*models.Application, error) {
+
+	sqlSelect := `
+        SELECT a.id, a.company_id, a.recruiter_id, a.job_title, a.job_ad_url, a.country, a.area, a.remote_status_type, 
+            a.weekdays_in_office, a.estimated_cycle_time, a.estimated_commute_time, a.application_date, a.created_date, 
+            a.updated_date, %s
+        FROM application a %s
+        ORDER BY a.created_date DESC
+        `
+	companyCoalesceString := "null \n"
+	companyJoinString := ""
+	if includeCompany != models.IncludeExtraDataTypeNone {
+		companyCoalesceString, companyJoinString = repository.buildCompanyCoalesceAndJoin(includeCompany)
+	}
+
+	sqlSelect = fmt.Sprintf(sqlSelect, companyCoalesceString, companyJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -363,7 +381,7 @@ func (repository *ApplicationRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Application, error) {
 
 	var result models.Application
-	var applicationDate, createdDate, updatedDate sql.NullString
+	var applicationDate, createdDate, updatedDate, companyString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -380,22 +398,10 @@ func (repository *ApplicationRepository) mapRow(
 		&applicationDate,
 		&createdDate,
 		&updatedDate,
+		&companyString,
 	)
 
 	if err != nil {
-		if err.Error() == "constraint failed: UNIQUE constraint failed: application.id (1555)" {
-			var IDString string
-			if ID != nil {
-				IDString = ID.String()
-			} else {
-				IDString = "[not set]"
-			}
-			slog.Info(
-				"application_repository.createApplication: UNIQUE constraint failed",
-				"ID", IDString)
-			return nil, internalErrors.NewConflictError(
-				"ID already exists in database: '" + IDString + "'")
-		}
 		return nil, err
 	}
 
@@ -433,5 +439,47 @@ func (repository *ApplicationRepository) mapRow(
 		result.UpdatedDate = &timestamp
 	}
 
+	if companyString.Valid {
+		var company *models.Company
+		if err := json.NewDecoder(strings.NewReader(companyString.String)).Decode(&company); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing company: " + err.Error())
+		}
+		if company != nil {
+			result.Company = company
+		}
+	}
+
 	return &result, nil
+}
+
+func (repository *ApplicationRepository) buildCompanyCoalesceAndJoin(
+	includeCompany models.IncludeExtraDataType) (string, string) {
+
+	if includeCompany == models.IncludeExtraDataTypeNone {
+		return "null \n", ""
+	}
+
+	coalesceString := `
+        CASE 
+             WHEN c.id IS NOT NULL THEN JSON_OBJECT(
+                'ID', c.id%s
+            )
+            ELSE NULL
+        END as company`
+
+	allColumns := ""
+	if includeCompany == models.IncludeExtraDataTypeAll {
+		allColumns = `,
+                'Name', c.name, 
+                'CompanyType', c.company_type,  
+                'Notes', c.notes, 
+                'LastContact', c.last_contact, 
+                'CreatedDate', c.created_date, 
+                'UpdatedDate', c.updated_date`
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString := "\n        LEFT JOIN company c ON (a.company_id = c.id)"
+
+	return coalesceString, joinString
 }

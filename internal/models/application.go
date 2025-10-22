@@ -22,6 +22,7 @@ type Application struct {
 	ApplicationDate      *time.Time
 	CreatedDate          *time.Time
 	UpdatedDate          *time.Time
+	Company              *Company
 }
 
 type CreateApplication struct {
