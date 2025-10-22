@@ -93,11 +93,11 @@ func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, companyResponse.ID)
-	assert.Equal(t, requestBody.Name, companyResponse.Name)
-	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
+	assert.Equal(t, requestBody.Name, *companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType.String(), companyResponse.CompanyType.String())
 	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, &companyResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, companyResponse.CreatedDate)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -128,12 +128,12 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 	err = json.NewDecoder(responseRecorder.Body).Decode(&companyResponse)
 	assert.NoError(t, err)
 
-	assert.Equal(t, requestBody.Name, companyResponse.Name)
-	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
+	assert.Equal(t, requestBody.Name, *companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType.String(), companyResponse.CompanyType.String())
 
 	assert.Nil(t, companyResponse.Notes)
 	assert.Nil(t, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, &companyResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, companyResponse.CreatedDate)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -224,11 +224,11 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, *requestBody.ID, companyResponse.ID)
-	assert.Equal(t, requestBody.Name, companyResponse.Name)
-	assert.Equal(t, requestBody.CompanyType, companyResponse.CompanyType)
+	assert.Equal(t, requestBody.Name, *companyResponse.Name)
+	assert.Equal(t, requestBody.CompanyType.String(), companyResponse.CompanyType.String())
 	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, &companyResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, companyResponse.CreatedDate)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -322,7 +322,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	assert.Len(t, firstResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
-	assert.Equal(t, requestBody.Name, firstResponse[0].Name)
+	assert.Equal(t, requestBody.Name, *firstResponse[0].Name)
 
 	// Get the company by partial name:
 
@@ -347,7 +347,7 @@ func TestGetCompaniesByName_ShouldReturnCompany(t *testing.T) {
 	assert.Len(t, secondResponse, 1)
 
 	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
-	assert.Equal(t, requestBody.Name, secondResponse[0].Name)
+	assert.Equal(t, requestBody.Name, *secondResponse[0].Name)
 }
 
 func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
@@ -396,10 +396,10 @@ func TestGetCompaniesByName_ShouldReturnCompanies(t *testing.T) {
 	assert.Len(t, response, 2)
 
 	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
-	assert.Equal(t, firstRequestBody.Name, response[0].Name)
+	assert.Equal(t, firstRequestBody.Name, *response[0].Name)
 
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
-	assert.Equal(t, secondRequestBody.Name, response[1].Name)
+	assert.Equal(t, secondRequestBody.Name, *response[1].Name)
 }
 
 func TestGetCompaniesByName_ShouldReturnNotFoundIfNoCompaniesMatchingName(t *testing.T) {
@@ -1059,11 +1059,11 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, getCompanyResponse.ID)
-	assert.Equal(t, *updateBody.Name, getCompanyResponse.Name)
-	assert.Equal(t, updatedCompanyType, getCompanyResponse.CompanyType)
+	assert.Equal(t, *updateBody.Name, *getCompanyResponse.Name)
+	assert.Equal(t, updatedCompanyType.String(), getCompanyResponse.CompanyType.String())
 	assert.Equal(t, *updateBody.Notes, *getCompanyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, updateBody.LastContact, getCompanyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, &getCompanyResponse.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, getCompanyResponse.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, getCompanyResponse.UpdatedDate)
 }
 

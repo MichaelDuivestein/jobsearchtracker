@@ -6,7 +6,6 @@ import (
 	"jobsearchtracker/internal/api/v1/requests"
 	"jobsearchtracker/internal/api/v1/responses"
 	internalErrors "jobsearchtracker/internal/errors"
-	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/services"
 	"log/slog"
 	"net/http"
@@ -279,7 +278,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 
 	query := request.URL.Query()
 
-	includeApplications, err := getExtraDataTypeParam(query.Get("include_applications"))
+	includeApplications, err := GetExtraDataTypeParam(query.Get("include_applications"))
 	if err != nil {
 		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_applications param", "error", err)
 
@@ -292,7 +291,7 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 		return
 	}
 
-	includePersons, err := getExtraDataTypeParam(query.Get("include_persons"))
+	includePersons, err := GetExtraDataTypeParam(query.Get("include_persons"))
 	if err != nil {
 		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_persons param", "error", err)
 
@@ -471,25 +470,4 @@ func (companyHandler *CompanyHandler) DeleteCompany(writer http.ResponseWriter, 
 	}
 
 	writer.WriteHeader(http.StatusOK)
-}
-
-func getExtraDataTypeParam(urlParamValue string) (*models.IncludeExtraDataType, error) {
-
-	var includeExtraDataType requests.IncludeExtraDataType
-	if urlParamValue == "" {
-		includeExtraDataType = requests.IncludeExtraDataTypeNone
-	} else {
-		var err error
-
-		// can return ValidationError
-		includeExtraDataType, err = requests.NewIncludeExtraDataType(urlParamValue)
-
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	includeApplicationsTypeModel, err := includeExtraDataType.ToModel()
-
-	return &includeApplicationsTypeModel, err
 }

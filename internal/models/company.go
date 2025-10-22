@@ -9,11 +9,11 @@ import (
 
 type Company struct {
 	ID           uuid.UUID
-	Name         string
-	CompanyType  CompanyType
+	Name         *string
+	CompanyType  *CompanyType
 	Notes        *string
 	LastContact  *time.Time
-	CreatedDate  time.Time
+	CreatedDate  *time.Time
 	UpdatedDate  *time.Time
 	Applications *[]*Application
 	Persons      *[]*Person

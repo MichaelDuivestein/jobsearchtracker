@@ -52,7 +52,7 @@ func setupCompanyRepository(t *testing.T) (
 		companyPersonRepository = repository
 	})
 	assert.NoError(t, err)
-	
+
 	return companyRepository, applicationRepository, personRepository, companyPersonRepository
 }
 
@@ -76,11 +76,11 @@ func TestCreate_ShouldInsertAndReturnCompany(t *testing.T) {
 	assert.NotNil(t, insertedCompany)
 
 	assert.Equal(t, *company.ID, insertedCompany.ID)
-	assert.Equal(t, company.Name, insertedCompany.Name)
-	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, company.Name, *insertedCompany.Name)
+	assert.Equal(t, company.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Equal(t, company.Notes, insertedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.LastContact, company.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedCompany.CreatedDate, company.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.CreatedDate, company.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.UpdatedDate, company.UpdatedDate)
 }
 
@@ -97,11 +97,11 @@ func TestCreate_ShouldInsertCompanyWithMinimumRequiredFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
-	assert.Equal(t, company.Name, insertedCompany.Name)
-	assert.Equal(t, company.CompanyType, insertedCompany.CompanyType)
+	assert.Equal(t, company.Name, *insertedCompany.Name)
+	assert.Equal(t, company.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, &insertedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, insertedCompany.CreatedDate)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -165,11 +165,11 @@ func TestGetById_ShouldGetCompany(t *testing.T) {
 	assert.NotNil(t, retrievedCompany)
 
 	assert.Equal(t, *companyToInsert.ID, retrievedCompany.ID)
-	assert.Equal(t, companyToInsert.Name, retrievedCompany.Name)
-	assert.Equal(t, companyToInsert.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, companyToInsert.Name, *retrievedCompany.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), retrievedCompany.CompanyType.String())
 	assert.Equal(t, companyToInsert.Notes, retrievedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, retrievedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, &retrievedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, retrievedCompany.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, retrievedCompany.UpdatedDate)
 }
 
@@ -205,12 +205,12 @@ func TestGetAllByName_ShouldReturnCompany(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedCompany)
 
-	retrievedCompanies, err := companyRepository.GetAllByName(&insertedCompany.Name)
+	retrievedCompanies, err := companyRepository.GetAllByName(insertedCompany.Name)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrievedCompanies)
 	assert.Len(t, retrievedCompanies, 1)
 
-	assert.Equal(t, "Company Bee", retrievedCompanies[0].Name)
+	assert.Equal(t, "Company Bee", *retrievedCompanies[0].Name)
 }
 
 func TestGetAllByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *testing.T) {
@@ -1129,11 +1129,11 @@ func TestUpdate_ShouldUpdateCompany(t *testing.T) {
 	assert.NotNil(t, retrievedCompany)
 
 	assert.Equal(t, updateModel.ID, retrievedCompany.ID)
-	assert.Equal(t, *updateModel.Name, retrievedCompany.Name)
-	assert.Equal(t, *updateModel.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, *updateModel.Name, *retrievedCompany.Name)
+	assert.Equal(t, updateModel.CompanyType.String(), retrievedCompany.CompanyType.String())
 	assert.Equal(t, *updateModel.Notes, *retrievedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, retrievedCompany.LastContact, retrievedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &retrievedCompany.CreatedDate, &insertedCompany.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, retrievedCompany.CreatedDate, insertedCompany.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedCompany.UpdatedDate)
 }
 
@@ -1164,7 +1164,7 @@ func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
 		Name: &nameToUpdate,
 	}
 	retrievedCompany := updateAndGetCompany(t, companyRepository, nameUpdateModel)
-	assert.Equal(t, nameToUpdate, retrievedCompany.Name)
+	assert.Equal(t, nameToUpdate, *retrievedCompany.Name)
 
 	// update CompanyType
 
@@ -1174,7 +1174,7 @@ func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
 		CompanyType: &companyTypeToUpdate,
 	}
 	retrievedCompany = updateAndGetCompany(t, companyRepository, companyTypeUpdateModel)
-	assert.Equal(t, *companyTypeUpdateModel.CompanyType, retrievedCompany.CompanyType)
+	assert.Equal(t, companyTypeUpdateModel.CompanyType.String(), retrievedCompany.CompanyType.String())
 
 	// update CompanyType
 
