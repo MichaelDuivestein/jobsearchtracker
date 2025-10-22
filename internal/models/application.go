@@ -23,6 +23,7 @@ type Application struct {
 	CreatedDate          *time.Time
 	UpdatedDate          *time.Time
 	Company              *Company
+	Recruiter            *Company
 }
 
 type CreateApplication struct {
