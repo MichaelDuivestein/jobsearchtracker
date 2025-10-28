@@ -373,6 +373,7 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -381,6 +382,7 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 
@@ -489,6 +491,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -497,6 +500,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// get all persons
 
@@ -566,6 +570,7 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -574,6 +579,7 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 
@@ -673,6 +679,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -681,6 +688,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// get all persons
 
@@ -750,6 +758,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -758,6 +767,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 

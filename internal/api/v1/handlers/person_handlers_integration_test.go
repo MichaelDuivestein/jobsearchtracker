@@ -550,6 +550,7 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 
@@ -681,6 +682,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// get all persons
 
@@ -773,6 +775,7 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 
@@ -898,6 +901,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// get all persons
 
@@ -990,6 +994,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
 	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
 
 	// associate persons and companies
 
