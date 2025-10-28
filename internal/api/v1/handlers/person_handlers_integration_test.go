@@ -541,6 +541,7 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -634,6 +635,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	}
 	insertPerson(t, personHandler, person1)
 
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
+
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
 		ID:         &person2ID,
@@ -641,6 +646,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 		PersonType: models.PersonTypeCTO,
 	}
 	insertPerson(t, personHandler, person2)
+
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -663,6 +672,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -695,13 +705,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person1ID, response[0].ID)
+	assert.Equal(t, person3ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
 	assert.Equal(t, person2ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person3ID, response[2].ID)
+	assert.Equal(t, person1ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
@@ -754,6 +764,7 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -841,6 +852,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	}
 	insertPerson(t, personHandler, person1)
 
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
+
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
 		ID:         &person2ID,
@@ -848,6 +863,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 		PersonType: models.PersonTypeCTO,
 	}
 	insertPerson(t, personHandler, person2)
+
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -870,6 +889,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -902,13 +922,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person1ID, response[0].ID)
+	assert.Equal(t, person3ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
 	assert.Equal(t, person2ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person3ID, response[2].ID)
+	assert.Equal(t, person1ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
@@ -924,6 +944,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	}
 	insertPerson(t, personHandler, person1)
 
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
+
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
 		ID:         &person2ID,
@@ -931,6 +955,10 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 		PersonType: models.PersonTypeCTO,
 	}
 	insertPerson(t, personHandler, person2)
+
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 1 second between inserts.
+	time.Sleep(1000 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -953,6 +981,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err := companyRepository.Create(&company1)
+	assert.NoError(t, err)
 
 	company2ID := uuid.New()
 	company2 := models.CreateCompany{
@@ -1005,13 +1034,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person1ID, response[0].ID)
+	assert.Equal(t, person3ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
 	assert.Equal(t, person2ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person3ID, response[2].ID)
+	assert.Equal(t, person1ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
