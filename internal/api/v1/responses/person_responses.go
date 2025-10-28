@@ -69,6 +69,7 @@ func NewPersonDTOs(persons []*models.Person) ([]*PersonDTO, error) {
 
 type PersonResponse struct {
 	PersonDTO
+	Companies *[]*CompanyDTO `json:"companies" extensions:"x-order=8"`
 }
 
 // NewPersonResponse can return InternalServerError
@@ -78,13 +79,24 @@ func NewPersonResponse(personModel *models.Person) (*PersonResponse, error) {
 		return nil, internalErrors.NewInternalServiceError("Error building response: Person is nil")
 	}
 
+	// can return InternalServerError
 	personDTO, err := NewPersonDTO(personModel)
 	if err != nil {
 		return nil, err
 	}
 
+	var companies []*CompanyDTO
+	if personModel.Companies != nil {
+		// can return InternalServerError
+		companies, err = NewCompanyDTOs(*personModel.Companies)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	personResponse := PersonResponse{
 		PersonDTO: *personDTO,
+		Companies: &companies,
 	}
 
 	return &personResponse, nil

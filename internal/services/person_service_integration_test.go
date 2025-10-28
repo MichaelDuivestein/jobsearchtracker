@@ -2,10 +2,13 @@ package services_test
 
 import (
 	"errors"
+	"jobsearchtracker/internal/api/v1/requests"
 	configPackage "jobsearchtracker/internal/config"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/repositories"
 	"jobsearchtracker/internal/services"
+	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
 	"testing"
 	"time"
@@ -14,7 +17,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupPersonService(t *testing.T) *services.PersonService {
+func setupPersonService(t *testing.T) (
+	*services.PersonService,
+	*repositories.CompanyRepository,
+	*repositories.CompanyPersonRepository) {
 	config := &configPackage.Config{
 		DatabaseMigrationsPath:               "../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
@@ -28,13 +34,25 @@ func setupPersonService(t *testing.T) *services.PersonService {
 	})
 	assert.NoError(t, err)
 
-	return personService
+	var companyRepository *repositories.CompanyRepository
+	err = container.Invoke(func(repository *repositories.CompanyRepository) {
+		companyRepository = repository
+	})
+	assert.NoError(t, err)
+
+	var companyPersonRepository *repositories.CompanyPersonRepository
+	err = container.Invoke(func(repository *repositories.CompanyPersonRepository) {
+		companyPersonRepository = repository
+	})
+	assert.NoError(t, err)
+
+	return personService, companyRepository, companyPersonRepository
 }
 
 // -------- CreatePerson tests: --------
 
 func TestCreatePerson_ShouldWork(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	id := uuid.New()
 	name := "Dude Janesson"
@@ -75,7 +93,7 @@ func TestCreatePerson_ShouldWork(t *testing.T) {
 }
 
 func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	name := "Sven Joe"
 
@@ -104,7 +122,7 @@ func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
 // -------- GetPersonById tests: --------
 
 func TestGetPersonById_ShouldWork(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	id := uuid.New()
 	name := "Some Name"
@@ -136,7 +154,7 @@ func TestGetPersonById_ShouldWork(t *testing.T) {
 }
 
 func TestGetPersonById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	id := uuid.New()
 	nilPerson, err := personService.GetPersonById(&id)
@@ -151,7 +169,7 @@ func TestGetPersonById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testi
 // -------- GetPersonsByName tests: --------
 
 func TestGetPersonsByName_ShouldReturnASinglePerson(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert persons
 	id1 := uuid.New()
@@ -185,7 +203,7 @@ func TestGetPersonsByName_ShouldReturnASinglePerson(t *testing.T) {
 }
 
 func TestGetPersonsByName_ShouldReturnMultiplePersons(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert persons
 
@@ -232,7 +250,7 @@ func TestGetPersonsByName_ShouldReturnMultiplePersons(t *testing.T) {
 }
 
 func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert persons
 	id1 := uuid.New()
@@ -268,47 +286,533 @@ func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) 
 
 // -------- GetAllPersons tests: --------
 func TestGetAlLPersons_ShouldWork(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert persons
 
 	name1 := "abc def"
 	personToInsert1 := models.CreatePerson{
-		Name:       name1,
-		PersonType: models.PersonTypeHR,
+		Name:        name1,
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 	}
 	_, err := personService.CreatePerson(&personToInsert1)
 	assert.NoError(t, err)
 
 	name2 := "ghi jkl"
 	personToInsert2 := models.CreatePerson{
-		Name:       name2,
-		PersonType: models.PersonTypeHR,
+		Name:        name2,
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 	}
 	_, err = personService.CreatePerson(&personToInsert2)
 	assert.NoError(t, err)
 
 	// getAll
-	persons, err := personService.GetAllPersons()
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
 	assert.Len(t, persons, 2)
 
-	assert.Equal(t, name1, *persons[0].Name)
-	assert.Equal(t, name2, *persons[1].Name)
+	assert.Equal(t, name2, *persons[0].Name)
+	assert.Equal(t, name1, *persons[1].Name)
 }
 
 func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
-	persons, err := personService.GetAllPersons()
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.Nil(t, persons)
 }
 
+func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
+	personService, companyRepository, companyPersonRepository := setupPersonService(t)
+
+	// setup persons
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:          &person1ID,
+		Name:        "Person1",
+		PersonType:  models.PersonTypeDeveloper,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := personService.CreatePerson(&person1)
+	assert.NoError(t, err)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:          &person2ID,
+		Name:        "Person2",
+		PersonType:  models.PersonTypeCTO,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = personService.CreatePerson(&person2)
+	assert.NoError(t, err)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:          &person3ID,
+		Name:        "person3",
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = personService.CreatePerson(&person3)
+	assert.NoError(t, err)
+
+	// add two companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Company1Name",
+		CompanyType: requests.CompanyTypeEmployer,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Company2Name",
+		CompanyType: requests.CompanyTypeConsultancy,
+	}
+	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
+
+	// associate persons and companies
+
+	Company1person1 := models.AssociateCompanyPerson{
+		CompanyID: company1ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
+	assert.NoError(t, err)
+
+	Company2person1 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
+	assert.NoError(t, err)
+
+	Company2person2 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person2ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
+	assert.NoError(t, err)
+
+	// get all persons
+
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Len(t, *(persons[0]).Companies, 2)
+
+	person1Company1 := (*(*persons[0]).Companies)[0]
+	assert.Equal(t, company1ID, person1Company1.ID)
+	assert.Equal(t, company1.Name, *person1Company1.Name)
+	assert.Equal(t, company1.CompanyType.String(), person1Company1.CompanyType.String())
+	assert.Equal(t, company1.Notes, person1Company1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, company1.LastContact, person1Company1.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, company1.CreatedDate, person1Company1.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company1.UpdatedDate, person1Company1.UpdatedDate)
+
+	person1Company2 := (*(*persons[0]).Companies)[1]
+	assert.Equal(t, company2ID, person1Company2.ID)
+	assert.Equal(t, company2.Name, *person1Company2.Name)
+	assert.Equal(t, company2.CompanyType.String(), person1Company2.CompanyType.String())
+	assert.Nil(t, person1Company2.Notes)
+	assert.Nil(t, person1Company2.LastContact)
+	assert.NotNil(t, person1Company2.CreatedDate)
+	assert.Nil(t, person1Company2.UpdatedDate)
+
+	assert.Equal(t, person2ID, persons[1].ID)
+	assert.Len(t, *(persons[1]).Companies, 1)
+	assert.Equal(t, company2ID, (*(*persons[1]).Companies)[0].ID)
+
+	assert.Equal(t, person3ID, persons[2].ID)
+	assert.Nil(t, persons[2].Companies)
+}
+
+func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+	personService, companyRepository, _ := setupPersonService(t)
+
+	// setup persons
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:          &person1ID,
+		Name:        "Person1",
+		PersonType:  models.PersonTypeDeveloper,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := personService.CreatePerson(&person1)
+	assert.NoError(t, err)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:          &person2ID,
+		Name:        "Person2",
+		PersonType:  models.PersonTypeCTO,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = personService.CreatePerson(&person2)
+	assert.NoError(t, err)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:          &person3ID,
+		Name:        "person3",
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = personService.CreatePerson(&person3)
+	assert.NoError(t, err)
+
+	// add two companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Company1Name",
+		CompanyType: requests.CompanyTypeEmployer,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Company2Name",
+		CompanyType: requests.CompanyTypeConsultancy,
+	}
+	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
+
+	// get all persons
+
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Nil(t, persons[0].Companies)
+
+	assert.Equal(t, person2ID, persons[1].ID)
+	assert.Nil(t, persons[1].Companies)
+
+	assert.Equal(t, person3ID, persons[2].ID)
+	assert.Nil(t, persons[2].Companies)
+}
+
+func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
+	personService, companyRepository, companyPersonRepository := setupPersonService(t)
+
+	// setup persons
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:          &person1ID,
+		Name:        "Person1",
+		PersonType:  models.PersonTypeDeveloper,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := personService.CreatePerson(&person1)
+	assert.NoError(t, err)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:          &person2ID,
+		Name:        "Person2",
+		PersonType:  models.PersonTypeCTO,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = personService.CreatePerson(&person2)
+	assert.NoError(t, err)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:          &person3ID,
+		Name:        "person3",
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = personService.CreatePerson(&person3)
+	assert.NoError(t, err)
+
+	// add two companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Company1Name",
+		CompanyType: requests.CompanyTypeEmployer,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Company2Name",
+		CompanyType: requests.CompanyTypeConsultancy,
+	}
+	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
+
+	// associate persons and companies
+
+	Company1person1 := models.AssociateCompanyPerson{
+		CompanyID: company1ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
+	assert.NoError(t, err)
+
+	Company2person1 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
+	assert.NoError(t, err)
+
+	Company2person2 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person2ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
+	assert.NoError(t, err)
+
+	// get all persons
+
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Len(t, *(persons[0]).Companies, 2)
+
+	person1Company1 := (*(*persons[0]).Companies)[0]
+	assert.Equal(t, company1ID, person1Company1.ID)
+	assert.Nil(t, person1Company1.Name)
+	assert.Nil(t, person1Company1.CompanyType)
+	assert.Nil(t, person1Company1.Notes)
+	assert.Nil(t, person1Company1.LastContact)
+	assert.Nil(t, person1Company1.CreatedDate)
+	assert.Nil(t, person1Company1.UpdatedDate)
+
+	assert.Equal(t, person2ID, persons[1].ID)
+	assert.Len(t, *(persons[1]).Companies, 1)
+	assert.Equal(t, company2ID, (*(*persons[1]).Companies)[0].ID)
+
+	assert.Equal(t, person3ID, persons[2].ID)
+	assert.Nil(t, persons[2].Companies)
+}
+
+func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+	personService, companyRepository, _ := setupPersonService(t)
+
+	// setup persons
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:          &person1ID,
+		Name:        "Person1",
+		PersonType:  models.PersonTypeDeveloper,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := personService.CreatePerson(&person1)
+	assert.NoError(t, err)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:          &person2ID,
+		Name:        "Person2",
+		PersonType:  models.PersonTypeCTO,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = personService.CreatePerson(&person2)
+	assert.NoError(t, err)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:          &person3ID,
+		Name:        "person3",
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = personService.CreatePerson(&person3)
+	assert.NoError(t, err)
+
+	// add two companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Company1Name",
+		CompanyType: requests.CompanyTypeEmployer,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Company2Name",
+		CompanyType: requests.CompanyTypeConsultancy,
+	}
+	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
+
+	// get all persons
+
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Nil(t, persons[0].Companies)
+
+	assert.Equal(t, person2ID, persons[1].ID)
+	assert.Nil(t, persons[1].Companies)
+
+	assert.Equal(t, person3ID, persons[2].ID)
+	assert.Nil(t, persons[2].Companies)
+}
+
+func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
+	personService, companyRepository, companyPersonRepository := setupPersonService(t)
+
+	// setup persons
+	person1ID := uuid.New()
+	person1 := models.CreatePerson{
+		ID:          &person1ID,
+		Name:        "Person1",
+		PersonType:  models.PersonTypeDeveloper,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := personService.CreatePerson(&person1)
+	assert.NoError(t, err)
+
+	person2ID := uuid.New()
+	person2 := models.CreatePerson{
+		ID:          &person2ID,
+		Name:        "Person2",
+		PersonType:  models.PersonTypeCTO,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	}
+	_, err = personService.CreatePerson(&person2)
+	assert.NoError(t, err)
+
+	person3ID := uuid.New()
+	person3 := models.CreatePerson{
+		ID:          &person3ID,
+		Name:        "person3",
+		PersonType:  models.PersonTypeHR,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err = personService.CreatePerson(&person3)
+	assert.NoError(t, err)
+
+	// add two companies
+
+	company1ID := uuid.New()
+	company1 := models.CreateCompany{
+		ID:          &company1ID,
+		Name:        "Company1Name",
+		CompanyType: requests.CompanyTypeEmployer,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err = companyRepository.Create(&company1)
+	assert.NoError(t, err)
+
+	company2ID := uuid.New()
+	company2 := models.CreateCompany{
+		ID:          &company2ID,
+		Name:        "Company2Name",
+		CompanyType: requests.CompanyTypeConsultancy,
+	}
+	_, err = companyRepository.Create(&company2)
+	assert.NoError(t, err)
+
+	// associate persons and companies
+
+	Company1person1 := models.AssociateCompanyPerson{
+		CompanyID: company1ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
+	assert.NoError(t, err)
+
+	Company2person1 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person1ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
+	assert.NoError(t, err)
+
+	Company2person2 := models.AssociateCompanyPerson{
+		CompanyID: company2ID,
+		PersonID:  person2ID,
+	}
+	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
+	assert.NoError(t, err)
+
+	// get all persons
+
+	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeNone)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 3)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Nil(t, persons[0].Companies)
+
+	assert.Equal(t, person2ID, persons[1].ID)
+	assert.Nil(t, persons[1].Companies)
+
+	assert.Equal(t, person3ID, persons[2].ID)
+	assert.Nil(t, persons[2].Companies)
+}
+
 // -------- UpdatePerson tests: --------
 func TestUpdatePerson_ShouldWork(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert person
 
@@ -367,7 +871,7 @@ func TestUpdatePerson_ShouldWork(t *testing.T) {
 }
 
 func TestUpdatePerson_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	id := uuid.New()
 	notes := "Random Notes"
@@ -383,7 +887,7 @@ func TestUpdatePerson_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T)
 // -------- DeletePerson tests: --------
 
 func TestDeletePerson_ShouldWork(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	// insert person
 
@@ -414,7 +918,7 @@ func TestDeletePerson_ShouldWork(t *testing.T) {
 }
 
 func TestDeletePerson_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
-	personService := setupPersonService(t)
+	personService, _, _ := setupPersonService(t)
 
 	id := uuid.New()
 	err := personService.DeletePerson(&id)
