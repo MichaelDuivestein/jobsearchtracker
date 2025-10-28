@@ -16,6 +16,7 @@ type Person struct {
 	Notes       *string
 	CreatedDate *time.Time
 	UpdatedDate *time.Time
+	Companies   *[]*Company
 }
 
 type CreatePerson struct {

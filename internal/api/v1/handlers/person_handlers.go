@@ -260,6 +260,9 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 //
 // @Summary Get all persons
 // @Description Get all `person`s
+// @Description - include_companies=all: Returns `company`s with all fields
+// @Description - include_companies=ids: Returns `company`s with only `id` field
+// @Description - include_companies=none: No `company` data included (default)
 // @Tags person
 // @Produce json
 // @Success 200 {array} responses.PersonResponse
@@ -267,8 +270,22 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 // @Failure 500
 // @Router /v1/person/get/all [get]
 func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	includeCompanies, err := GetExtraDataTypeParam(query.Get("include_companies"))
+	if err != nil {
+		slog.Error("v1.personHandler.GetAllPersons: Could not parse include_company param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_companies. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	persons, err := personHandler.personService.GetAllPersons()
+	persons, err := personHandler.personService.GetAllPersons(*includeCompanies)
 	if err != nil {
 		errorMessage := "Internal service error while getting all persons"
 		status := http.StatusInternalServerError

@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
@@ -27,7 +29,7 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 	sqlInsert :=
 		"INSERT INTO person (id, name, person_type, email, phone, notes, created_date, updated_date) " +
 			"VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
-			"RETURNING id, name, person_type, email, phone, notes, created_date, updated_date"
+			"RETURNING id, name, person_type, email, phone, notes, created_date, updated_date, null"
 
 	var personID uuid.UUID
 	if person.ID != nil {
@@ -61,9 +63,15 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 	)
 
 	// can return ConflictError, InternalServiceError
-	result, err := repository.mapRow(row, "Create", &personID)
+	result, err := repository.mapRow(row, "Create")
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if err.Error() == "constraint failed: UNIQUE constraint failed: person.id (1555)" {
+			slog.Info(
+				"person_repository.createPerson: UNIQUE constraint failed",
+				"ID", personID)
+			return nil, internalErrors.NewConflictError(
+				"ID already exists in database: '" + personID.String() + "'")
+		} else if errors.Is(err, sql.ErrNoRows) {
 			slog.Info("person_repository.create: No result found for ID", "ID", personID, "error", err.Error())
 			return nil, internalErrors.NewNotFoundError("ID: '" + personID.String() + "'")
 		}
@@ -82,12 +90,12 @@ func (repository *PersonRepository) GetById(id *uuid.UUID) (*models.Person, erro
 	}
 
 	sqlSelect :=
-		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date " +
+		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null " +
 			"FROM person " +
 			"WHERE id = ?"
 
 	row := repository.database.QueryRow(sqlSelect, id)
-	result, err := repository.mapRow(row, "GetById", id)
+	result, err := repository.mapRow(row, "GetById")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			slog.Info("person_repository.GetById: No result found for ID", "ID", id, "error", err.Error())
@@ -110,7 +118,7 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 	wildcardName := "%" + *name + "%"
 
 	sqlSelect :=
-		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date " +
+		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null " +
 			"FROM person " +
 			"WHERE name LIKE ?" +
 			"ORDER BY name ASC"
@@ -123,7 +131,7 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 	var results []*models.Person
 
 	for rows.Next() {
-		result, err := repository.mapRow(rows, "GetAllByName", nil)
+		result, err := repository.mapRow(rows, "GetAllByName")
 		if err != nil {
 			slog.Error("person_repository.GetAllByName: Error mapping row", "error", err)
 			return nil, internalErrors.NewInternalServiceError("Error processing person data: " + err.Error())
@@ -148,11 +156,20 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 }
 
 // GetAll can return InternalServiceError
-func (repository *PersonRepository) GetAll() ([]*models.Person, error) {
-	sqlSelect :=
-		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date " +
-			"FROM person " +
-			"ORDER BY name ASC"
+func (repository *PersonRepository) GetAll(includeCompanies models.IncludeExtraDataType) ([]*models.Person, error) {
+	sqlSelect := `
+        SELECT p.id, p.name, p.person_type, p.email, p.phone, p.notes, p.created_date, p.updated_date, %s
+        FROM person p %s
+        GROUP BY p.id, p.name, p.person_type
+        ORDER BY p.created_date DESC;`
+
+	companiesCoalesceString := "null \n"
+	companiesJoinString := ""
+	if includeCompanies != models.IncludeExtraDataTypeNone {
+		companiesCoalesceString, companiesJoinString = repository.buildCompaniesCoalesceAndJoin(includeCompanies)
+	}
+
+	sqlSelect = fmt.Sprintf(sqlSelect, companiesCoalesceString, companiesJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -165,7 +182,7 @@ func (repository *PersonRepository) GetAll() ([]*models.Person, error) {
 	var results []*models.Person
 
 	for rows.Next() {
-		result, err := repository.mapRow(rows, "GetAll", nil)
+		result, err := repository.mapRow(rows, "GetAll")
 		if err != nil {
 			slog.Error("person_repository.GetAll: Error mapping row", "error", err)
 			return nil, internalErrors.NewInternalServiceError("Error processing person data: " + err.Error())
@@ -290,11 +307,10 @@ func (repository *PersonRepository) Delete(id *uuid.UUID) error {
 // mapRow can return InternalServiceError
 func (repository *PersonRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error },
-	methodName string,
-	ID *uuid.UUID) (*models.Person, error) {
+	methodName string) (*models.Person, error) {
 
 	var result models.Person
-	var createdDate, updatedDate sql.NullString
+	var createdDate, updatedDate, companiesString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -305,22 +321,10 @@ func (repository *PersonRepository) mapRow(
 		&result.Notes,
 		&createdDate,
 		&updatedDate,
+		&companiesString,
 	)
 
 	if err != nil {
-		if err.Error() == "constraint failed: UNIQUE constraint failed: person.id (1555)" {
-			var IDString string
-			if ID != nil {
-				IDString = ID.String()
-			} else {
-				IDString = "[not set]"
-			}
-			slog.Info(
-				"person_repository.createPerson: UNIQUE constraint failed",
-				"ID", IDString)
-			return nil, internalErrors.NewConflictError(
-				"ID already exists in database: '" + IDString + "'")
-		}
 		return nil, err
 	}
 
@@ -346,5 +350,50 @@ func (repository *PersonRepository) mapRow(
 		result.UpdatedDate = &timestamp
 	}
 
+	if companiesString.Valid {
+		var companies []*models.Company
+		if err = json.Unmarshal([]byte(companiesString.String), &companies); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing companies: " + err.Error())
+		}
+
+		if len(companies) > 0 {
+			result.Companies = &companies
+		}
+	}
+
 	return &result, nil
+}
+
+func (repository *PersonRepository) buildCompaniesCoalesceAndJoin(includeCompanies models.IncludeExtraDataType) (string, string) {
+	if includeCompanies == models.IncludeExtraDataTypeNone {
+		return "null \n", ""
+	}
+
+	coalesceString := `
+        COALESCE(
+            JSON_GROUP_ARRAY(
+                JSON_OBJECT(
+                    'ID', c.id%s
+                ) ORDER BY c.created_date DESC
+            ) FILTER (WHERE c.id IS NOT NULL),
+            JSON_ARRAY()
+        ) as companies`
+
+	allColumns := ""
+	if includeCompanies == models.IncludeExtraDataTypeAll {
+		allColumns = `, 
+                    'Name', c.name, 
+                    'CompanyType', c.company_type, 
+                    'Notes', c.notes, 
+                    'LastContact', c.last_contact, 
+                    'CreatedDate', c.created_date, 
+                    'UpdatedDate', c.updated_date `
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString := `    
+        LEFT JOIN company_person cp ON cp.person_id = p.id 
+        LEFT JOIN company c ON c.id = cp.company_id `
+
+	return coalesceString, joinString
 }

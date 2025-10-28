@@ -252,6 +252,54 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testi
 	assert.Equal(t, err.Error(), "internal service error: Error building response: Person is nil")
 }
 
+func TestNewPersonResponse_ShouldHandleCompanies(t *testing.T) {
+
+	var company1CompanyType models.CompanyType = models.CompanyTypeRecruiter
+	company1Model := models.Company{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Company1Name"),
+		CompanyType: &company1CompanyType,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+
+	company2Model := models.Company{
+		ID: uuid.New(),
+	}
+
+	companyModels := []*models.Company{&company1Model, &company2Model}
+	var personType models.PersonType = models.PersonTypeJobContact
+	model := models.Person{
+		ID:         uuid.New(),
+		Name:       testutil.ToPtr("PersonName"),
+		PersonType: &personType,
+		Companies:  &companyModels,
+	}
+
+	response, err := NewPersonResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID.String(), response.ID.String())
+	assert.NotNil(t, response.Companies)
+
+	assert.Len(t, *response.Companies, 2)
+
+	company1 := (*response.Companies)[0]
+	assert.Equal(t, company1Model.ID, company1.ID)
+	assert.Equal(t, company1Model.Name, company1.Name)
+	assert.Equal(t, company1Model.CompanyType.String(), company1.CompanyType.String())
+	assert.Equal(t, company1Model.Notes, company1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, company1.LastContact, company1Model.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, company1.CreatedDate, company1Model.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company1.UpdatedDate, company1Model.UpdatedDate)
+
+	company2 := (*response.Companies)[1]
+	assert.Equal(t, company2Model.ID, company2.ID)
+}
+
 // -------- NewPersonsResponse tests: --------
 
 func TestNewPersonsResponse_ShouldWork(t *testing.T) {
