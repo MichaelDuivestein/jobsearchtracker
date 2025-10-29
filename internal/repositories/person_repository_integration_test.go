@@ -82,14 +82,8 @@ func TestCreate_ShouldInsertPerson(t *testing.T) {
 	assert.Equal(t, person.Email, insertedPerson.Email)
 	assert.Equal(t, person.Phone, insertedPerson.Phone)
 	assert.Equal(t, person.Notes, insertedPerson.Notes)
-
-	personToInsertCreatedDate := person.CreatedDate.Format(time.RFC3339)
-	insertedPersonCreatedDate := insertedPerson.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, personToInsertCreatedDate, insertedPersonCreatedDate)
-
-	personToInsertUpdatedDate := person.UpdatedDate.Format(time.RFC3339)
-	insertedPersonUpdatedDate := insertedPerson.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, personToInsertUpdatedDate, insertedPersonUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, person.CreatedDate, insertedPerson.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, person.UpdatedDate, insertedPerson.UpdatedDate)
 }
 
 func TestCreate_ShouldInsertPersonWithMinimumRequiredFields(t *testing.T) {
@@ -100,7 +94,7 @@ func TestCreate_ShouldInsertPersonWithMinimumRequiredFields(t *testing.T) {
 		PersonType: models.PersonTypeCEO,
 	}
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	insertedPerson, err := personRepository.Create(&person)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedPerson)
@@ -111,10 +105,7 @@ func TestCreate_ShouldInsertPersonWithMinimumRequiredFields(t *testing.T) {
 	assert.Nil(t, insertedPerson.Email)
 	assert.Nil(t, insertedPerson.Phone)
 	assert.Nil(t, insertedPerson.Notes)
-
-	insertedPersonCreatedDate := insertedPerson.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedPersonCreatedDate)
-
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, insertedPerson.CreatedDate, time.Second)
 	assert.Nil(t, insertedPerson.UpdatedDate)
 }
 
@@ -910,7 +901,7 @@ func TestUpdate_ShouldUpdatePerson(t *testing.T) {
 
 	// update the person
 
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	err = personRepository.Update(&personToUpdate)
 	assert.NoError(t, err)
 
@@ -925,9 +916,7 @@ func TestUpdate_ShouldUpdatePerson(t *testing.T) {
 	assert.Equal(t, email, *retrievedPerson.Email)
 	assert.Equal(t, phone, *retrievedPerson.Phone)
 	assert.Equal(t, notes, *retrievedPerson.Notes)
-
-	retrievedUpdatedDate := retrievedPerson.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, retrievedUpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedPerson.UpdatedDate, time.Second)
 }
 
 func TestUpdate_ShouldReturnValidationErrorIfNoPersonFieldsToUpdate(t *testing.T) {

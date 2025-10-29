@@ -373,8 +373,8 @@ func setupTestData(
 
 	if sleep {
 		// a sleep is needed in order to ensure the order of the records.
-		//There needs to be a minimum of 1 second between inserts.
-		time.Sleep(1000 * time.Millisecond)
+		//There needs to be a minimum of 10 milliseconds between inserts.
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	companyPerson2 := requests.AssociateCompanyPersonRequest{
@@ -390,7 +390,9 @@ func setupTestData(
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	if sleep {
-		time.Sleep(1000 * time.Millisecond)
+		// a sleep is needed in order to ensure the order of the records.
+		//There needs to be a minimum of 10 milliseconds between inserts.
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	companyPerson3 := requests.AssociateCompanyPersonRequest{

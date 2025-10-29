@@ -5,6 +5,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/pkg/timeutil"
 	"log/slog"
 	"strconv"
 	"time"
@@ -34,9 +35,9 @@ func (repository *CompanyPersonRepository) AssociateCompanyPerson(
 
 	var createdDate string
 	if associateModel.CreatedDate != nil {
-		createdDate = associateModel.CreatedDate.Format(time.RFC3339)
+		createdDate = associateModel.CreatedDate.Format(timeutil.RFC3339Milli_Write)
 	} else {
-		createdDate = time.Now().UTC().Format(time.RFC3339)
+		createdDate = time.Now().UTC().Format(timeutil.RFC3339Milli_Write)
 	}
 
 	row := repository.database.QueryRow(
@@ -225,7 +226,7 @@ func (repository *CompanyPersonRepository) mapRow(scanner interface{ Scan(...int
 	}
 
 	if createdDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, createdDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, createdDate.String)
 		if err != nil {
 			slog.Error("company_person_repository."+methodName+": Error parsing createdDate",
 				"createdDate", createdDate,

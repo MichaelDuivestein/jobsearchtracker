@@ -66,10 +66,7 @@ func TestAssociateCompanyToPerson_ShouldWork(t *testing.T) {
 
 	assert.Equal(t, company.ID, associatedCompanyPerson.CompanyID)
 	assert.Equal(t, person.ID, associatedCompanyPerson.PersonID)
-
-	createdDateToInsert := companyPerson.CreatedDate.Format(time.RFC3339)
-	insertedCreatedDate := associatedCompanyPerson.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateToInsert, insertedCreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyPerson.CreatedDate, &associatedCompanyPerson.CreatedDate)
 }
 
 func TestAssociateCompanyToPerson_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
@@ -520,26 +517,17 @@ func TestGetAllCompanyPersons_ShouldReturnAllCompanyPersons(t *testing.T) {
 	insertedCompanyPerson1 := personCompanies[0]
 	assert.Equal(t, company1.ID, insertedCompanyPerson1.CompanyID)
 	assert.Equal(t, person2.ID, insertedCompanyPerson1.PersonID)
-
-	createdDateToInsert1 := companyPerson2.CreatedDate.Format(time.RFC3339)
-	insertedCreatedDate1 := insertedCompanyPerson1.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateToInsert1, insertedCreatedDate1)
+	testutil.AssertEqualFormattedDateTimes(t, companyPerson2.CreatedDate, &insertedCompanyPerson1.CreatedDate)
 
 	insertedCompanyPerson2 := personCompanies[1]
 	assert.Equal(t, company2.ID, insertedCompanyPerson2.CompanyID)
 	assert.Equal(t, person2.ID, insertedCompanyPerson2.PersonID)
-
-	createdDateToInsert2 := companyPerson3.CreatedDate.Format(time.RFC3339)
-	insertedCreatedDate2 := insertedCompanyPerson2.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateToInsert2, insertedCreatedDate2)
+	testutil.AssertEqualFormattedDateTimes(t, companyPerson3.CreatedDate, &insertedCompanyPerson2.CreatedDate)
 
 	insertedCompanyPerson3 := personCompanies[2]
 	assert.Equal(t, company1.ID, insertedCompanyPerson3.CompanyID)
 	assert.Equal(t, person1.ID, insertedCompanyPerson3.PersonID)
-
-	createdDateToInsert3 := companyPerson1.CreatedDate.Format(time.RFC3339)
-	insertedCreatedDate3 := insertedCompanyPerson3.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateToInsert3, insertedCreatedDate3)
+	testutil.AssertEqualFormattedDateTimes(t, companyPerson1.CreatedDate, &insertedCompanyPerson3.CreatedDate)
 }
 
 func TestGetAllCompanyPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
+	"jobsearchtracker/pkg/timeutil"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -41,13 +42,13 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 	var createdDate, updatedDate interface{}
 
 	if person.CreatedDate != nil {
-		createdDate = person.CreatedDate.Format(time.RFC3339)
+		createdDate = person.CreatedDate.Format(timeutil.RFC3339Milli_Write)
 	} else {
-		createdDate = time.Now().Format(time.RFC3339)
+		createdDate = time.Now().Format(timeutil.RFC3339Milli_Write)
 	}
 
 	if person.UpdatedDate != nil {
-		updatedDate = person.UpdatedDate.Format(time.RFC3339)
+		updatedDate = person.UpdatedDate.Format(timeutil.RFC3339Milli_Write)
 	}
 
 	row := repository.database.QueryRow(
@@ -209,7 +210,7 @@ func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
 	var sqlString strings.Builder
 	sqlString.WriteString("UPDATE person SET ")
 	sqlString.WriteString("updated_date = ?, ")
-	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
 
@@ -329,7 +330,7 @@ func (repository *PersonRepository) mapRow(
 	}
 
 	if createdDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, createdDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, createdDate.String)
 		if err != nil {
 			slog.Error("person_repository."+methodName+": Error parsing createdDate",
 				"createdDate", createdDate,
@@ -340,7 +341,7 @@ func (repository *PersonRepository) mapRow(
 	}
 
 	if updatedDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, updatedDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, updatedDate.String)
 		if err != nil {
 			slog.Error("person_repository."+methodName+": Error parsing updatedDate",
 				"updatedDate", updatedDate,

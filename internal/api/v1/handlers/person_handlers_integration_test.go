@@ -80,7 +80,7 @@ func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	personHandler.CreatePerson(responseRecorder, request)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
@@ -97,10 +97,7 @@ func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
 	assert.Equal(t, requestBody.Email, personResponse.Email)
 	assert.Equal(t, requestBody.Phone, personResponse.Phone)
 	assert.Equal(t, requestBody.Notes, personResponse.Notes)
-
-	insertedPersonCreatedDate := personResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedPersonCreatedDate)
-
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, personResponse.CreatedDate, time.Second)
 	assert.Nil(t, personResponse.UpdatedDate)
 }
 
@@ -202,10 +199,7 @@ func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
 	assert.Equal(t, requestBody.Email, response.Email)
 	assert.Equal(t, requestBody.Phone, response.Phone)
 	assert.Equal(t, requestBody.Notes, response.Notes)
-
-	insertedPersonCreatedDate := response.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, insertedPersonCreatedDate)
-
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, response.CreatedDate, time.Second)
 	assert.Nil(t, response.UpdatedDate)
 }
 
@@ -407,8 +401,8 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	insertPerson(t, personHandler, firstRequestBody)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	secondID := uuid.New()
 	email = "Person2 Email"
@@ -425,8 +419,8 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	insertPerson(t, personHandler, secondRequestBody)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	thirdID := uuid.New()
 	email = "Person3 Email"
@@ -501,8 +495,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	insertPerson(t, personHandler, person1)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
@@ -513,8 +507,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	insertPerson(t, personHandler, person2)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -525,8 +519,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	insertPerson(t, personHandler, person3)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	// add two companies
 
@@ -637,8 +631,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	insertPerson(t, personHandler, person1)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
@@ -649,8 +643,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	insertPerson(t, personHandler, person2)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -730,8 +724,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	insertPerson(t, personHandler, person1)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
@@ -742,8 +736,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	insertPerson(t, personHandler, person2)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -856,8 +850,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	insertPerson(t, personHandler, person1)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
@@ -868,8 +862,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	insertPerson(t, personHandler, person2)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -949,8 +943,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	insertPerson(t, personHandler, person1)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
@@ -961,8 +955,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	insertPerson(t, personHandler, person2)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
@@ -1095,7 +1089,7 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	personHandler.UpdatePerson(responseRecorder, updateRequest)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
@@ -1125,12 +1119,8 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 	assert.Equal(t, updatedEmail, *getPersonResponse.Email)
 	assert.Equal(t, updatedPhone, *getPersonResponse.Phone)
 	assert.Equal(t, updatedNotes, *getPersonResponse.Notes)
-
-	personResponseCreatedDate := getPersonResponse.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, *createdDateApproximation, personResponseCreatedDate)
-
-	personResponseUpdatedDate := getPersonResponse.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, personResponseUpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, getPersonResponse.CreatedDate, time.Second)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, getPersonResponse.UpdatedDate, time.Second)
 }
 
 func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
@@ -1240,7 +1230,7 @@ func TestDeletePerson_ShouldReturnStatusNotFoundIfPersonDoesNotExist(t *testing.
 
 func insertPerson(
 	t *testing.T, personHandler *handlers.PersonHandler, requestBody requests.CreatePersonRequest) (
-	*responses.PersonResponse, *string) {
+	*responses.PersonResponse, *time.Time) {
 
 	requestBytes, err := json.Marshal(requestBody)
 	assert.NoError(t, err)
@@ -1250,7 +1240,7 @@ func insertPerson(
 
 	responseRecorder := httptest.NewRecorder()
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	personHandler.CreatePerson(responseRecorder, createRequest)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 

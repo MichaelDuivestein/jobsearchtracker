@@ -98,7 +98,7 @@ func TestCreateApplication_ShouldInsertAndReturnApplication(t *testing.T) {
 	assert.Equal(t, requestBody.EstimatedCycleTime, applicationResponse.EstimatedCycleTime)
 	assert.Equal(t, requestBody.EstimatedCommuteTime, applicationResponse.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.ApplicationDate, applicationResponse.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, applicationResponse.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, applicationResponse.CreatedDate, time.Second)
 	assert.Nil(t, applicationResponse.UpdatedDate)
 }
 
@@ -271,7 +271,7 @@ func TestGetApplicationById_ShouldReturnApplication(t *testing.T) {
 	assert.Equal(t, *requestBody.EstimatedCycleTime, *response.EstimatedCycleTime)
 	assert.Equal(t, *requestBody.EstimatedCommuteTime, *response.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.ApplicationDate, response.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, response.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, response.CreatedDate, time.Second)
 	assert.Nil(t, response.UpdatedDate)
 }
 
@@ -455,6 +455,10 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 	}
 	insertApplication(t, applicationHandler, firstRequestBody)
 
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
+
 	secondRequestBody := requests.CreateApplicationRequest{
 		ID:               testutil.ToPtr(uuid.New()),
 		RecruiterID:      testutil.ToPtr(recruiter.ID),
@@ -462,6 +466,10 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 		RemoteStatusType: requests.RemoteStatusTypeRemote,
 	}
 	insertApplication(t, applicationHandler, secondRequestBody)
+
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	thirdRequestBody := requests.CreateApplicationRequest{
 		ID:               testutil.ToPtr(uuid.New()),
@@ -491,9 +499,9 @@ func TestGetAllApplications_ShouldReturnAllApplications(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, *firstRequestBody.ID, response[0].ID)
+	assert.Equal(t, *thirdRequestBody.ID, response[0].ID)
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
-	assert.Equal(t, *thirdRequestBody.ID, response[2].ID)
+	assert.Equal(t, *firstRequestBody.ID, response[2].ID)
 }
 
 func TestGetAllApplications_ShouldReturnEmptyResponseIfNoApplicationsInDatabase(t *testing.T) {
@@ -1205,8 +1213,8 @@ func TestUpdateApplication_ShouldUpdateApplication(t *testing.T) {
 	assert.Equal(t, updateBody.EstimatedCycleTime, getApplicationResponse.EstimatedCycleTime)
 	assert.Equal(t, updateBody.EstimatedCommuteTime, getApplicationResponse.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, updateBody.ApplicationDate, getApplicationResponse.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, getApplicationResponse.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, getApplicationResponse.UpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, getApplicationResponse.CreatedDate, time.Second)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, getApplicationResponse.UpdatedDate, time.Second)
 }
 
 func TestUpdateApplication_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
