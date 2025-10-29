@@ -96,7 +96,7 @@ func TestCreateApplication_ShouldHandleEmptyFields(t *testing.T) {
 		RemoteStatusType: models.RemoteStatusTypeHybrid,
 	}
 
-	createdDateApproximation := time.Now().Format(time.RFC3339)
+	createdDateApproximation := time.Now()
 	insertedApplication, err := applicationService.CreateApplication(&application)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedApplication)
@@ -113,9 +113,7 @@ func TestCreateApplication_ShouldHandleEmptyFields(t *testing.T) {
 	assert.Nil(t, insertedApplication.EstimatedCycleTime)
 	assert.Nil(t, insertedApplication.EstimatedCommuteTime)
 	assert.Nil(t, insertedApplication.ApplicationDate)
-
-	insertedCompanyCreatedDate := insertedApplication.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateApproximation, insertedCompanyCreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, insertedApplication.CreatedDate, time.Second)
 	assert.Nil(t, insertedApplication.UpdatedDate)
 }
 
@@ -782,7 +780,7 @@ func TestUpdateApplication_ShouldWork(t *testing.T) {
 	assert.Equal(t, applicationToUpdate.EstimatedCycleTime, retrievedApplication.EstimatedCycleTime)
 	assert.Equal(t, applicationToUpdate.EstimatedCommuteTime, retrievedApplication.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, applicationToUpdate.ApplicationDate, retrievedApplication.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedApplication.UpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedApplication.UpdatedDate, time.Second)
 }
 
 func TestUpdateApplication_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {

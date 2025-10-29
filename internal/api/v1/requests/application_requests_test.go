@@ -171,7 +171,6 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	weekdaysInOffice := 1
 	estimatedCycleTime := 2
 	estimatedCommuteTime := 3
-	applicationDate := time.Now().AddDate(0, 0, -1)
 
 	request := CreateApplicationRequest{
 		ID:                   &id,
@@ -185,7 +184,7 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 		WeekdaysInOffice:     &weekdaysInOffice,
 		EstimatedCycleTime:   &estimatedCycleTime,
 		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
 	model, err := request.ToModel()
@@ -203,10 +202,7 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.Equal(t, weekdaysInOffice, *model.WeekdaysInOffice)
 	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
 	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
-
-	requestApplicationDate := applicationDate.Format(time.RFC3339)
-	modelApplicationDate := model.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, requestApplicationDate, modelApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, request.ApplicationDate, model.ApplicationDate)
 }
 
 func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
@@ -318,7 +314,6 @@ func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	weekdaysInOffice := 1
 	estimatedCycleTime := 2
 	estimatedCommuteTime := 3
-	applicationDate := time.Now().AddDate(0, 0, -1)
 
 	request := UpdateApplicationRequest{
 		ID:                   id,
@@ -332,7 +327,7 @@ func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 		WeekdaysInOffice:     &weekdaysInOffice,
 		EstimatedCycleTime:   &estimatedCycleTime,
 		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
 	model, err := request.ToModel()
@@ -350,10 +345,7 @@ func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.Equal(t, weekdaysInOffice, *model.WeekdaysInOffice)
 	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
 	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
-
-	requestApplicationDate := applicationDate.Format(time.RFC3339)
-	modelApplicationDate := model.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, requestApplicationDate, modelApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, request.ApplicationDate, model.ApplicationDate)
 }
 
 func TestUpdateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {

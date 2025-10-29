@@ -100,7 +100,7 @@ func TestCreateCompany_ShouldHandleEmptyFields(t *testing.T) {
 	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, insertedCompany.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &insertedDateApproximation, insertedCompany.CreatedDate, time.Second)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -122,7 +122,7 @@ func TestCreateCompany_ShouldHandleUnsetCreatedDate(t *testing.T) {
 	assert.Equal(t, companyToInsert.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &insertedDateApproximation, insertedCompany.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &insertedDateApproximation, insertedCompany.CreatedDate, time.Second)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -1244,7 +1244,7 @@ func TestUpdateCompany_ShouldWork(t *testing.T) {
 	assert.Equal(t, companyTypeToUpdate.String(), retrievedCompany.CompanyType.String())
 	testutil.AssertEqualFormattedDateTimes(t, updateModel.LastContact, retrievedCompany.LastContact)
 	testutil.AssertEqualFormattedDateTimes(t, insertedCompany.CreatedDate, retrievedCompany.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedCompany.UpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedCompany.UpdatedDate, time.Second)
 }
 
 func TestUpdateCompany_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {

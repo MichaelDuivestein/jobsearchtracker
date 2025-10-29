@@ -8,6 +8,7 @@ import (
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
+	"jobsearchtracker/pkg/timeutil"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -41,17 +42,17 @@ func (repository *CompanyRepository) Create(company *models.CreateCompany) (*mod
 	var lastContact, createdDate, updatedDate interface{}
 
 	if company.LastContact != nil {
-		lastContact = company.LastContact.Format(time.RFC3339)
+		lastContact = company.LastContact.Format(timeutil.RFC3339Milli_Write)
 	}
 
 	if company.CreatedDate != nil {
-		createdDate = company.CreatedDate.Format(time.RFC3339)
+		createdDate = company.CreatedDate.Format(timeutil.RFC3339Milli_Write)
 	} else {
-		createdDate = time.Now().Format(time.RFC3339)
+		createdDate = time.Now().Format(timeutil.RFC3339Milli_Write)
 	}
 
 	if company.UpdatedDate != nil {
-		updatedDate = company.UpdatedDate.Format(time.RFC3339)
+		updatedDate = company.UpdatedDate.Format(timeutil.RFC3339Milli_Write)
 	}
 
 	row := repository.database.QueryRow(
@@ -225,7 +226,7 @@ func (repository *CompanyRepository) Update(company *models.UpdateCompany) error
 	var sqlString strings.Builder
 	sqlString.WriteString("UPDATE company SET ")
 	sqlString.WriteString("updated_date = ?, ")
-	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
 
@@ -249,7 +250,7 @@ func (repository *CompanyRepository) Update(company *models.UpdateCompany) error
 
 	if company.LastContact != nil {
 		sqlParts = append(sqlParts, "last_contact = ?")
-		sqlVars = append(sqlVars, company.LastContact.Format(time.RFC3339))
+		sqlVars = append(sqlVars, company.LastContact.Format(timeutil.RFC3339Milli_Write))
 		updateItemCount++
 	}
 
@@ -354,7 +355,7 @@ func (repository *CompanyRepository) mapRow(
 	}
 
 	if lastContact.Valid {
-		timestamp, err := time.Parse(time.RFC3339, lastContact.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, lastContact.String)
 		if err != nil {
 			slog.Error(
 				"company_repository."+methodName+": Error parsing lastContact",
@@ -366,7 +367,7 @@ func (repository *CompanyRepository) mapRow(
 	}
 
 	if createdDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, createdDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, createdDate.String)
 		if err != nil {
 			slog.Error("company_repository."+methodName+": Error parsing createdDate",
 				"createdDate", createdDate,
@@ -377,7 +378,7 @@ func (repository *CompanyRepository) mapRow(
 	}
 
 	if updatedDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, updatedDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, updatedDate.String)
 		if err != nil {
 			slog.Error("company_repository."+methodName+": Error parsing updatedDate",
 				"updatedDate", updatedDate,

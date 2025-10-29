@@ -97,7 +97,7 @@ func TestCreateCompany_ShouldInsertAndReturnReturnCompany(t *testing.T) {
 	assert.Equal(t, requestBody.CompanyType.String(), companyResponse.CompanyType.String())
 	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, companyResponse.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, companyResponse.CreatedDate, time.Second)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -133,7 +133,7 @@ func TestCreateCompany_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 
 	assert.Nil(t, companyResponse.Notes)
 	assert.Nil(t, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, companyResponse.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, companyResponse.CreatedDate, time.Second)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -228,7 +228,7 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 	assert.Equal(t, requestBody.CompanyType.String(), companyResponse.CompanyType.String())
 	assert.Equal(t, requestBody.Notes, companyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, requestBody.LastContact, companyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, companyResponse.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, companyResponse.CreatedDate, time.Second)
 	assert.Nil(t, companyResponse.UpdatedDate)
 }
 
@@ -440,8 +440,8 @@ func TestGetAllCompanies_ShouldReturnAllCompanies(t *testing.T) {
 	insertCompany(t, companyHandler, request1Body)
 
 	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 1 second between inserts.
-	time.Sleep(1000 * time.Millisecond)
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
 
 	request2Body := requests.CreateCompanyRequest{
 		ID:          testutil.ToPtr(uuid.New()),
@@ -1063,8 +1063,8 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 	assert.Equal(t, updatedCompanyType.String(), getCompanyResponse.CompanyType.String())
 	assert.Equal(t, *updateBody.Notes, *getCompanyResponse.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, updateBody.LastContact, getCompanyResponse.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, createdDateApproximation, getCompanyResponse.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, getCompanyResponse.UpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, getCompanyResponse.CreatedDate, time.Second)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, getCompanyResponse.UpdatedDate, time.Second)
 }
 
 func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {

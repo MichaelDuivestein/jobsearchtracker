@@ -101,7 +101,7 @@ func TestCreate_ShouldInsertCompanyWithMinimumRequiredFields(t *testing.T) {
 	assert.Equal(t, company.CompanyType.String(), insertedCompany.CompanyType.String())
 	assert.Nil(t, insertedCompany.Notes)
 	assert.Nil(t, insertedCompany.LastContact)
-	testutil.AssertEqualFormattedDateTimes(t, &createdDateApproximation, insertedCompany.CreatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, insertedCompany.CreatedDate, time.Second)
 	assert.Nil(t, insertedCompany.UpdatedDate)
 }
 
@@ -571,9 +571,6 @@ func TestGetAll_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testi
 
 	application1ID := uuid.New()
 	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
-	applicationDate := time.Now().AddDate(0, 0, 1)
-	createdDate := time.Now().AddDate(0, 0, 2)
-	updatedDate := time.Now().AddDate(0, 0, 3)
 	createApplication1 := models.CreateApplication{
 		ID:                   &application1ID,
 		CompanyID:            &company1ID,
@@ -586,9 +583,9 @@ func TestGetAll_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testi
 		WeekdaysInOffice:     testutil.ToPtr(10),
 		EstimatedCycleTime:   testutil.ToPtr(11),
 		EstimatedCommuteTime: testutil.ToPtr(12),
-		ApplicationDate:      &applicationDate,
-		CreatedDate:          &createdDate,
-		UpdatedDate:          &updatedDate,
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 	}
 	_, err = applicationRepository.Create(&createApplication1)
 	assert.NoError(t, err)
@@ -647,15 +644,9 @@ func TestGetAll_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testi
 	assert.Equal(t, 10, *company2Application2.WeekdaysInOffice)
 	assert.Equal(t, 11, *company2Application2.EstimatedCycleTime)
 	assert.Equal(t, 12, *company2Application2.EstimatedCommuteTime)
-
-	retrievedApplicationDate := company2Application2.ApplicationDate.Format(time.RFC3339)
-	assert.Equal(t, applicationDate.Format(time.RFC3339), retrievedApplicationDate)
-
-	retrievedCreatedDate := company2Application2.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDate.Format(time.RFC3339), retrievedCreatedDate)
-
-	retrievedUpdatedDate := company2Application2.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDate.Format(time.RFC3339), retrievedUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.ApplicationDate, company2Application2.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.CreatedDate, company2Application2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.UpdatedDate, company2Application2.UpdatedDate)
 
 	company2Application3 := (*companies[0].Applications)[2]
 	assert.Equal(t, application3ID, company2Application3.ID)
@@ -1134,7 +1125,7 @@ func TestUpdate_ShouldUpdateCompany(t *testing.T) {
 	assert.Equal(t, *updateModel.Notes, *retrievedCompany.Notes)
 	testutil.AssertEqualFormattedDateTimes(t, retrievedCompany.LastContact, retrievedCompany.LastContact)
 	testutil.AssertEqualFormattedDateTimes(t, retrievedCompany.CreatedDate, insertedCompany.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, &updatedDateApproximation, retrievedCompany.UpdatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedCompany.UpdatedDate, time.Second)
 }
 
 func TestUpdate_ShouldUpdateASingleField(t *testing.T) {

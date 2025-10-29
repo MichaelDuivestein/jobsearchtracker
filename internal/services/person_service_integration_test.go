@@ -59,8 +59,6 @@ func TestCreatePerson_ShouldWork(t *testing.T) {
 	email := "em@ai.l"
 	phone := "321"
 	Notes := "Text"
-	createdDate := time.Now().AddDate(1, 0, 0)
-	updatedDate := time.Now().AddDate(0, -2, 0)
 
 	personToInsert := models.CreatePerson{
 		ID:          &id,
@@ -69,8 +67,8 @@ func TestCreatePerson_ShouldWork(t *testing.T) {
 		Email:       &email,
 		Phone:       &phone,
 		Notes:       &Notes,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(1, 0, 0)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, -2, 0)),
 	}
 
 	insertedPerson, err := personService.CreatePerson(&personToInsert)
@@ -82,14 +80,8 @@ func TestCreatePerson_ShouldWork(t *testing.T) {
 	assert.Equal(t, personToInsert.PersonType.String(), insertedPerson.PersonType.String())
 	assert.Equal(t, &email, insertedPerson.Email)
 	assert.Equal(t, &phone, insertedPerson.Phone)
-
-	createdDateToInsert := createdDate.Format(time.RFC3339)
-	insertedCreatedDate := insertedPerson.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, createdDateToInsert, insertedCreatedDate)
-
-	updatedDateToInsert := updatedDate.Format(time.RFC3339)
-	insertedUpdatedDate := insertedPerson.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateToInsert, insertedUpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, personToInsert.CreatedDate, insertedPerson.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, personToInsert.UpdatedDate, insertedPerson.UpdatedDate)
 }
 
 func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
@@ -102,7 +94,7 @@ func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
 		PersonType: models.PersonTypeCEO,
 	}
 
-	insertedDateApproximation := time.Now().Format(time.RFC3339)
+	insertedDateApproximation := time.Now()
 	insertedPerson, err := personService.CreatePerson(&personToInsert)
 	assert.NoError(t, err)
 	assert.NotNil(t, insertedPerson)
@@ -112,10 +104,7 @@ func TestCreatePerson_ShouldHandleEmptyFields(t *testing.T) {
 	assert.Equal(t, personToInsert.PersonType.String(), insertedPerson.PersonType.String())
 	assert.Nil(t, insertedPerson.Email)
 	assert.Nil(t, insertedPerson.Phone)
-
-	insertedCreatedDate := insertedPerson.CreatedDate.Format(time.RFC3339)
-	assert.Equal(t, insertedDateApproximation, insertedCreatedDate)
-
+	testutil.AssertDateTimesWithinDelta(t, &insertedDateApproximation, insertedPerson.CreatedDate, time.Second)
 	assert.Nil(t, insertedPerson.UpdatedDate)
 }
 
@@ -851,7 +840,7 @@ func TestUpdatePerson_ShouldWork(t *testing.T) {
 		Notes: &newNotes,
 	}
 
-	updatedDateApproximation := time.Now().Format(time.RFC3339)
+	updatedDateApproximation := time.Now()
 	err = personService.UpdatePerson(&personToUpdate)
 	assert.NoError(t, err)
 
@@ -865,9 +854,7 @@ func TestUpdatePerson_ShouldWork(t *testing.T) {
 	assert.Equal(t, newEmail, *retrievedPerson.Email)
 	assert.Equal(t, newPhone, *retrievedPerson.Phone)
 	assert.Equal(t, newNotes, *retrievedPerson.Notes)
-
-	updatedDate := retrievedPerson.UpdatedDate.Format(time.RFC3339)
-	assert.Equal(t, updatedDateApproximation, updatedDate)
+	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedPerson.UpdatedDate, time.Second)
 }
 
 func TestUpdatePerson_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {

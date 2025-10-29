@@ -8,6 +8,7 @@ import (
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
 	"jobsearchtracker/internal/utils"
+	"jobsearchtracker/pkg/timeutil"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -44,17 +45,17 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 	var applicationDate, createdDate, updatedDate interface{}
 
 	if application.ApplicationDate != nil {
-		applicationDate = application.ApplicationDate.Format(time.RFC3339)
+		applicationDate = application.ApplicationDate.Format(timeutil.RFC3339Milli_Write)
 	}
 
 	if application.CreatedDate != nil {
-		createdDate = application.CreatedDate.Format(time.RFC3339)
+		createdDate = application.CreatedDate.Format(timeutil.RFC3339Milli_Write)
 	} else {
-		createdDate = time.Now().Format(time.RFC3339)
+		createdDate = time.Now().Format(timeutil.RFC3339Milli_Write)
 	}
 
 	if application.UpdatedDate != nil {
-		updatedDate = application.UpdatedDate.Format(time.RFC3339)
+		updatedDate = application.UpdatedDate.Format(timeutil.RFC3339Milli_Write)
 	}
 
 	row := repository.database.QueryRow(
@@ -245,7 +246,7 @@ func (repository *ApplicationRepository) Update(application *models.UpdateApplic
 	var sqlString strings.Builder
 	sqlString.WriteString("UPDATE application SET ")
 	sqlString.WriteString("updated_date = ?, ")
-	sqlVars = append(sqlVars, time.Now().Format(time.RFC3339))
+	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
 
@@ -311,7 +312,7 @@ func (repository *ApplicationRepository) Update(application *models.UpdateApplic
 
 	if application.ApplicationDate != nil {
 		sqlParts = append(sqlParts, "application_date = ?")
-		sqlVars = append(sqlVars, application.ApplicationDate.Format(time.RFC3339))
+		sqlVars = append(sqlVars, application.ApplicationDate.Format(timeutil.RFC3339Milli_Write))
 		updateItemCount++
 	}
 
@@ -414,7 +415,7 @@ func (repository *ApplicationRepository) mapRow(
 	}
 
 	if applicationDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, applicationDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, applicationDate.String)
 		if err != nil {
 			slog.Error(
 				"application_repository."+methodName+": Error parsing applicationDate",
@@ -426,7 +427,7 @@ func (repository *ApplicationRepository) mapRow(
 	}
 
 	if createdDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, createdDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, createdDate.String)
 		if err != nil {
 			slog.Error("application_repository."+methodName+": Error parsing createdDate",
 				"createdDate", createdDate,
@@ -437,7 +438,7 @@ func (repository *ApplicationRepository) mapRow(
 	}
 
 	if updatedDate.Valid {
-		timestamp, err := time.Parse(time.RFC3339, updatedDate.String)
+		timestamp, err := time.Parse(timeutil.RFC3339Milli_Read, updatedDate.String)
 		if err != nil {
 			slog.Error("application_repository."+methodName+": Error parsing updatedDate",
 				"updatedDate", updatedDate,
