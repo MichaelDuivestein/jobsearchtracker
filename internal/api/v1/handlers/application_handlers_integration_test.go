@@ -27,7 +27,6 @@ func setupApplicationHandler(t *testing.T) (*handlers.ApplicationHandler, *repos
 		DatabaseMigrationsPath:               "../../../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
 	}
-
 	container := dependencyinjection.SetupApplicationHandlerTestContainer(t, config)
 
 	var applicationHandler *handlers.ApplicationHandler

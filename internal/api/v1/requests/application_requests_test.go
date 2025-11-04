@@ -15,31 +15,19 @@ import (
 // -------- CreateApplicationRequest tests: --------
 
 func TestCreateApplicationRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	companyID := uuid.New()
-	recruiterID := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
-	weekdaysInOffice := 1
-	estimatedCycleTime := 2
-	estimatedCommuteTime := 3
-	applicationDate := time.Now().AddDate(0, 0, -1)
-
 	request := models.CreateApplication{
-		ID:                   &id,
-		CompanyID:            &companyID,
-		RecruiterID:          &recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
 		RemoteStatusType:     models.RemoteStatusTypeHybrid,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
 	err := request.Validate()
@@ -152,38 +140,26 @@ func TestCreateApplicationRequestValidate_ShouldReturnValidationErrors(t *testin
 			err := request.validate()
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-
-			assert.Equal(t, test.expectedErrorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.expectedErrorMessage, validationError.Error())
 		})
 	}
 }
 
 func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
-	id := uuid.New()
-	companyID := uuid.New()
-	recruiterID := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
-	weekdaysInOffice := 1
-	estimatedCycleTime := 2
-	estimatedCommuteTime := 3
-
 	request := CreateApplicationRequest{
-		ID:                   &id,
-		CompanyID:            &companyID,
-		RecruiterID:          &recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
 		RemoteStatusType:     models.RemoteStatusTypeHybrid,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
 		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
@@ -191,27 +167,24 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id.String(), model.ID.String())
-	assert.Equal(t, companyID.String(), model.CompanyID.String())
-	assert.Equal(t, recruiterID.String(), model.RecruiterID.String())
-	assert.Equal(t, jobTitle, *model.JobTitle)
-	assert.Equal(t, jobAdURL, *model.JobAdURL)
-	assert.Equal(t, country, *model.Country)
-	assert.Equal(t, area, *model.Area)
+	assert.Equal(t, request.ID.String(), model.ID.String())
+	assert.Equal(t, request.CompanyID.String(), model.CompanyID.String())
+	assert.Equal(t, request.RecruiterID.String(), model.RecruiterID.String())
+	assert.Equal(t, request.JobTitle, model.JobTitle)
+	assert.Equal(t, request.JobAdURL, model.JobAdURL)
+	assert.Equal(t, request.Country, model.Country)
+	assert.Equal(t, request.Area, model.Area)
 	assert.Equal(t, request.RemoteStatusType.String(), model.RemoteStatusType.String())
-	assert.Equal(t, weekdaysInOffice, *model.WeekdaysInOffice)
-	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
-	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
+	assert.Equal(t, request.WeekdaysInOffice, model.WeekdaysInOffice)
+	assert.Equal(t, request.EstimatedCycleTime, model.EstimatedCycleTime)
+	assert.Equal(t, request.EstimatedCommuteTime, model.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, request.ApplicationDate, model.ApplicationDate)
 }
 
 func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
-	recruiterID := uuid.New()
-	jobAdURL := "Job Ad URL"
-
 	request := CreateApplicationRequest{
-		RecruiterID:      &recruiterID,
-		JobAdURL:         &jobAdURL,
+		RecruiterID:      testutil.ToPtr(uuid.New()),
+		JobAdURL:         testutil.ToPtr("Job Ad URL"),
 		RemoteStatusType: RemoteStatusTypeRemote,
 	}
 
@@ -223,7 +196,7 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *te
 	assert.Nil(t, model.CompanyID)
 	assert.Equal(t, request.RecruiterID, model.RecruiterID)
 	assert.Nil(t, model.JobTitle)
-	assert.Equal(t, jobAdURL, *model.JobAdURL)
+	assert.Equal(t, request.JobAdURL, model.JobAdURL)
 	assert.Nil(t, model.Country)
 	assert.Nil(t, model.Area)
 	assert.Equal(t, request.RemoteStatusType.String(), model.RemoteStatusType.String())
@@ -236,32 +209,20 @@ func TestCreateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *te
 // --------UpdateApplicationRequest tests: --------
 
 func TestUpdateApplicationRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	companyID := uuid.New()
-	recruiterID := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
 	var remoteStatusType RemoteStatusType = RemoteStatusTypeOffice
-	weekdaysInOffice := 1
-	estimatedCycleTime := 2
-	estimatedCommuteTime := 3
-	applicationDate := time.Now().AddDate(0, 0, -1)
-
 	request := UpdateApplicationRequest{
-		ID:                   id,
-		CompanyID:            &companyID,
-		RecruiterID:          &recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
-		RemoteStatusType:     &remoteStatusType,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
-		ApplicationDate:      &applicationDate,
+		ID:                   uuid.New(),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     testutil.ToPtr(remoteStatusType),
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
 	err := request.validate()
@@ -269,64 +230,52 @@ func TestUpdateApplicationRequestValidate_ShouldValidateRequest(t *testing.T) {
 }
 
 func TestUpdateApplicationRequestValidate_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
-	id := uuid.New()
-
 	request := UpdateApplicationRequest{
-		ID: id,
+		ID: uuid.New(),
 	}
 
 	err := request.validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 
-	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfRemoteStatusTypeIsInvalid(t *testing.T) {
-	id := uuid.New()
 	var fakeRemoteStatusType RemoteStatusType = "something that should never happen"
-
 	request := UpdateApplicationRequest{
-		ID:               id,
+		ID:               uuid.New(),
 		RemoteStatusType: &fakeRemoteStatusType,
 	}
 
 	err := request.validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 
-	assert.Equal(t, "validation error on field 'RemoteStatusType': RemoteStatusType is invalid", validationErr.Error())
+	assert.Equal(
+		t,
+		"validation error on field 'RemoteStatusType': RemoteStatusType is invalid",
+		validationError.Error())
 }
 
 func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
-	id := uuid.New()
-	companyID := uuid.New()
-	recruiterID := uuid.New()
-	jobTitle := "Job Title"
-	jobAdURL := "Job Ad URL"
-	country := "Some Country"
-	area := "Some Area"
 	var remoteStatusType RemoteStatusType = RemoteStatusTypeOffice
-	weekdaysInOffice := 1
-	estimatedCycleTime := 2
-	estimatedCommuteTime := 3
-
 	request := UpdateApplicationRequest{
-		ID:                   id,
-		CompanyID:            &companyID,
-		RecruiterID:          &recruiterID,
-		JobTitle:             &jobTitle,
-		JobAdURL:             &jobAdURL,
-		Country:              &country,
-		Area:                 &area,
-		RemoteStatusType:     &remoteStatusType,
-		WeekdaysInOffice:     &weekdaysInOffice,
-		EstimatedCycleTime:   &estimatedCycleTime,
-		EstimatedCommuteTime: &estimatedCommuteTime,
+		ID:                   uuid.New(),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Job Title"),
+		JobAdURL:             testutil.ToPtr("Job Ad URL"),
+		Country:              testutil.ToPtr("Some Country"),
+		Area:                 testutil.ToPtr("Some Area"),
+		RemoteStatusType:     testutil.ToPtr(remoteStatusType),
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
 		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
 
@@ -334,35 +283,32 @@ func TestUpdateApplicationRequestToModel_ShouldConvertToModel(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id.String(), model.ID.String())
-	assert.Equal(t, companyID.String(), model.CompanyID.String())
-	assert.Equal(t, recruiterID.String(), model.RecruiterID.String())
-	assert.Equal(t, jobTitle, *model.JobTitle)
-	assert.Equal(t, jobAdURL, *model.JobAdURL)
-	assert.Equal(t, country, *model.Country)
-	assert.Equal(t, area, *model.Area)
+	assert.Equal(t, request.ID.String(), model.ID.String())
+	assert.Equal(t, request.CompanyID.String(), model.CompanyID.String())
+	assert.Equal(t, request.RecruiterID.String(), model.RecruiterID.String())
+	assert.Equal(t, request.JobTitle, model.JobTitle)
+	assert.Equal(t, request.JobAdURL, model.JobAdURL)
+	assert.Equal(t, request.Country, model.Country)
+	assert.Equal(t, request.Area, model.Area)
 	assert.Equal(t, request.RemoteStatusType.String(), model.RemoteStatusType.String())
-	assert.Equal(t, weekdaysInOffice, *model.WeekdaysInOffice)
-	assert.Equal(t, estimatedCycleTime, *model.EstimatedCycleTime)
-	assert.Equal(t, estimatedCommuteTime, *model.EstimatedCommuteTime)
+	assert.Equal(t, request.WeekdaysInOffice, model.WeekdaysInOffice)
+	assert.Equal(t, request.EstimatedCycleTime, model.EstimatedCycleTime)
+	assert.Equal(t, request.EstimatedCommuteTime, model.EstimatedCommuteTime)
 	testutil.AssertEqualFormattedDateTimes(t, request.ApplicationDate, model.ApplicationDate)
 }
 
 func TestUpdateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
-	id := uuid.New()
-	companyID := uuid.New()
-
 	request := UpdateApplicationRequest{
-		ID:        id,
-		CompanyID: &companyID,
+		ID:        uuid.New(),
+		CompanyID: testutil.ToPtr(uuid.New()),
 	}
 
 	model, err := request.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id, model.ID)
-	assert.Equal(t, companyID, *model.CompanyID)
+	assert.Equal(t, request.ID, model.ID)
+	assert.Equal(t, request.CompanyID, model.CompanyID)
 	assert.Nil(t, model.RecruiterID)
 	assert.Nil(t, model.JobTitle)
 	assert.Nil(t, model.JobAdURL)
@@ -376,20 +322,16 @@ func TestUpdateApplicationRequestToModel_ShouldConvertToModelWithNilValues(t *te
 }
 
 func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
-	id := uuid.New()
-
 	request := UpdateApplicationRequest{
-		ID: id,
+		ID: uuid.New(),
 	}
-
 	model, err := request.ToModel()
 	assert.Nil(t, model)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 // -------- RemoteStatusType tests: --------
@@ -409,7 +351,6 @@ func TestRemoteStatusTypeIsValid_ShouldReturnTrue(t *testing.T) {
 }
 
 func TestRemoteStatusTypeIsValid_ShouldReturnFalseOnInvalidRemoteStatusType(t *testing.T) {
-
 	empty := RemoteStatusType("")
 	assert.False(t, empty.IsValid())
 
@@ -445,21 +386,27 @@ func TestRemoteStatusTypeToModel_ShouldReturnValidationErrorOnInvalidRemoteStatu
 	assert.NotNil(t, emptyModel)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", emptyModel.String())
-	assert.Equal(t, "validation error on field 'RemoteStatusType': invalid RemoteStatusType: ''", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(
+		t,
+		"validation error on field 'RemoteStatusType': invalid RemoteStatusType: ''",
+		validationError.Error())
 
 	blah := RemoteStatusType("Blah")
 	blahModel, err := blah.ToModel()
 	assert.NotNil(t, blahModel)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", blahModel.String())
-	assert.Equal(t, "validation error on field 'RemoteStatusType': invalid RemoteStatusType: 'Blah'", err.Error())
+
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(
+		t,
+		"validation error on field 'RemoteStatusType': invalid RemoteStatusType: 'Blah'",
+		validationError.Error())
 }
 
 func TestNewRemoteStatusType_ShouldConvertFromModel(t *testing.T) {
@@ -489,14 +436,14 @@ func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnNilRemoteStat
 	assert.NotNil(t, applicationType)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
 	assert.Equal(t, "", applicationType.String())
+
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error trying to convert internal RemoteStatusType to external RemoteStatusType.",
-		err.Error())
+		internalServiceError.Error())
 }
 
 func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnInvalidRemoteStatusType(t *testing.T) {
@@ -506,8 +453,8 @@ func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnInvalidRemote
 	assert.NotNil(t, emptyApplication)
 	assert.Equal(t, "", emptyApplication.String())
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 
 	assert.Equal(t, "", emptyApplication.String())
 
@@ -517,9 +464,8 @@ func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnInvalidRemote
 	assert.NotNil(t, specialist)
 	assert.Equal(t, "", specialist.String())
 
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: 'specialist'",
-		err.Error())
+		internalServiceError.Error())
 }

@@ -50,7 +50,7 @@ func TestGetIncludeExtraDataParam_ShouldReturnValidationErrIfUrlParamValueIsNotM
 	assert.Nil(t, dataType)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: invalid Type 'names'", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: invalid Type 'names'", validationError.Error())
 }

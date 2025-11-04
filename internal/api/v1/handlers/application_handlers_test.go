@@ -91,7 +91,6 @@ func TestCreateApplication_ShouldRespondWithBadRequestStatus(t *testing.T) {
 			responseBodyString := responseRecorder.Body.String()
 			assert.Contains(t, responseBodyString, test.expectedErrorMessage)
 		})
-
 	}
 }
 
