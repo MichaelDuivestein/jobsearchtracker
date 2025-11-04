@@ -35,7 +35,6 @@ func NewCompanyPersonsResponse(models []*models.CompanyPerson) []*CompanyPersonR
 	var responses = make([]*CompanyPersonResponse, len(models))
 	for index := range models {
 		response := NewCompanyPersonResponse(models[index])
-
 		responses[index] = response
 	}
 

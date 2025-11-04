@@ -50,57 +50,65 @@ func setupCompanyPersonService(t *testing.T) (
 
 // -------- AssociateCompanyPerson tests: --------
 
-func TestAssociateCompanyToPerson_ShouldAssociateCompaniesToPersons(t *testing.T) {
+func TestAssociateCompanyToPerson_ShouldAssociateACompanyToAPerson(t *testing.T) {
 	companyPersonService, companyRepository, personRepository := setupCompanyPersonService(t)
 
-	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
-	company2 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
-	person1 := repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
-	person2 := repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
+	company := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
+	person := repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
 
-	companyPerson1 := models.AssociateCompanyPerson{
-		CompanyID:   company1.ID,
-		PersonID:    person1.ID,
+	companyPerson := models.AssociateCompanyPerson{
+		CompanyID:   company.ID,
+		PersonID:    person.ID,
 		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 	}
-	_, err := companyPersonService.AssociateCompanyPerson(&companyPerson1)
+	associatedCompanyPerson, err := companyPersonService.AssociateCompanyPerson(&companyPerson)
 	assert.NoError(t, err)
 
-	companyPerson2 := models.AssociateCompanyPerson{
-		CompanyID:   company2.ID,
-		PersonID:    person2.ID,
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+	assert.Equal(t, companyPerson.CompanyID, associatedCompanyPerson.CompanyID)
+	assert.Equal(t, companyPerson.PersonID, associatedCompanyPerson.PersonID)
+	testutil.AssertEqualFormattedDateTimes(t, companyPerson.CreatedDate, &associatedCompanyPerson.CreatedDate)
+}
+
+func TestAssociateCompanyToPerson_ShouldAssociateACompanyToAPersonWithOnlyRequiredFields(t *testing.T) {
+	companyPersonService, companyRepository, personRepository := setupCompanyPersonService(t)
+
+	company := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
+	person := repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
+
+	companyPerson := models.AssociateCompanyPerson{
+		CompanyID: company.ID,
+		PersonID:  person.ID,
 	}
-	_, err = companyPersonService.AssociateCompanyPerson(&companyPerson2)
+	associatedCompanyPerson, err := companyPersonService.AssociateCompanyPerson(&companyPerson)
 	assert.NoError(t, err)
 
-	companyPerson3 := models.AssociateCompanyPerson{
-		CompanyID:   company2.ID,
-		PersonID:    person1.ID,
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
+	assert.Equal(t, companyPerson.CompanyID, associatedCompanyPerson.CompanyID)
+	assert.Equal(t, companyPerson.PersonID, associatedCompanyPerson.PersonID)
+	assert.NotNil(t, associatedCompanyPerson.CreatedDate)
+}
+
+func TestAssociateCompanyToPerson_ShouldReturnConflictErrorIfCompanyIDAndPersonIDCombinationAlreadyExist(t *testing.T) {
+	companyPersonService, companyRepository, personRepository := setupCompanyPersonService(t)
+
+	company := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
+	person := repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
+
+	companyPerson := models.AssociateCompanyPerson{
+		CompanyID: company.ID,
+		PersonID:  person.ID,
 	}
-	_, err = companyPersonService.AssociateCompanyPerson(&companyPerson3)
+	_, err := companyPersonService.AssociateCompanyPerson(&companyPerson)
 	assert.NoError(t, err)
 
-	personCompanies, err := companyPersonService.GetAll()
-	assert.NoError(t, err)
-	assert.NotNil(t, personCompanies)
-	assert.Len(t, personCompanies, 3)
+	_, err = companyPersonService.AssociateCompanyPerson(&companyPerson)
+	assert.NotNil(t, err)
 
-	associatedCompanyPerson1 := personCompanies[0]
-	assert.Equal(t, company2.ID, associatedCompanyPerson1.CompanyID)
-	assert.Equal(t, person2.ID, associatedCompanyPerson1.PersonID)
-	assert.NotNil(t, associatedCompanyPerson1.CreatedDate)
-
-	associatedCompanyPerson2 := personCompanies[1]
-	assert.Equal(t, company1.ID, associatedCompanyPerson2.CompanyID)
-	assert.Equal(t, person1.ID, associatedCompanyPerson2.PersonID)
-	assert.NotNil(t, associatedCompanyPerson2.CreatedDate)
-
-	associatedCompanyPerson3 := personCompanies[2]
-	assert.Equal(t, company2.ID, associatedCompanyPerson3.CompanyID)
-	assert.Equal(t, person1.ID, associatedCompanyPerson3.PersonID)
-	assert.NotNil(t, associatedCompanyPerson3.CreatedDate)
+	var conflictError *internalErrors.ConflictError
+	assert.True(t, errors.As(err, &conflictError))
+	assert.Equal(
+		t,
+		"conflict error on insert: CompanyID and PersonID combination already exists in database.",
+		conflictError.Error())
 }
 
 // -------- GetByID tests: --------

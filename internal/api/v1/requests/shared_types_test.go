@@ -35,9 +35,9 @@ func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 
 	assert.Equal(t, "", emptyType.String())
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: invalid Type ''", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: invalid Type ''", validationError.Error())
 
 	namesType, err := NewIncludeExtraDataType("names")
 	assert.NotNil(t, namesType)
@@ -45,8 +45,8 @@ func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 
 	assert.Equal(t, "", namesType.String())
 
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: invalid Type 'names'", validationErr.Error())
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: invalid Type 'names'", validationError.Error())
 }
 
 func TestIncludeExtraDataTypeIsValid_ShouldReturnTrue(t *testing.T) {
@@ -94,21 +94,25 @@ func TestIncludeExtraDataTypeToModel_ShouldReturnValidationErrorOnInvalidType(t 
 	assert.NotNil(t, emptyModel)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", emptyModel.String())
-	assert.Equal(t, "validation error on field 'IncludeExtraDataType': invalid IncludeExtraDataType: ''", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(
+		t,
+		"validation error on field 'IncludeExtraDataType': invalid IncludeExtraDataType: ''",
+		validationError.Error())
 
 	name := IncludeExtraDataType("name")
 	nameModel, err := name.ToModel()
 	assert.NotNil(t, nameModel)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &validationErr))
 	assert.Equal(t, "", nameModel.String())
+
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(
 		t,
-		"validation error on field 'IncludeExtraDataType': invalid IncludeExtraDataType: 'name'", err.Error())
-
+		"validation error on field 'IncludeExtraDataType': invalid IncludeExtraDataType: 'name'",
+		validationError.Error())
 }

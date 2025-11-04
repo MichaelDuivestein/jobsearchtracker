@@ -24,48 +24,6 @@ func TestAssociateCompanyPerson_ShouldReturnValidationErrorIfModelIsNil(t *testi
 	assert.Equal(t, validationError.Error(), "validation error: AssociateCompanyPerson model is nil")
 }
 
-func TestAssociateCompanyPerson_ShouldReturnValidationErrorIfModelIsInvalid(t *testing.T) {
-	tests := []struct {
-		testName  string
-		companyID *uuid.UUID
-		personID  *uuid.UUID
-	}{
-		{
-			testName:  "nil companyID and nil personID ",
-			personID:  nil,
-			companyID: nil,
-		},
-		{
-			testName:  "empty companyID and nil personID",
-			companyID: testutil.ToPtr(uuid.UUID{}),
-			personID:  nil,
-		},
-		{
-			testName:  "nil companyID and empty personID",
-			companyID: nil,
-			personID:  testutil.ToPtr(uuid.UUID{}),
-		},
-		{
-			testName:  "empty companyID and empty personID",
-			companyID: testutil.ToPtr(uuid.UUID{}),
-			personID:  testutil.ToPtr(uuid.UUID{}),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.testName, func(t *testing.T) {
-			service := NewCompanyPersonService(nil)
-
-			personCompanies, err := service.GetByID(test.companyID, test.personID)
-			assert.Nil(t, personCompanies)
-
-			assert.NotNil(t, err)
-			assert.Equal(t, internalErrors.NewValidationError(nil, "companyID and personID cannot both be empty"), err)
-		})
-	}
-
-}
-
 // -------- GetByID tests: --------
 
 func TestGetByID_ShouldReturnValidationErrorIfCompanyIDAndPersonIDAreEmpty(t *testing.T) {
@@ -111,7 +69,7 @@ func TestGetByID_ShouldReturnValidationErrorIfCompanyIDAndPersonIDAreEmpty(t *te
 
 // -------- Delete tests: --------
 
-func TestDelete_ShouldReturnValidationErrorIfCompanyIDORPersonIDAreEmpty(t *testing.T) {
+func TestDelete_ShouldReturnValidationErrorIfCompanyIDOrPersonIDisEmpty(t *testing.T) {
 	tests := []struct {
 		testName  string
 		companyID uuid.UUID
@@ -154,7 +112,6 @@ func TestDelete_ShouldReturnValidationErrorIfCompanyIDORPersonIDAreEmpty(t *test
 			assert.ErrorAs(t, err, &validationError)
 
 			assert.Equal(t, test.errorText, validationError.Error())
-
 		})
 	}
 }

@@ -50,9 +50,9 @@ func TestAssociateCompanyPersonRequestValidate_ShouldReturnValidationErrors(t *t
 			err := request.validate()
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-			assert.Equal(t, test.expectedErrorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.expectedErrorMessage, validationError.Error())
 		})
 	}
 }
@@ -115,9 +115,9 @@ func TestDeleteCompanyPersonRequestValidate_ShouldReturnValidationErrors(t *test
 			err := request.validate()
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-			assert.Equal(t, test.expectedErrorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.expectedErrorMessage, validationError.Error())
 		})
 	}
 }
