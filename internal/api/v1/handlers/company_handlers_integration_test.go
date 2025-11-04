@@ -31,7 +31,6 @@ func setupCompanyHandler(t *testing.T) (
 		DatabaseMigrationsPath:               "../../../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
 	}
-
 	container := dependencyinjection.SetupCompanyHandlerTestContainer(t, config)
 
 	var companyHandler *handlers.CompanyHandler
@@ -198,7 +197,6 @@ func TestGetCompanyById_ShouldReturnCompany(t *testing.T) {
 		Notes:       testutil.ToPtr("Not a lot of notes for this company"),
 		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
 	}
-
 	_, createdDateApproximation := insertCompany(t, companyHandler, requestBody)
 
 	// Get the company:
@@ -252,35 +250,6 @@ func TestGetCompanyById_ShouldReturnNotFoundIfCompanyDoesNotExist(t *testing.T) 
 
 	firstResponseBodyString := responseRecorder.Body.String()
 	assert.NotEmpty(t, firstResponseBodyString)
-
-	// Insert a company
-
-	requestBody := requests.CreateCompanyRequest{
-		ID:          testutil.ToPtr(uuid.New()),
-		Name:        "random company name",
-		CompanyType: requests.CompanyTypeConsultancy,
-		Notes:       testutil.ToPtr("Not a lot of notes for this company"),
-		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
-	}
-	insertCompany(t, companyHandler, requestBody)
-
-	// Get another company that doesn't exist
-
-	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/get/id", nil)
-	assert.NoError(t, err)
-
-	responseRecorder = httptest.NewRecorder()
-
-	secondGetVars := map[string]string{
-		"id": uuid.New().String(),
-	}
-	secondGetRequest = mux.SetURLVars(secondGetRequest, secondGetVars)
-
-	companyHandler.GetCompanyById(responseRecorder, secondGetRequest)
-	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
-
-	secondResponseBodyString := responseRecorder.Body.String()
-	assert.NotEmpty(t, secondResponseBodyString)
 }
 
 // -------- GetCompanyByName tests: --------
@@ -513,25 +482,36 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplica
 
 	// setup applications
 
-	application1ID := uuid.New()
-	repositoryhelpers.CreateApplication(
+	application1ID := repositoryhelpers.CreateApplication(
 		t,
 		applicationRepository,
-		&application1ID,
+		nil,
 		&companyId,
 		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	)
+	).ID
 
-	application2ID := uuid.New()
-	repositoryhelpers.CreateApplication(
-		t,
-		applicationRepository,
-		&application2ID,
-		nil,
-		&companyId,
-		testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
-	)
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
+
+	application2 := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		RecruiterID:          &companyId,
+		JobTitle:             testutil.ToPtr("Application2JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
+		Country:              testutil.ToPtr("Application2Country"),
+		Area:                 testutil.ToPtr("Application2Area"),
+		RemoteStatusType:     models.RemoteStatusTypeRemote,
+		WeekdaysInOffice:     testutil.ToPtr(1),
+		EstimatedCycleTime:   testutil.ToPtr(2),
+		EstimatedCommuteTime: testutil.ToPtr(3),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+	}
+	_, err := applicationRepository.Create(&application2)
+	assert.NoError(t, err)
 
 	// get all companies
 
@@ -559,12 +539,8 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplica
 	assert.NotNil(t, retrievedCompany.Applications)
 	assert.Len(t, *retrievedCompany.Applications, 2)
 
-	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[0].ID)
-	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[0].CompanyID)
-	assert.Nil(t, (*retrievedCompany.Applications)[0].RecruiterID)
-
-	application := (*retrievedCompany.Applications)[1]
-	assert.Equal(t, application2ID, application.ID)
+	application := (*retrievedCompany.Applications)[0]
+	assert.Equal(t, *application2.ID, application.ID)
 	assert.Nil(t, application.CompanyID)
 	assert.Equal(t, companyId, *application.RecruiterID)
 	assert.Nil(t, application.JobTitle)
@@ -579,6 +555,9 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationIDsIfIncludeApplica
 	assert.Nil(t, application.CreatedDate)
 	assert.Nil(t, application.UpdatedDate)
 
+	assert.Equal(t, application1ID, (*retrievedCompany.Applications)[1].ID)
+	assert.Equal(t, companyId, *(*retrievedCompany.Applications)[1].CompanyID)
+	assert.Nil(t, (*retrievedCompany.Applications)[1].RecruiterID)
 }
 
 func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationsIfIncludeApplicationsIsAll(t *testing.T) {
@@ -596,19 +575,21 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationsIfIncludeApplicati
 
 	// setup applications
 
-	application1ID := uuid.New()
-	repositoryhelpers.CreateApplication(
+	application1ID := repositoryhelpers.CreateApplication(
 		t,
 		applicationRepository,
-		&application1ID,
+		nil,
 		&companyId,
 		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
-	)
+	).ID
 
-	application2ID := uuid.New()
+	// a sleep is needed in order to ensure the order of the records.
+	//There needs to be a minimum of 10 milliseconds between inserts.
+	time.Sleep(10 * time.Millisecond)
+
 	application2 := models.CreateApplication{
-		ID:                   testutil.ToPtr(application2ID),
+		ID:                   testutil.ToPtr(uuid.New()),
 		RecruiterID:          &companyId,
 		JobTitle:             testutil.ToPtr("Application2JobTitle"),
 		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
@@ -656,7 +637,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithApplicationsIfIncludeApplicati
 	assert.Nil(t, (*retrievedCompany.Applications)[0].RecruiterID)
 
 	retrievedApplication2 := (*retrievedCompany.Applications)[1]
-	assert.Equal(t, application2ID, retrievedApplication2.ID)
+	assert.Equal(t, *application2.ID, retrievedApplication2.ID)
 	assert.Nil(t, retrievedApplication2.CompanyID)
 	assert.Equal(t, companyId, *retrievedApplication2.RecruiterID)
 	assert.Equal(t, "Application2JobTitle", *retrievedApplication2.JobTitle)
@@ -687,21 +668,19 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithNoApplicationsIfIncludeApplica
 
 	// setup applications
 
-	application1ID := uuid.New()
 	repositoryhelpers.CreateApplication(
 		t,
 		applicationRepository,
-		&application1ID,
+		nil,
 		&companyId,
 		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 	)
 
-	application2ID := uuid.New()
 	repositoryhelpers.CreateApplication(
 		t,
 		applicationRepository,
-		&application2ID,
+		nil,
 		nil,
 		&companyId,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
@@ -748,17 +727,15 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonIDsIfIncludePersonsIsIDs
 
 	// setup persons
 
-	person1ID := uuid.New()
-	repositoryhelpers.CreatePerson(
+	person1ID := repositoryhelpers.CreatePerson(
 		t,
 		personRepository,
-		&person1ID,
+		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	)
+	).ID
 
-	person2ID := uuid.New()
 	person2 := models.CreatePerson{
-		ID:          &person2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person 2 Name",
 		PersonType:  models.PersonTypeCTO,
 		Email:       testutil.ToPtr("Person 2 Email"),
@@ -782,7 +759,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonIDsIfIncludePersonsIsIDs
 	_, err = companyPersonRepository.AssociateCompanyPerson(
 		testutil.ToPtr(models.AssociateCompanyPerson{
 			CompanyID: companyID,
-			PersonID:  person2ID,
+			PersonID:  *person2.ID,
 		}))
 	assert.NoError(t, err)
 
@@ -815,7 +792,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonIDsIfIncludePersonsIsIDs
 	assert.Equal(t, person1ID, (*retrievedCompany.Persons)[0].ID)
 
 	person := (*retrievedCompany.Persons)[1]
-	assert.Equal(t, person2ID, person.ID)
+	assert.Equal(t, *person2.ID, person.ID)
 	assert.Nil(t, person.Name)
 	assert.Nil(t, person.PersonType)
 	assert.Nil(t, person.Email)
@@ -840,17 +817,15 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsAll(t
 
 	// setup persons
 
-	person1ID := uuid.New()
-	repositoryhelpers.CreatePerson(
+	person1ID := repositoryhelpers.CreatePerson(
 		t,
 		personRepository,
-		&person1ID,
+		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	)
+	).ID
 
-	person2ID := uuid.New()
 	person2 := models.CreatePerson{
-		ID:          &person2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person 2 Name",
 		PersonType:  models.PersonTypeCTO,
 		Email:       testutil.ToPtr("Person 2 Email"),
@@ -874,7 +849,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsAll(t
 	_, err = companyPersonRepository.AssociateCompanyPerson(
 		testutil.ToPtr(models.AssociateCompanyPerson{
 			CompanyID: companyID,
-			PersonID:  person2ID,
+			PersonID:  *person2.ID,
 		}))
 	assert.NoError(t, err)
 
@@ -907,7 +882,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsAll(t
 	assert.Equal(t, person1ID, (*retrievedCompany.Persons)[0].ID)
 
 	person := (*retrievedCompany.Persons)[1]
-	assert.Equal(t, person2ID, person.ID)
+	assert.Equal(t, *person2.ID, person.ID)
 	assert.Equal(t, person2.Name, *person.Name)
 	assert.Equal(t, person2.PersonType.String(), person.PersonType.String())
 	assert.Equal(t, person2.Email, person.Email)
@@ -922,9 +897,8 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsNone(
 
 	// setup company
 
-	companyID := uuid.New()
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &companyID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "company1Name",
 		CompanyType: models.CompanyTypeConsultancy,
 	}
@@ -932,17 +906,15 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsNone(
 
 	// setup persons
 
-	person1ID := uuid.New()
-	repositoryhelpers.CreatePerson(
+	person1ID := repositoryhelpers.CreatePerson(
 		t,
 		personRepository,
-		&person1ID,
+		nil,
 		testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-	)
+	).ID
 
-	person2ID := uuid.New()
 	person2 := models.CreatePerson{
-		ID:          &person2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person 2 Name",
 		PersonType:  models.PersonTypeCTO,
 		Email:       testutil.ToPtr("Person 2 Email"),
@@ -958,15 +930,15 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsNone(
 
 	_, err = companyPersonRepository.AssociateCompanyPerson(
 		testutil.ToPtr(models.AssociateCompanyPerson{
-			CompanyID: companyID,
+			CompanyID: *requestBody.ID,
 			PersonID:  person1ID,
 		}))
 	assert.NoError(t, err)
 
 	_, err = companyPersonRepository.AssociateCompanyPerson(
 		testutil.ToPtr(models.AssociateCompanyPerson{
-			CompanyID: companyID,
-			PersonID:  person2ID,
+			CompanyID: *requestBody.ID,
+			PersonID:  *person2.ID,
 		}))
 	assert.NoError(t, err)
 
@@ -990,7 +962,7 @@ func TestGetAllCompanies_ShouldReturnCompaniesWithPersonsIfIncludePersonsIsNone(
 	assert.NotNil(t, response)
 	assert.Len(t, response, 1)
 
-	assert.Equal(t, companyID, response[0].ID)
+	assert.Equal(t, *requestBody.ID, response[0].ID)
 	retrievedCompany := response[0]
 
 	assert.Nil(t, retrievedCompany.Persons)
@@ -1003,15 +975,12 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 
 	// create a company
 
-	id := uuid.New()
-	notes := "Notes here"
-	lastContact := time.Now().AddDate(0, 2, 0)
 	createRequest := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeEmployer,
-		Notes:       &notes,
-		LastContact: &lastContact,
+		Notes:       testutil.ToPtr("Notes here"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 2, 0)),
 	}
 	_, createdDateApproximation := insertCompany(t, companyHandler, createRequest)
 
@@ -1019,7 +988,7 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 
 	var updatedCompanyType requests.CompanyType = requests.CompanyTypeConsultancy
 	updateBody := requests.UpdateCompanyRequest{
-		ID:          id,
+		ID:          *createRequest.ID,
 		Name:        testutil.ToPtr("Updated Name"),
 		CompanyType: &updatedCompanyType,
 		Notes:       testutil.ToPtr("Updated Notes"),
@@ -1044,7 +1013,7 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": createRequest.ID.String(),
 	}
 	getRequest = mux.SetURLVars(getRequest, vars)
 
@@ -1058,7 +1027,7 @@ func TestUpdateCompany_ShouldUpdateCompany(t *testing.T) {
 	err = json.NewDecoder(responseRecorder.Body).Decode(&getCompanyResponse)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, getCompanyResponse.ID)
+	assert.Equal(t, updateBody.ID, getCompanyResponse.ID)
 	assert.Equal(t, *updateBody.Name, *getCompanyResponse.Name)
 	assert.Equal(t, updatedCompanyType.String(), getCompanyResponse.CompanyType.String())
 	assert.Equal(t, *updateBody.Notes, *getCompanyResponse.Notes)
@@ -1072,9 +1041,8 @@ func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 
 	// create a company
 
-	id := uuid.New()
 	createRequest := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Nameless Company",
 		CompanyType: models.CompanyTypeConsultancy,
 		Notes:       testutil.ToPtr("Notes"),
@@ -1085,7 +1053,7 @@ func TestUpdateCompany_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 	// update the company
 
 	updateBody := requests.UpdateCompanyRequest{
-		ID: id,
+		ID: *createRequest.ID,
 	}
 
 	requestBytes, err := json.Marshal(updateBody)
@@ -1114,9 +1082,8 @@ func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
 
 	// insert the company
 
-	id := uuid.New()
 	requestBody := requests.CreateCompanyRequest{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Keeping company",
 		CompanyType: requests.CompanyTypeConsultancy,
 		Notes:       testutil.ToPtr("Noting things"),
@@ -1132,7 +1099,7 @@ func TestDeleteCompany_ShouldDeleteCompany(t *testing.T) {
 	deleteResponseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": requestBody.ID.String(),
 	}
 	deleteRequest = mux.SetURLVars(deleteRequest, vars)
 

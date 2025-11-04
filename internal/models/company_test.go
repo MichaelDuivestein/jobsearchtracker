@@ -39,7 +39,7 @@ func TestCreateCompanyValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testi
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
-	company := &CreateCompany{
+	company := CreateCompany{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "",
 		CompanyType: CompanyTypeRecruiter,
@@ -52,13 +52,13 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing
 	err := company.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'Name': company name is empty", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'Name': company name is empty", validationError.Error())
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.T) {
-	company := &CreateCompany{
+	company := CreateCompany{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "A random person",
 		Notes:       testutil.ToPtr("More stuff"),
@@ -70,13 +70,13 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *
 	err := company.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationError.Error())
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t *testing.T) {
-	company := &CreateCompany{
+	company := CreateCompany{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Jan Janssen",
 		CompanyType: "Nothing",
@@ -89,13 +89,13 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t
 	err := company.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'CompanyType': company type is invalid", validationError.Error())
 }
 
 func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
-	company := &CreateCompany{
+	company := CreateCompany{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Pick one",
 		CompanyType: CompanyTypeEmployer,
@@ -108,12 +108,12 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *
 	err := company.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(
 		t,
 		"validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		validationErr.Error())
+		validationError.Error())
 }
 
 // -------- CompanyType.IsValid tests: --------

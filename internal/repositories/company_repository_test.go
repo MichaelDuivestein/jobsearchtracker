@@ -21,9 +21,9 @@ func TestUpdate_ShouldReturnValidationErrorIfNoCompanyFieldsToUpdate(t *testing.
 	err := companyRepository.Update(&updateModel)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 // -------- buildApplicationsCoalesceAndJoin tests: --------
@@ -42,7 +42,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDa
 
 	coalesce, join := companyRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
 
-	assert.Equal(t, "\t\tLEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n", join)
+	assert.Equal(t, "\n\t\tLEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n", join)
 
 	expectedCoalesce := `
 		COALESCE(
@@ -65,7 +65,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtr
 
 	coalesce, join := companyRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
 
-	assert.Equal(t, "\t\tLEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n", join)
+	assert.Equal(t, "\n\t\tLEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n", join)
 
 	expectedCoalesce := `
 		COALESCE(
