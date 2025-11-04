@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -98,113 +99,102 @@ func TestCreateApplicationValidate_ShouldReturnValidationErrorIfCompanyIDAndRecr
 			err := application.Validate()
 			assert.Error(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-			assert.Equal(t, "validation error: CompanyID and RecruiterID cannot both be empty", err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, "validation error: CompanyID and RecruiterID cannot both be empty", validationError.Error())
 		})
 	}
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorIfJobTitleIsEmpty(t *testing.T) {
-	companyID := uuid.New()
-	jobTitle := ""
 	application := CreateApplication{
-		CompanyID: &companyID,
-		JobTitle:  &jobTitle,
+		CompanyID: testutil.ToPtr(uuid.New()),
+		JobTitle:  testutil.ToPtr(""),
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: JobTitle is empty", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: JobTitle is empty", validationError.Error())
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorIfJobAdUrlIsEmpty(t *testing.T) {
-	companyID := uuid.New()
-	JobAdUrl := ""
 	application := CreateApplication{
-		CompanyID: &companyID,
-		JobAdURL:  &JobAdUrl,
+		CompanyID: testutil.ToPtr(uuid.New()),
+		JobAdURL:  testutil.ToPtr(""),
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: JobAdURL is empty", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: JobAdURL is empty", validationError.Error())
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorIfJobTitleIsEmptyAndJobAdUrlIsNil(t *testing.T) {
-	companyID := uuid.New()
 	application := CreateApplication{
-		CompanyID: &companyID,
+		CompanyID: testutil.ToPtr(uuid.New()),
 		JobTitle:  nil,
 		JobAdURL:  nil,
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: JobTitle and JobAdURL cannot be both be nil", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: JobTitle and JobAdURL cannot be both be nil", validationError.Error())
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorIfRemoteStatusIsInvalid(t *testing.T) {
-	companyID := uuid.New()
-	jobTitle := "not important"
 	var fakeRemoteStatusType RemoteStatusType = "something that should never happen"
 	application := CreateApplication{
-		CompanyID:        &companyID,
-		JobTitle:         &jobTitle,
+		CompanyID:        testutil.ToPtr(uuid.New()),
+		JobTitle:         testutil.ToPtr("not important"),
 		RemoteStatusType: fakeRemoteStatusType,
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: remoteStatusType is invalid", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: remoteStatusType is invalid", validationError.Error())
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorOnUnsetApplicationDate(t *testing.T) {
-	companyID := uuid.New()
-	jobTitle := "not important"
 	application := CreateApplication{
-		CompanyID:        &companyID,
-		JobTitle:         &jobTitle,
+		CompanyID:        testutil.ToPtr(uuid.New()),
+		JobTitle:         testutil.ToPtr("not important"),
 		RemoteStatusType: RemoteStatusTypeOffice,
 		ApplicationDate:  &time.Time{},
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(
 		t,
 		"validation error on field 'ApplicationDate': ApplicationDate is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		validationErr.Error())
+		validationError.Error())
 }
 
 func TestCreateApplicationValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
-	companyID := uuid.New()
-	jobTitle := "not important"
 	application := CreateApplication{
-		CompanyID:        &companyID,
-		JobTitle:         &jobTitle,
+		CompanyID:        testutil.ToPtr(uuid.New()),
+		JobTitle:         testutil.ToPtr("not important"),
 		RemoteStatusType: RemoteStatusTypeUnknown,
 		UpdatedDate:      &time.Time{},
 	}
 	err := application.Validate()
 	assert.Error(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(
 		t,
 		"validation error on field 'UpdatedDate': UpdatedDate is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		validationErr.Error())
+		validationError.Error())
 }
 
 // -------- RemoteStatusType.IsValid tests: --------

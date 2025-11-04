@@ -27,13 +27,15 @@ func NewApplicationRepository(database *sql.DB) *ApplicationRepository {
 
 // Create can return ConflictError, InternalServiceError, ValidationError
 func (repository *ApplicationRepository) Create(application *models.CreateApplication) (*models.Application, error) {
-	sqlInsert := "INSERT INTO application (id, company_id, recruiter_id, job_title, job_ad_url, country, area, " +
-		"remote_status_type, weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, " +
-		"created_date, updated_date)" +
-		"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
-		"RETURNING id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
-		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date, null, null"
+	sqlInsert := `
+		INSERT INTO application (
+	 		id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, weekdays_in_office, 
+			estimated_cycle_time, estimated_commute_time, application_date, created_date, updated_date
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+	  	RETURNING 
+			id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
+		    weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
+		    updated_date, null, null; `
 
 	var applicationID uuid.UUID
 	if application.ID != nil {
@@ -113,11 +115,12 @@ func (repository *ApplicationRepository) GetById(id *uuid.UUID) (*models.Applica
 		return nil, internalErrors.NewValidationError(nil, "ID is nil")
 	}
 
-	sqlSelect := "SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
-		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date, null, null " +
-		"FROM application " +
-		"WHERE id = ?"
+	sqlSelect := `
+		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
+		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
+		   updated_date, null, null 
+		FROM application 
+		WHERE id = ? `
 
 	row := repository.database.QueryRow(sqlSelect, id)
 
@@ -141,12 +144,13 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 		return nil, internalErrors.NewValidationError(nil, "JobTitle is nil")
 	}
 
-	sqlSelect := "SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, " +
-		"weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, " +
-		"updated_date, null, null " +
-		"FROM application " +
-		"WHERE job_title LIKE ? " +
-		"ORDER BY updated_Date DESC"
+	sqlSelect := `
+		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
+		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
+		   updated_date, null, null 
+		FROM application 
+		WHERE job_title LIKE ? 
+		ORDER BY updated_Date DESC `
 
 	wildcardJobTitle := "%" + *jobTitle + "%"
 	rows, err := repository.database.Query(sqlSelect, wildcardJobTitle)
@@ -188,23 +192,14 @@ func (repository *ApplicationRepository) GetAll(
 	includeRecruiter models.IncludeExtraDataType) ([]*models.Application, error) {
 
 	sqlSelect := `
-        SELECT a.id, a.company_id, a.recruiter_id, a.job_title, a.job_ad_url, a.country, a.area, a.remote_status_type, 
-            a.weekdays_in_office, a.estimated_cycle_time, a.estimated_commute_time, a.application_date, a.created_date, 
-            a.updated_date, %s, %s
-        FROM application a %s %s
-        ORDER BY a.created_date DESC
-        `
-	companyCoalesceString := "null \n"
-	companyJoinString := ""
-	if includeCompany != models.IncludeExtraDataTypeNone {
-		companyCoalesceString, companyJoinString = repository.buildCompanyCoalesceAndJoin(includeCompany)
-	}
+		SELECT a.id, a.company_id, a.recruiter_id, a.job_title, a.job_ad_url, a.country, a.area, a.remote_status_type, 
+			a.weekdays_in_office, a.estimated_cycle_time, a.estimated_commute_time, a.application_date, a.created_date, 
+			a.updated_date, %s, %s
+		FROM application a %s %s
+		ORDER BY a.created_date DESC `
 
-	recruiterCoalesceString := "null \n"
-	recruiterJoinString := ""
-	if includeRecruiter != models.IncludeExtraDataTypeNone {
-		recruiterCoalesceString, recruiterJoinString = repository.buildRecruiterCoalesceAndJoin(includeRecruiter)
-	}
+	companyCoalesceString, companyJoinString := repository.buildCompanyCoalesceAndJoin(includeCompany)
+	recruiterCoalesceString, recruiterJoinString := repository.buildRecruiterCoalesceAndJoin(includeRecruiter)
 
 	sqlSelect = fmt.Sprintf(sqlSelect, companyCoalesceString, recruiterCoalesceString, companyJoinString, recruiterJoinString)
 
@@ -240,12 +235,14 @@ func (repository *ApplicationRepository) GetAll(
 
 // Update can return InternalServiceError, ValidationError
 func (repository *ApplicationRepository) Update(application *models.UpdateApplication) error {
+	var sqlString strings.Builder
 	var sqlParts []string
 	var sqlVars []interface{}
 
-	var sqlString strings.Builder
-	sqlString.WriteString("UPDATE application SET ")
-	sqlString.WriteString("updated_date = ?, ")
+	sqlString.WriteString(`
+		UPDATE application SET
+			updated_date = ?, 
+			`)
 	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
@@ -321,7 +318,7 @@ func (repository *ApplicationRepository) Update(application *models.UpdateApplic
 		return internalErrors.NewValidationError(nil, "nothing to update")
 	}
 
-	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", \n\t\t\t", nil)
 	if err != nil {
 		var message = "unable to join SQL statement string"
 		slog.Error("application_repository.Update: unable to join SQL statement string", "error", err)
@@ -330,7 +327,8 @@ func (repository *ApplicationRepository) Update(application *models.UpdateApplic
 
 	sqlString.WriteString(sqlPayload)
 
-	sqlString.WriteString(" WHERE id = ?")
+	sqlString.WriteString(`
+		WHERE id = ? `)
 	sqlVars = append(sqlVars, application.ID)
 
 	_, err = repository.database.Exec(
@@ -479,26 +477,26 @@ func (repository *ApplicationRepository) buildCompanyCoalesceAndJoin(
 	}
 
 	coalesceString := `
-        CASE 
-             WHEN c.id IS NOT NULL THEN JSON_OBJECT(
-                'ID', c.id%s
-            )
-            ELSE NULL
-        END as company`
+		CASE 
+			WHEN c.id IS NOT NULL THEN JSON_OBJECT(
+				'ID', c.id%s
+			)
+			ELSE NULL
+		END as company`
 
 	allColumns := ""
 	if includeCompany == models.IncludeExtraDataTypeAll {
 		allColumns = `,
-                'Name', c.name, 
-                'CompanyType', c.company_type,  
-                'Notes', c.notes, 
-                'LastContact', c.last_contact, 
-                'CreatedDate', c.created_date, 
-                'UpdatedDate', c.updated_date`
+				'Name', c.name, 
+				'CompanyType', c.company_type,  
+				'Notes', c.notes, 
+				'LastContact', c.last_contact, 
+				'CreatedDate', c.created_date, 
+				'UpdatedDate', c.updated_date`
 	}
 	coalesceString = fmt.Sprintf(coalesceString, allColumns)
 
-	joinString := "\n        LEFT JOIN company c ON (a.company_id = c.id)"
+	joinString := "\n\t\tLEFT JOIN company c ON (a.company_id = c.id)"
 
 	return coalesceString, joinString
 }
@@ -511,26 +509,26 @@ func (repository *ApplicationRepository) buildRecruiterCoalesceAndJoin(
 	}
 
 	coalesceString := `
-        CASE 
-             WHEN r.id IS NOT NULL THEN JSON_OBJECT(
-                'ID', r.id%s
-            )
-            ELSE NULL
-        END as recruiter`
+		CASE 
+			WHEN r.id IS NOT NULL THEN JSON_OBJECT(
+				'ID', r.id%s
+			)
+			ELSE NULL
+		END as recruiter`
 
 	allColumns := ""
 	if includeRecruiter == models.IncludeExtraDataTypeAll {
 		allColumns = `,
-                'Name', r.name, 
-                'CompanyType', r.company_type,  
-                'Notes', r.notes, 
-                'LastContact', r.last_contact, 
-                'CreatedDate', r.created_date, 
-                'UpdatedDate', r.updated_date`
+				'Name', r.name, 
+				'CompanyType', r.company_type,  
+				'Notes', r.notes, 
+				'LastContact', r.last_contact, 
+				'CreatedDate', r.created_date, 
+				'UpdatedDate', r.updated_date`
 	}
 	coalesceString = fmt.Sprintf(coalesceString, allColumns)
 
-	joinString := "\n        LEFT JOIN company r ON (a.recruiter_id = r.id)"
+	joinString := "\n\t\tLEFT JOIN company r ON (a.recruiter_id = r.id)"
 
 	return coalesceString, joinString
 }

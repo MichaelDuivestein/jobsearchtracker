@@ -47,8 +47,8 @@ func (applicationHandler *ApplicationHandler) CreateApplication(writer http.Resp
 	createApplicationModel, err := createApplicationRequest.ToModel()
 	if err != nil {
 		slog.Info(
-			"v1.ApplicationHandler.CreateApplication: Unable to convert CreateApplicationRequest to model", "error",
-			err)
+			"v1.ApplicationHandler.CreateApplication: Unable to convert CreateApplicationRequest to model",
+			"error", err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -177,8 +177,8 @@ func (applicationHandler *ApplicationHandler) GetApplicationByID(writer http.Res
 	applicationResponse, err := responses.NewApplicationResponse(application)
 	if err != nil {
 		slog.Error(
-			"v1.ApplicationHandler.GetApplicationByID: Unable to convert internal model to response", "error",
-			err)
+			"v1.ApplicationHandler.GetApplicationByID: Unable to convert internal model to response",
+			"error", err)
 		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
 	}
 
@@ -252,8 +252,8 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 	applicationsResponse, err := responses.NewApplicationsResponse(applications)
 	if err != nil {
 		slog.Error(
-			"v1.ApplicationHandler.GetApplicationsByJobTitle: Unable to convert internal model to response", "error",
-			err)
+			"v1.ApplicationHandler.GetApplicationsByJobTitle: Unable to convert internal model to response",
+			"error", err)
 		http.Error(writer, "Error: Unable to convert internal model to response", http.StatusInternalServerError)
 	}
 

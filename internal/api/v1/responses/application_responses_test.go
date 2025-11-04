@@ -53,32 +53,27 @@ func TestNewApplicationDTO_ShouldWork(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, model.UpdatedDate, dto.UpdatedDate)
 }
 
-func TestNewApplicationDTO_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
-	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeRemote
+func TestNewApplicationDTO_ShouldWorkWithOnlyID(t *testing.T) {
 	model := models.Application{
-		ID:               uuid.New(),
-		CompanyID:        testutil.ToPtr(uuid.New()),
-		JobAdURL:         testutil.ToPtr("Job Ad URL"),
-		RemoteStatusType: &remoteStatusType,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 3, 0)),
+		ID: uuid.New(),
 	}
 	dto, err := NewApplicationDTO(&model)
 	assert.NoError(t, err)
 	assert.NotNil(t, dto)
 
 	assert.Equal(t, model.ID.String(), dto.ID.String())
-	assert.Equal(t, model.CompanyID, dto.CompanyID)
-	assert.Nil(t, model.RecruiterID)
+	assert.Nil(t, dto.CompanyID)
+	assert.Nil(t, dto.RecruiterID)
 	assert.Nil(t, dto.JobTitle)
-	assert.Equal(t, model.JobAdURL, dto.JobAdURL)
+	assert.Nil(t, dto.JobAdURL)
 	assert.Nil(t, dto.Country)
 	assert.Nil(t, dto.Area)
-	assert.Equal(t, model.RemoteStatusType.String(), dto.RemoteStatusType.String())
+	assert.Nil(t, dto.RemoteStatusType)
 	assert.Nil(t, dto.WeekdaysInOffice)
 	assert.Nil(t, dto.EstimatedCycleTime)
 	assert.Nil(t, dto.EstimatedCommuteTime)
 	assert.Nil(t, dto.ApplicationDate)
-	assert.Equal(t, model.CreatedDate, dto.CreatedDate)
+	assert.Nil(t, dto.CreatedDate)
 	assert.Nil(t, dto.UpdatedDate)
 }
 
@@ -87,49 +82,40 @@ func TestNewApplicationDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testi
 	assert.Nil(t, nilModel)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(t, err.Error(), "internal service error: Error building DTO: Application is nil")
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(t, internalServiceError.Error(), "internal service error: Error building DTO: Application is nil")
 }
 
 func TestNewApplicationDTO_ShouldReturnInternalServiceErrorIfRemoteStatusTypeIsInvalid(t *testing.T) {
 	var remoteStatusTypeEmpty models.RemoteStatusType = ""
 	emptyRemoteStatusType := models.Application{
 		ID:               uuid.New(),
-		RecruiterID:      testutil.ToPtr(uuid.New()),
-		JobAdURL:         testutil.ToPtr("Job Ad URL"),
 		RemoteStatusType: &remoteStatusTypeEmpty,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	emptyDTO, err := NewApplicationDTO(&emptyRemoteStatusType)
 	assert.Nil(t, emptyDTO)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: ''",
-		err.Error())
+		internalServiceError.Error())
 
 	var remoteStatusTypeBlah models.RemoteStatusType = "Blah"
 	invalidRemoteStatusType := models.Application{
 		ID:               uuid.New(),
-		RecruiterID:      testutil.ToPtr(uuid.New()),
-		JobAdURL:         testutil.ToPtr("Job Ad URL"),
 		RemoteStatusType: &remoteStatusTypeBlah,
-		CreatedDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 16)),
 	}
 	invalidDTO, err := NewApplicationDTO(&invalidRemoteStatusType)
 	assert.Nil(t, invalidDTO)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: 'Blah'",
-		err.Error())
+		internalServiceError.Error())
 }
 
 // -------- NewApplicationDTOs tests: --------
@@ -175,7 +161,7 @@ func TestNewApplicationDTOs_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	assert.Len(t, emptyDTOs, 0)
 }
 
-func TestNewApplicationDTOs_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsInvalid(t *testing.T) {
+func TestNewApplicationDTOs_ShouldReturnNilIfOneRemoteStatusTypeIsInvalid(t *testing.T) {
 	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeUnknown
 	var application2RemoteStatusType models.RemoteStatusType = ""
 	applicationModels := []*models.Application{
@@ -199,13 +185,12 @@ func TestNewApplicationDTOs_ShouldReturnEmptySliceIfOneRemoteStatusTypeIsInvalid
 	assert.Nil(t, nilDTOs)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal RemoteStatusType to external RemoteStatusType: ''",
-		err.Error())
+		internalServiceError.Error())
 }
 
 // -------- NewApplicationResponse tests: --------
@@ -254,10 +239,12 @@ func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *
 	assert.Nil(t, nilModel)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(t, err.Error(), "internal service error: Error building response: Application is nil")
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(
+		t,
+		internalServiceError.Error(),
+		"internal service error: Error building response: Application is nil")
 }
 
 func TestNewApplicationResponse_ShouldHandleCompany(t *testing.T) {
@@ -272,23 +259,10 @@ func TestNewApplicationResponse_ShouldHandleCompany(t *testing.T) {
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 8)),
 	}
 
-	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
 	model := models.Application{
-		ID:                   uuid.New(),
-		CompanyID:            testutil.ToPtr(uuid.New()),
-		RecruiterID:          testutil.ToPtr(uuid.New()),
-		JobTitle:             testutil.ToPtr("Job Title"),
-		JobAdURL:             testutil.ToPtr("Job Ad URL"),
-		Country:              testutil.ToPtr("Job Country"),
-		Area:                 testutil.ToPtr("Job Area"),
-		RemoteStatusType:     &remoteStatusType,
-		WeekdaysInOffice:     testutil.ToPtr(2),
-		EstimatedCycleTime:   testutil.ToPtr(30),
-		EstimatedCommuteTime: testutil.ToPtr(40),
-		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
-		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
-		Company:              &company,
+		ID:        uuid.New(),
+		CompanyID: testutil.ToPtr(uuid.New()),
+		Company:   &company,
 	}
 
 	response, err := NewApplicationResponse(&model)
@@ -297,18 +271,6 @@ func TestNewApplicationResponse_ShouldHandleCompany(t *testing.T) {
 
 	assert.Equal(t, model.ID, response.ID)
 	assert.Equal(t, model.CompanyID, response.CompanyID)
-	assert.Equal(t, model.RecruiterID, response.RecruiterID)
-	assert.Equal(t, model.JobTitle, response.JobTitle)
-	assert.Equal(t, model.JobAdURL, response.JobAdURL)
-	assert.Equal(t, model.Country, response.Country)
-	assert.Equal(t, model.Area, response.Area)
-	assert.Equal(t, model.RemoteStatusType.String(), response.RemoteStatusType.String())
-	assert.Equal(t, model.WeekdaysInOffice, response.WeekdaysInOffice)
-	assert.Equal(t, model.EstimatedCycleTime, response.EstimatedCycleTime)
-	assert.Equal(t, model.EstimatedCommuteTime, response.EstimatedCommuteTime)
-	testutil.AssertEqualFormattedDateTimes(t, model.ApplicationDate, response.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, model.CreatedDate, response.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, model.UpdatedDate, response.UpdatedDate)
 	assert.NotNil(t, response.Company)
 
 	assert.Equal(t, company.ID, response.Company.ID)
@@ -332,23 +294,10 @@ func TestNewApplicationResponse_ShouldHandleRecruiter(t *testing.T) {
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 8)),
 	}
 
-	var remoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
 	model := models.Application{
-		ID:                   uuid.New(),
-		CompanyID:            testutil.ToPtr(uuid.New()),
-		RecruiterID:          testutil.ToPtr(uuid.New()),
-		JobTitle:             testutil.ToPtr("Job Title"),
-		JobAdURL:             testutil.ToPtr("Job Ad URL"),
-		Country:              testutil.ToPtr("Job Country"),
-		Area:                 testutil.ToPtr("Job Area"),
-		RemoteStatusType:     &remoteStatusType,
-		WeekdaysInOffice:     testutil.ToPtr(2),
-		EstimatedCycleTime:   testutil.ToPtr(30),
-		EstimatedCommuteTime: testutil.ToPtr(40),
-		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
-		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
-		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
-		Recruiter:            &recruiter,
+		ID:          uuid.New(),
+		RecruiterID: testutil.ToPtr(uuid.New()),
+		Recruiter:   &recruiter,
 	}
 
 	response, err := NewApplicationResponse(&model)
@@ -356,19 +305,7 @@ func TestNewApplicationResponse_ShouldHandleRecruiter(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.Equal(t, model.ID, response.ID)
-	assert.Equal(t, model.CompanyID, response.CompanyID)
 	assert.Equal(t, model.RecruiterID, response.RecruiterID)
-	assert.Equal(t, model.JobTitle, response.JobTitle)
-	assert.Equal(t, model.JobAdURL, response.JobAdURL)
-	assert.Equal(t, model.Country, response.Country)
-	assert.Equal(t, model.Area, response.Area)
-	assert.Equal(t, model.RemoteStatusType.String(), response.RemoteStatusType.String())
-	assert.Equal(t, model.WeekdaysInOffice, response.WeekdaysInOffice)
-	assert.Equal(t, model.EstimatedCycleTime, response.EstimatedCycleTime)
-	assert.Equal(t, model.EstimatedCommuteTime, response.EstimatedCommuteTime)
-	testutil.AssertEqualFormattedDateTimes(t, model.ApplicationDate, response.ApplicationDate)
-	testutil.AssertEqualFormattedDateTimes(t, model.CreatedDate, response.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, model.UpdatedDate, response.UpdatedDate)
 	assert.NotNil(t, response.Recruiter)
 
 	assert.Equal(t, recruiter.ID, response.Recruiter.ID)

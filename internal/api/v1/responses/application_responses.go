@@ -37,6 +37,7 @@ func NewApplicationDTO(applicationModel *models.Application) (*ApplicationDTO, e
 
 	var remoteStatusType *requests.RemoteStatusType = nil
 	if applicationModel.RemoteStatusType != nil {
+		// can return InternalServerError
 		nonNilRemoteStatusType, err := requests.NewRemoteStatusType(applicationModel.RemoteStatusType)
 		if err != nil {
 			return nil, err
@@ -72,6 +73,7 @@ func NewApplicationDTOs(applications []*models.Application) ([]*ApplicationDTO, 
 
 	var applicationDTOs = make([]*ApplicationDTO, len(applications))
 	for index := range applications {
+		// can return InternalServiceError
 		dto, err := NewApplicationDTO(applications[index])
 		if err != nil {
 			return nil, err
@@ -95,6 +97,7 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		return nil, internalErrors.NewInternalServiceError("Error building response: Application is nil")
 	}
 
+	// can return InternalServiceError
 	applicationDTO, err := NewApplicationDTO(applicationModel)
 	if err != nil {
 		return nil, err
@@ -102,6 +105,7 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 
 	var companyDTO *CompanyDTO = nil
 	if applicationModel.Company != nil {
+		// can return InternalServiceError
 		companyDTO, err = NewCompanyDTO(applicationModel.Company)
 		if err != nil {
 			return nil, err
@@ -110,6 +114,7 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 
 	var recruiterDTO *CompanyDTO = nil
 	if applicationModel.Recruiter != nil {
+		// can return InternalServiceError
 		recruiterDTO, err = NewCompanyDTO(applicationModel.Recruiter)
 		if err != nil {
 			return nil, err

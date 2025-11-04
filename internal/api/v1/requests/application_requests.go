@@ -243,6 +243,7 @@ func (remoteStatusType RemoteStatusType) ToModel() (models.RemoteStatusType, err
 	}
 }
 
+// NewRemoteStatusType can return InternalServiceError
 func NewRemoteStatusType(modelRemoteStatusType *models.RemoteStatusType) (RemoteStatusType, error) {
 	if modelRemoteStatusType == nil {
 		slog.Info("v1.types.NewRemoteStatusType: modelRemoteStatusType is nil")
@@ -265,8 +266,4 @@ func NewRemoteStatusType(modelRemoteStatusType *models.RemoteStatusType) (Remote
 		return "", internalErrors.NewInternalServiceError(
 			"Error converting internal RemoteStatusType to external RemoteStatusType: '" + modelRemoteStatusType.String() + "'")
 	}
-}
-
-func (remoteStatusType RemoteStatusType) ToPointer() *RemoteStatusType {
-	return &remoteStatusType
 }

@@ -23,10 +23,10 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilApplication(t *testin
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
-	assert.Equal(t, "validation error: CreateApplication is nil", err.Error())
+	assert.Equal(t, "validation error: CreateApplication is nil", validationError.Error())
 }
 
-func TestCreateApplication_ShouldReturnValidationErrorOnNilCompanyIDAndRecruiterID(t *testing.T) {
+func TestCreateApplication_ShouldReturnValidationErrorOnNilCompanyIDAndNilRecruiterID(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
 	application := models.CreateApplication{
@@ -40,12 +40,12 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilCompanyIDAndRecruiter
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: CompanyID and RecruiterID cannot both be empty", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: CompanyID and RecruiterID cannot both be empty", validationError.Error())
 }
 
-func TestCreateApplication_ShouldReturnValidationErrorOnEmptyCompanyIDAndEmptyJobAdURL(t *testing.T) {
+func TestCreateApplication_ShouldReturnValidationErrorOnNilOrEmptyCompanyIDAndNilOrEmptyJobAdURL(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
 	tests := []struct {
@@ -93,14 +93,14 @@ func TestCreateApplication_ShouldReturnValidationErrorOnEmptyCompanyIDAndEmptyJo
 			assert.Nil(t, nilApplication)
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-			assert.Equal(t, test.errorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.errorMessage, validationError.Error())
 		})
 	}
 }
 
-func TestCreateApplication_ShouldReturnValidationErrorOnInvalidApplicationType(t *testing.T) {
+func TestCreateApplication_ShouldReturnValidationErrorOnInvalidRemoteStatusType(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
 	var remoteStatusType models.RemoteStatusType = "Not Valid"
@@ -113,9 +113,9 @@ func TestCreateApplication_ShouldReturnValidationErrorOnInvalidApplicationType(t
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: remoteStatusType is invalid", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: remoteStatusType is invalid", validationError.Error())
 }
 
 func TestCreateApplication_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
@@ -131,12 +131,12 @@ func TestCreateApplication_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *test
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(
 		t,
 		"validation error on field 'UpdatedDate': UpdatedDate is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		err.Error())
+		validationError.Error())
 }
 
 // -------- GetApplicationById tests: --------
@@ -147,33 +147,42 @@ func TestGetApplicationById_ShouldReturnValidationErrorIfApplicationIdIsNil(t *t
 	nilApplication, err := applicationService.GetApplicationById(nil)
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'application ID': applicationId is required", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'application ID': applicationId is required", validationError.Error())
 }
 
 // -------- GetApplicationsByJobTitle tests: --------
 
-func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsNil(t *testing.T) {
+func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfJobTitleIsNil(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
 	nilApplication, err := applicationService.GetApplicationsByJobTitle(nil)
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'applicationJobTitle': applicationJobTitle is required", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(
+		t,
+		"validation error on field 'applicationJobTitle': applicationJobTitle is required",
+		validationError.Error())
 }
 
-func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsEmpty(t *testing.T) {
+func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfJobTitleIsEmpty(t *testing.T) {
 	applicationService := NewApplicationService(nil)
 
 	nilApplication, err := applicationService.GetApplicationsByJobTitle(testutil.ToPtr(""))
 	assert.Nil(t, nilApplication)
 	assert.NotNil(t, err)
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'applicationJobTitle': applicationJobTitle is required", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(
+		t,
+		"validation error on field 'applicationJobTitle': applicationJobTitle is required",
+		validationError.Error())
 }
 
 // -------- UpdateApplication tests: --------
@@ -183,9 +192,10 @@ func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationIsNil(t *test
 
 	err := applicationService.UpdateApplication(nil)
 	assert.NotNil(t, err)
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: UpdateApplication model is nil", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: UpdateApplication model is nil", validationError.Error())
 }
 
 func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationContainsNothingToUpdate(t *testing.T) {
@@ -198,9 +208,9 @@ func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationContainsNothi
 	err := applicationService.UpdateApplication(&application)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 
 }
 
@@ -211,7 +221,8 @@ func TestDeleteApplication_ShouldReturnValidationErrorIfApplicationIdIsNil(t *te
 
 	err := applicationService.DeleteApplication(nil)
 	assert.NotNil(t, err)
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'application ID': applicationId is required", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'application ID': applicationId is required", validationError.Error())
 }
