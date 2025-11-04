@@ -32,8 +32,6 @@ type CreatePerson struct {
 
 // Validate can return NewValidationError
 func (person *CreatePerson) Validate() error {
-	emptyString := ""
-
 	if person.Name == "" {
 		name := "Name"
 		return errors.NewValidationError(&name, "person name is empty")
@@ -44,12 +42,12 @@ func (person *CreatePerson) Validate() error {
 		return errors.NewValidationError(&companyType, "person type is invalid")
 	}
 
-	if person.Email != nil && *person.Email == emptyString {
+	if person.Email != nil && *person.Email == "" {
 		name := "email"
 		return errors.NewValidationError(&name, "person email is empty")
 	}
 
-	if person.Phone != nil && *person.Phone == emptyString {
+	if person.Phone != nil && *person.Phone == "" {
 		name := "phone"
 		return errors.NewValidationError(
 			&name,
@@ -77,7 +75,10 @@ type UpdatePerson struct {
 
 // Validate can return ValidationError
 func (updatePerson *UpdatePerson) Validate() error {
-	if updatePerson.Name == nil && updatePerson.PersonType == nil && updatePerson.Email == nil && updatePerson.Phone == nil && updatePerson.Notes == nil {
+
+	if updatePerson.Name == nil && updatePerson.PersonType == nil && updatePerson.Email == nil &&
+		updatePerson.Phone == nil && updatePerson.Notes == nil {
+
 		return errors.NewValidationError(nil, "nothing to update")
 	}
 	return nil

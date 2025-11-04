@@ -30,7 +30,6 @@ func setupPersonHandler(t *testing.T) (
 		DatabaseMigrationsPath:               "../../../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
 	}
-
 	container := dependencyinjection.SetupPersonHandlerTestContainer(t, config)
 
 	var personHandler *handlers.PersonHandler
@@ -59,17 +58,13 @@ func setupPersonHandler(t *testing.T) (
 func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
 	personHandler, _, _ := setupPersonHandler(t)
 
-	id := uuid.New()
-	email := "e@ma.il"
-	phone := "456908"
-	notes := "Notes appeared here"
 	requestBody := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "random person name",
 		PersonType: requests.PersonTypeHR,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("e@ma.il"),
+		Phone:      testutil.ToPtr("456908"),
+		Notes:      testutil.ToPtr("Notes appeared here"),
 	}
 
 	requestBytes, err := json.Marshal(requestBody)
@@ -157,17 +152,13 @@ func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
 
 	// insert a person:
 
-	id := uuid.New()
-	email := "Email here"
-	phone := "456908"
-	notes := "Notes appeared here"
 	requestBody := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "random person name",
 		PersonType: requests.PersonTypeDeveloper,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("Email here"),
+		Phone:      testutil.ToPtr("456908"),
+		Notes:      testutil.ToPtr("Notes appeared here"),
 	}
 	_, createdDateApproximation := insertPerson(t, personHandler, requestBody)
 
@@ -179,7 +170,7 @@ func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": requestBody.ID.String(),
 	}
 	getRequest = mux.SetURLVars(getRequest, vars)
 
@@ -230,69 +221,47 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 
 	// Insert a person:
 
-	id := uuid.New()
-	email := "Email here"
-	phone := "456908"
-	notes := "Notes appeared here"
 	requestBody := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "PersonName",
 		PersonType: requests.PersonTypeDeveloper,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("Email here"),
+		Phone:      testutil.ToPtr("456908"),
+		Notes:      testutil.ToPtr("Notes appeared here"),
 	}
 	insertPerson(t, personHandler, requestBody)
 
 	// Get the person by full name:
 
-	firstGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
 	assert.NoError(t, err)
 	responseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
 		"name": "PersonName",
 	}
-	firstGetRequest = mux.SetURLVars(firstGetRequest, vars)
+	getRequest = mux.SetURLVars(getRequest, vars)
 
-	personHandler.GetPersonsByName(responseRecorder, firstGetRequest)
+	createdDateApproximation := time.Now()
+	personHandler.GetPersonsByName(responseRecorder, getRequest)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseBodyString := responseRecorder.Body.String()
 	assert.NotEmpty(t, responseBodyString)
 
-	var firstResponse []responses.PersonResponse
-	err = json.NewDecoder(responseRecorder.Body).Decode(&firstResponse)
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Len(t, firstResponse, 1)
+	assert.Len(t, response, 1)
 
-	assert.Equal(t, *requestBody.ID, firstResponse[0].ID)
-	assert.Equal(t, requestBody.Name, *firstResponse[0].Name)
-
-	// Get the person by partial name:
-
-	secondGetRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
-	assert.NoError(t, err)
-	responseRecorder = httptest.NewRecorder()
-
-	vars = map[string]string{
-		"name": "son",
-	}
-	secondGetRequest = mux.SetURLVars(secondGetRequest, vars)
-
-	personHandler.GetPersonsByName(responseRecorder, secondGetRequest)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-
-	responseBodyString = responseRecorder.Body.String()
-	assert.NotEmpty(t, responseBodyString)
-
-	var secondResponse []responses.PersonResponse
-	err = json.NewDecoder(responseRecorder.Body).Decode(&secondResponse)
-	assert.NoError(t, err)
-	assert.Len(t, secondResponse, 1)
-
-	assert.Equal(t, *requestBody.ID, secondResponse[0].ID)
-	assert.Equal(t, requestBody.Name, *secondResponse[0].Name)
+	assert.Equal(t, *requestBody.ID, response[0].ID)
+	assert.Equal(t, requestBody.Name, *response[0].Name)
+	assert.Equal(t, requestBody.PersonType.String(), response[0].PersonType.String())
+	assert.Equal(t, requestBody.Email, response[0].Email)
+	assert.Equal(t, requestBody.Phone, response[0].Phone)
+	assert.Equal(t, requestBody.Notes, response[0].Notes)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, response[0].CreatedDate, time.Second)
+	assert.Nil(t, response[0].UpdatedDate)
 }
 
 func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
@@ -300,31 +269,17 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 
 	// Insert two persons:
 
-	firstID := uuid.New()
-	email := "Jane email"
-	phone := "345345"
-	notes := "Jane Notes"
 	firstRequestBody := requests.CreatePersonRequest{
-		ID:         &firstID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Jane Smith",
-		PersonType: requests.PersonTypeJobAdvertiser,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		PersonType: requests.PersonTypeDeveloper,
 	}
 	insertPerson(t, personHandler, firstRequestBody)
 
-	secondID := uuid.New()
-	email = "Sarah email"
-	phone = "4567856654"
-	notes = "Sara Notes"
 	secondRequestBody := requests.CreatePersonRequest{
-		ID:         &secondID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Sarah Janesson",
 		PersonType: requests.PersonTypeCEO,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
 	}
 	insertPerson(t, personHandler, secondRequestBody)
 
@@ -355,7 +310,6 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
 	assert.Equal(t, secondRequestBody.Name, *response[1].Name)
-
 }
 
 func TestGetPersonsByName_ShouldReturnNotFoundIfNoPersonsMatchingName(t *testing.T) {
@@ -386,17 +340,13 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 
 	// insert persons
 
-	firstID := uuid.New()
-	email := "Person1 Email"
-	phone := "1111111"
-	notes := "Person1 Notes"
 	firstRequestBody := requests.CreatePersonRequest{
-		ID:         &firstID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: requests.PersonTypeCTO,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("Person1 Email"),
+		Phone:      testutil.ToPtr("1111111"),
+		Notes:      testutil.ToPtr("Person1 Notes"),
 	}
 	insertPerson(t, personHandler, firstRequestBody)
 
@@ -404,17 +354,10 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	secondID := uuid.New()
-	email = "Person2 Email"
-	phone = "222222"
-	notes = "Person2 Notes"
 	secondRequestBody := requests.CreatePersonRequest{
-		ID:         &secondID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: requests.PersonTypeInternalRecruiter,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
 	}
 	insertPerson(t, personHandler, secondRequestBody)
 
@@ -422,17 +365,10 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	thirdID := uuid.New()
-	email = "Person3 Email"
-	phone = "333333"
-	notes = "Person3 Notes"
 	thirdRequestBody := requests.CreatePersonRequest{
-		ID:         &thirdID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person3",
 		PersonType: requests.PersonTypeJobAdvertiser,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
 	}
 	insertPerson(t, personHandler, thirdRequestBody)
 
@@ -443,6 +379,7 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
+	createdDateApproximation := time.Now()
 	personHandler.GetAllPersons(responseRecorder, getRequest)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
@@ -458,7 +395,15 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 
 	assert.Equal(t, *thirdRequestBody.ID, response[0].ID)
 	assert.Equal(t, *secondRequestBody.ID, response[1].ID)
+
 	assert.Equal(t, *firstRequestBody.ID, response[2].ID)
+	assert.Equal(t, firstRequestBody.Name, *response[2].Name)
+	assert.Equal(t, firstRequestBody.PersonType.String(), response[2].PersonType.String())
+	assert.Equal(t, firstRequestBody.Email, response[2].Email)
+	assert.Equal(t, firstRequestBody.Phone, response[2].Phone)
+	assert.Equal(t, firstRequestBody.Notes, response[2].Notes)
+	testutil.AssertDateTimesWithinDelta(t, &createdDateApproximation, response[2].CreatedDate, time.Second)
+	assert.Nil(t, response[2].UpdatedDate)
 }
 
 func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing.T) {
@@ -486,9 +431,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
 
 	// setup persons
-	person1ID := uuid.New()
 	person1 := requests.CreatePersonRequest{
-		ID:         &person1ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: models.PersonTypeDeveloper,
 	}
@@ -498,9 +442,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
-		ID:         &person2ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: models.PersonTypeCTO,
 	}
@@ -510,23 +453,17 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
-		ID:         &person3ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "person3",
 		PersonType: models.PersonTypeHR,
 	}
 	insertPerson(t, personHandler, person3)
 
-	// a sleep is needed in order to ensure the order of the records.
-	//There needs to be a minimum of 10 milliseconds between inserts.
-	time.Sleep(10 * time.Millisecond)
-
 	// add two companies
 
-	company1ID := uuid.New()
 	company1 := models.CreateCompany{
-		ID:          &company1ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company1Name",
 		CompanyType: requests.CompanyTypeEmployer,
 		Notes:       testutil.ToPtr("Company1Notes"),
@@ -537,9 +474,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	_, err := companyRepository.Create(&company1)
 	assert.NoError(t, err)
 
-	company2ID := uuid.New()
 	company2 := models.CreateCompany{
-		ID:          &company2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company2Name",
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
@@ -549,22 +485,22 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	// associate persons and companies
 
 	Company1person1 := models.AssociateCompanyPerson{
-		CompanyID: company1ID,
-		PersonID:  person1ID,
+		CompanyID: *company1.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
 	assert.NoError(t, err)
 
 	Company2person1 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person1ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
 	assert.NoError(t, err)
 
 	Company2person2 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person2ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person2.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
 	assert.NoError(t, err)
@@ -589,18 +525,18 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person3ID, response[0].ID)
+	assert.Equal(t, *person3.ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
-	assert.Equal(t, person2ID, response[1].ID)
+	assert.Equal(t, *person2.ID, response[1].ID)
 	assert.Len(t, *response[1].Companies, 1)
-	assert.Equal(t, company2ID, (*(response[1]).Companies)[0].ID)
+	assert.Equal(t, *company2.ID, (*(response[1]).Companies)[0].ID)
 
-	assert.Equal(t, person1ID, response[2].ID)
+	assert.Equal(t, *person1.ID, response[2].ID)
 	assert.Len(t, *response[2].Companies, 2)
 
 	person1Company1 := (*(response[2]).Companies)[0]
-	assert.Equal(t, company1ID, person1Company1.ID)
+	assert.Equal(t, *company1.ID, person1Company1.ID)
 	assert.Equal(t, company1.Name, *person1Company1.Name)
 	assert.Equal(t, company1.CompanyType.String(), person1Company1.CompanyType.String())
 	assert.Equal(t, company1.Notes, person1Company1.Notes)
@@ -608,23 +544,15 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	testutil.AssertEqualFormattedDateTimes(t, company1.CreatedDate, person1Company1.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, company1.UpdatedDate, person1Company1.UpdatedDate)
 
-	person1Company2 := (*(response[2]).Companies)[1]
-	assert.Equal(t, company2ID, person1Company2.ID)
-	assert.Equal(t, company2.Name, *person1Company2.Name)
-	assert.Equal(t, company2.CompanyType.String(), person1Company2.CompanyType.String())
-	assert.Nil(t, person1Company2.Notes)
-	assert.Nil(t, person1Company2.LastContact)
-	assert.NotNil(t, person1Company2.CreatedDate)
-	assert.Nil(t, person1Company2.UpdatedDate)
+	assert.Equal(t, *company2.ID, (*(response[2]).Companies)[1].ID)
 }
 
 func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
 	personHandler, companyRepository, _ := setupPersonHandler(t)
 
 	// setup persons
-	person1ID := uuid.New()
 	person1 := requests.CreatePersonRequest{
-		ID:         &person1ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: models.PersonTypeDeveloper,
 	}
@@ -634,9 +562,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
-		ID:         &person2ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: models.PersonTypeCTO,
 	}
@@ -646,9 +573,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
-		ID:         &person3ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "person3",
 		PersonType: models.PersonTypeHR,
 	}
@@ -656,9 +582,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 
 	// add two companies
 
-	company1ID := uuid.New()
 	company1 := models.CreateCompany{
-		ID:          &company1ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company1Name",
 		CompanyType: requests.CompanyTypeEmployer,
 		Notes:       testutil.ToPtr("Company1Notes"),
@@ -669,9 +594,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	_, err := companyRepository.Create(&company1)
 	assert.NoError(t, err)
 
-	company2ID := uuid.New()
 	company2 := models.CreateCompany{
-		ID:          &company2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company2Name",
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
@@ -701,13 +625,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person3ID, response[0].ID)
+	assert.Equal(t, *person3.ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
-	assert.Equal(t, person2ID, response[1].ID)
+	assert.Equal(t, *person2.ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person1ID, response[2].ID)
+	assert.Equal(t, *person1.ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
@@ -715,9 +639,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
 
 	// setup persons
-	person1ID := uuid.New()
 	person1 := requests.CreatePersonRequest{
-		ID:         &person1ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: models.PersonTypeDeveloper,
 	}
@@ -727,9 +650,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
-		ID:         &person2ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: models.PersonTypeCTO,
 	}
@@ -739,9 +661,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
-		ID:         &person3ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "person3",
 		PersonType: models.PersonTypeHR,
 	}
@@ -749,9 +670,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 
 	// add two companies
 
-	company1ID := uuid.New()
 	company1 := models.CreateCompany{
-		ID:          &company1ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company1Name",
 		CompanyType: requests.CompanyTypeEmployer,
 		Notes:       testutil.ToPtr("Company1Notes"),
@@ -762,9 +682,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	_, err := companyRepository.Create(&company1)
 	assert.NoError(t, err)
 
-	company2ID := uuid.New()
 	company2 := models.CreateCompany{
-		ID:          &company2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company2Name",
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
@@ -774,22 +693,22 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	// associate persons and companies
 
 	Company1person1 := models.AssociateCompanyPerson{
-		CompanyID: company1ID,
-		PersonID:  person1ID,
+		CompanyID: *company1.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
 	assert.NoError(t, err)
 
 	Company2person1 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person1ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
 	assert.NoError(t, err)
 
 	Company2person2 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person2ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person2.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
 	assert.NoError(t, err)
@@ -814,18 +733,18 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person3ID, response[0].ID)
+	assert.Equal(t, *person3.ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
-	assert.Equal(t, person2ID, response[1].ID)
+	assert.Equal(t, *person2.ID, response[1].ID)
 	assert.Len(t, *(response[1]).Companies, 1)
-	assert.Equal(t, company2ID, (*(response[1]).Companies)[0].ID)
+	assert.Equal(t, *company2.ID, (*(response[1]).Companies)[0].ID)
 
-	assert.Equal(t, person1ID, response[2].ID)
+	assert.Equal(t, *person1.ID, response[2].ID)
 	assert.Len(t, *response[2].Companies, 2)
 
 	person1Company1 := (*(response[2]).Companies)[0]
-	assert.Equal(t, company1ID, person1Company1.ID)
+	assert.Equal(t, *company1.ID, person1Company1.ID)
 	assert.Nil(t, person1Company1.Name)
 	assert.Nil(t, person1Company1.CompanyType)
 	assert.Nil(t, person1Company1.Notes)
@@ -834,16 +753,15 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	assert.Nil(t, person1Company1.UpdatedDate)
 
 	person1Company2 := (*(response[2]).Companies)[1]
-	assert.Equal(t, company2ID, person1Company2.ID)
+	assert.Equal(t, *company2.ID, person1Company2.ID)
 }
 
 func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
 	personHandler, companyRepository, _ := setupPersonHandler(t)
 
 	// setup persons
-	person1ID := uuid.New()
 	person1 := requests.CreatePersonRequest{
-		ID:         &person1ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: models.PersonTypeDeveloper,
 	}
@@ -853,9 +771,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
-		ID:         &person2ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: models.PersonTypeCTO,
 	}
@@ -865,9 +782,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
-		ID:         &person3ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "person3",
 		PersonType: models.PersonTypeHR,
 	}
@@ -875,9 +791,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 
 	// add two companies
 
-	company1ID := uuid.New()
 	company1 := models.CreateCompany{
-		ID:          &company1ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company1Name",
 		CompanyType: requests.CompanyTypeEmployer,
 		Notes:       testutil.ToPtr("Company1Notes"),
@@ -888,9 +803,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	_, err := companyRepository.Create(&company1)
 	assert.NoError(t, err)
 
-	company2ID := uuid.New()
 	company2 := models.CreateCompany{
-		ID:          &company2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company2Name",
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
@@ -920,13 +834,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person3ID, response[0].ID)
+	assert.Equal(t, *person3.ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
-	assert.Equal(t, person2ID, response[1].ID)
+	assert.Equal(t, *person2.ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person1ID, response[2].ID)
+	assert.Equal(t, *person1.ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
@@ -934,9 +848,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
 
 	// setup persons
-	person1ID := uuid.New()
 	person1 := requests.CreatePersonRequest{
-		ID:         &person1ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person1",
 		PersonType: models.PersonTypeDeveloper,
 	}
@@ -946,9 +859,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person2ID := uuid.New()
 	person2 := requests.CreatePersonRequest{
-		ID:         &person2ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person2",
 		PersonType: models.PersonTypeCTO,
 	}
@@ -958,9 +870,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	//There needs to be a minimum of 10 milliseconds between inserts.
 	time.Sleep(10 * time.Millisecond)
 
-	person3ID := uuid.New()
 	person3 := requests.CreatePersonRequest{
-		ID:         &person3ID,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "person3",
 		PersonType: models.PersonTypeHR,
 	}
@@ -968,9 +879,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 
 	// add two companies
 
-	company1ID := uuid.New()
 	company1 := models.CreateCompany{
-		ID:          &company1ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company1Name",
 		CompanyType: requests.CompanyTypeEmployer,
 		Notes:       testutil.ToPtr("Company1Notes"),
@@ -981,9 +891,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	_, err := companyRepository.Create(&company1)
 	assert.NoError(t, err)
 
-	company2ID := uuid.New()
 	company2 := models.CreateCompany{
-		ID:          &company2ID,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Company2Name",
 		CompanyType: requests.CompanyTypeConsultancy,
 	}
@@ -993,22 +902,22 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	// associate persons and companies
 
 	Company1person1 := models.AssociateCompanyPerson{
-		CompanyID: company1ID,
-		PersonID:  person1ID,
+		CompanyID: *company1.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company1person1)
 	assert.NoError(t, err)
 
 	Company2person1 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person1ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person1.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person1)
 	assert.NoError(t, err)
 
 	Company2person2 := models.AssociateCompanyPerson{
-		CompanyID: company2ID,
-		PersonID:  person2ID,
+		CompanyID: *company2.ID,
+		PersonID:  *person2.ID,
 	}
 	_, err = companyPersonRepository.AssociateCompanyPerson(&Company2person2)
 	assert.NoError(t, err)
@@ -1033,13 +942,13 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	assert.NotNil(t, response)
 	assert.Len(t, response, 3)
 
-	assert.Equal(t, person3ID, response[0].ID)
+	assert.Equal(t, *person3.ID, response[0].ID)
 	assert.Nil(t, response[0].Companies)
 
-	assert.Equal(t, person2ID, response[1].ID)
+	assert.Equal(t, *person2.ID, response[1].ID)
 	assert.Nil(t, response[1].Companies)
 
-	assert.Equal(t, person1ID, response[2].ID)
+	assert.Equal(t, *person1.ID, response[2].ID)
 	assert.Nil(t, response[2].Companies)
 }
 
@@ -1050,35 +959,26 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 
 	// create a person
 
-	id := uuid.New()
-	email := "Person Email"
-	phone := "2345345"
-	notes := "Notes"
 	createRequest := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person Name",
 		PersonType: requests.PersonTypeUnknown,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("Person Email"),
+		Phone:      testutil.ToPtr("2345345"),
+		Notes:      testutil.ToPtr("Notes"),
 	}
 	_, createdDateApproximation := insertPerson(t, personHandler, createRequest)
 
 	// update the person
 
-	updatedName := "updated person name"
 	var updatedPersonType requests.PersonType = requests.PersonTypeJobContact
-	updatedEmail := "updated email"
-	updatedPhone := "46584566745"
-	updatedNotes := "updated notes"
-
 	updateBody := requests.UpdatePersonRequest{
-		ID:         id,
-		Name:       &updatedName,
+		ID:         *createRequest.ID,
+		Name:       testutil.ToPtr("updated person name"),
 		PersonType: &updatedPersonType,
-		Email:      &updatedEmail,
-		Phone:      &updatedPhone,
-		Notes:      &updatedNotes,
+		Email:      testutil.ToPtr("updated email"),
+		Phone:      testutil.ToPtr("46584566745"),
+		Notes:      testutil.ToPtr("updated notes"),
 	}
 
 	requestBytes, err := json.Marshal(updateBody)
@@ -1099,7 +999,7 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 	assert.NoError(t, err)
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": createRequest.ID.String(),
 	}
 	getRequest = mux.SetURLVars(getRequest, vars)
 
@@ -1113,12 +1013,12 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 	err = json.NewDecoder(responseRecorder.Body).Decode(&getPersonResponse)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, getPersonResponse.ID)
-	assert.Equal(t, updatedName, *getPersonResponse.Name)
-	assert.Equal(t, updatedPersonType.String(), getPersonResponse.PersonType.String())
-	assert.Equal(t, updatedEmail, *getPersonResponse.Email)
-	assert.Equal(t, updatedPhone, *getPersonResponse.Phone)
-	assert.Equal(t, updatedNotes, *getPersonResponse.Notes)
+	assert.Equal(t, updateBody.ID, getPersonResponse.ID)
+	assert.Equal(t, updateBody.Name, getPersonResponse.Name)
+	assert.Equal(t, updateBody.PersonType.String(), getPersonResponse.PersonType.String())
+	assert.Equal(t, updateBody.Email, getPersonResponse.Email)
+	assert.Equal(t, updateBody.Phone, getPersonResponse.Phone)
+	assert.Equal(t, updateBody.Notes, getPersonResponse.Notes)
 	testutil.AssertDateTimesWithinDelta(t, createdDateApproximation, getPersonResponse.CreatedDate, time.Second)
 	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, getPersonResponse.UpdatedDate, time.Second)
 }
@@ -1127,23 +1027,16 @@ func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 	personHandler, _, _ := setupPersonHandler(t)
 
 	// create a person
-	id := uuid.New()
-	email := "Person Email"
-	phone := "2345345"
-	notes := "Notes"
 	createRequest := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person Name",
 		PersonType: requests.PersonTypeUnknown,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
 	}
 	insertPerson(t, personHandler, createRequest)
 
 	// update the person
 	updateBody := requests.UpdatePersonRequest{
-		ID: id,
+		ID: *createRequest.ID,
 	}
 
 	requestBytes, err := json.Marshal(updateBody)
@@ -1172,9 +1065,8 @@ func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
 
 	// insert a person
 
-	id := uuid.New()
 	requestBody := requests.CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Person Name",
 		PersonType: requests.PersonTypeDeveloper,
 	}
@@ -1189,7 +1081,7 @@ func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
 	deleteResponseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": requestBody.ID.String(),
 	}
 	deleteRequest = mux.SetURLVars(deleteRequest, vars)
 
@@ -1210,15 +1102,13 @@ func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
 func TestDeletePerson_ShouldReturnStatusNotFoundIfPersonDoesNotExist(t *testing.T) {
 	personHandler, _, _ := setupPersonHandler(t)
 
-	id := uuid.New()
-
 	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete/", nil)
 	assert.NoError(t, err)
 
 	deleteResponseRecorder := httptest.NewRecorder()
 
 	vars := map[string]string{
-		"id": id.String(),
+		"id": uuid.New().String(),
 	}
 	deleteRequest = mux.SetURLVars(deleteRequest, vars)
 

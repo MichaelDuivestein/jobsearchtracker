@@ -139,13 +139,13 @@ func (personHandler *PersonHandler) GetPersonByID(writer http.ResponseWriter, re
 		return
 	}
 
-	var internalServiceError *internalErrors.InternalServiceError
-	var notFoundError *internalErrors.NotFoundError
-	var validationErr *internalErrors.ValidationError
-
 	// can return InternalServiceError, NotFoundError, ValidationError
 	person, err := personHandler.personService.GetPersonById(&personID)
 	if err != nil {
+		var internalServiceError *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
 		var errorMessage string
 		var status int
 
@@ -208,13 +208,12 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 		http.Error(writer, "person Name is empty", http.StatusBadRequest)
 		return
 	}
-
-	var internalServiceError *internalErrors.InternalServiceError
-	var notFoundError *internalErrors.NotFoundError
-	var validationErr *internalErrors.ValidationError
-
 	persons, err := personHandler.personService.GetPersonsByName(&personName)
 	if err != nil {
+		var internalServiceError *internalErrors.InternalServiceError
+		var notFoundError *internalErrors.NotFoundError
+		var validationErr *internalErrors.ValidationError
+
 		var errorMessage string
 		var status int
 

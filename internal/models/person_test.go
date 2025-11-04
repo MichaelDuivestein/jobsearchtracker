@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 	"time"
 
@@ -13,30 +14,21 @@ import (
 // -------- CreatePerson.Validate tests: --------
 
 func TestCreatePersonValidate_ShouldReturnNilIfPersonIsValid(t *testing.T) {
-	id := uuid.New()
-	email := "Email Address"
-	phone := "84323445"
-	notes := "Noted"
-	createdDate := time.Now().AddDate(0, 0, 2)
-	updatedDate := time.Now().AddDate(0, 1, 0)
-
 	person := CreatePerson{
-		ID:          &id,
+		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Random Name",
 		PersonType:  PersonTypeOther,
-		Email:       &email,
-		Phone:       &phone,
-		Notes:       &notes,
-		CreatedDate: &createdDate,
-		UpdatedDate: &updatedDate,
+		Email:       testutil.ToPtr("Email Address"),
+		Phone:       testutil.ToPtr("84323445"),
+		Notes:       testutil.ToPtr("Noted"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 1, 0)),
 	}
-
 	err := person.Validate()
 	assert.NoError(t, err)
 }
 
 func TestCreatePersonValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testing.T) {
-
 	person := CreatePerson{
 		Name:       "Name Names",
 		PersonType: PersonTypeCEO,
@@ -46,7 +38,6 @@ func TestCreatePersonValidate_ShouldReturnNilIfOnlyRequiredFieldsExist(t *testin
 }
 
 func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
-
 	person := CreatePerson{
 		Name:       "",
 		PersonType: PersonTypeUnknown,
@@ -54,9 +45,9 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.
 	err := person.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'Name': person name is empty", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'Name': person name is empty", validationError.Error())
 }
 
 func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyPersonType(t *testing.T) {
@@ -66,13 +57,12 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyPersonType(t *te
 	err := person.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'PersonType': person type is invalid", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'PersonType': person type is invalid", validationError.Error())
 }
 
 func TestCreatePersonValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T) {
-
 	person := CreatePerson{
 		PersonType:  PersonTypeJobAdvertiser,
 		Name:        "Something here",
@@ -81,11 +71,11 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *t
 	err := person.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t,
 		"validation error on field 'UpdatedDate': updated date is zero. It should either be 'nil' or a recent date. Given that this is an insert, it is recommended to use nil",
-		validationErr.Error())
+		validationError.Error())
 }
 
 // -------- PersonType.IsValid tests: --------
