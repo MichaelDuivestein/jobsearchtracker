@@ -27,10 +27,12 @@ func NewCompanyRepository(database *sql.DB) *CompanyRepository {
 
 // Create can return ConflictError, InternalServiceError
 func (repository *CompanyRepository) Create(company *models.CreateCompany) (*models.Company, error) {
-	sqlInsert :=
-		"INSERT INTO company (id, name, company_type, notes, last_contact, created_date, updated_date) " +
-			"VALUES (?, ?, ?, ?, ?, ?, ?) " +
-			"RETURNING id, name, company_type, notes, last_contact, created_date, updated_date, null, null"
+	sqlInsert := `
+		INSERT INTO company (
+			id, name, company_type, notes, last_contact, created_date, updated_date
+		) VALUES (?, ?, ?, ?, ?, ?, ?)
+		RETURNING 
+		    id, name, company_type, notes, last_contact, created_date, updated_date, null, null; `
 
 	var companyID uuid.UUID
 	if company.ID != nil {
@@ -87,10 +89,10 @@ func (repository *CompanyRepository) GetById(id *uuid.UUID) (*models.Company, er
 		return nil, internalErrors.NewValidationError(&id, "ID is nil")
 	}
 
-	sqlSelect :=
-		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null, null " +
-			"FROM company " +
-			"WHERE id = ?"
+	sqlSelect := `
+		SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null, null 
+		FROM company 
+		WHERE id = ? `
 
 	row := repository.database.QueryRow(sqlSelect, id)
 
@@ -114,11 +116,11 @@ func (repository *CompanyRepository) GetAllByName(name *string) ([]*models.Compa
 		return nil, internalErrors.NewValidationError(nil, "name is nil")
 	}
 
-	sqlSelect :=
-		"SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null, null " +
-			"FROM company " +
-			"WHERE name LIKE ? " +
-			"ORDER BY name ASC"
+	sqlSelect := `
+		SELECT id, name, company_type, notes, last_contact, created_date, updated_date, null, null 
+		FROM company 
+		WHERE name LIKE ? 
+		ORDER BY name ASC `
 
 	wildcardName := "%" + *name + "%"
 	rows, err := repository.database.Query(sqlSelect, wildcardName)
@@ -161,8 +163,7 @@ func (repository *CompanyRepository) GetAll(
 
 	sqlSelect := `
 		SELECT c.id, c.name, c.company_type, c.notes, c.last_contact, c.created_date, c.updated_date, %s, %s
-		FROM company c
-		%s %s
+		FROM company c %s %s
 		GROUP BY c.id, c.name, c.company_type
 		ORDER BY c.created_date DESC;
 		`
@@ -220,12 +221,14 @@ func (repository *CompanyRepository) GetAll(
 
 // Update can return InternalServiceError, ValidationError
 func (repository *CompanyRepository) Update(company *models.UpdateCompany) error {
+	var sqlString strings.Builder
 	var sqlParts []string
 	var sqlVars []interface{}
 
-	var sqlString strings.Builder
-	sqlString.WriteString("UPDATE company SET ")
-	sqlString.WriteString("updated_date = ?, ")
+	sqlString.WriteString(`
+		UPDATE company SET 
+   		updated_date = ?,  
+   		`)
 	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
@@ -259,7 +262,7 @@ func (repository *CompanyRepository) Update(company *models.UpdateCompany) error
 		return internalErrors.NewValidationError(nil, "nothing to update")
 	}
 
-	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", \n\t\t\t", nil)
 	if err != nil {
 		var message = "unable to join SQL statement string"
 		slog.Error("company_repository.Update: unable to join SQL statement string", "error", err)
@@ -268,7 +271,8 @@ func (repository *CompanyRepository) Update(company *models.UpdateCompany) error
 
 	sqlString.WriteString(sqlPayload)
 
-	sqlString.WriteString(" WHERE id = ?")
+	sqlString.WriteString(`
+		WHERE id = ? `)
 	sqlVars = append(sqlVars, company.ID)
 
 	_, err = repository.database.Exec(
@@ -451,7 +455,7 @@ func (repository *CompanyRepository) buildApplicationsCoalesceAndJoin(
 	}
 	coalesceString = fmt.Sprintf(coalesceString, allColumns)
 
-	joinString := "		LEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n"
+	joinString := "\n\t\tLEFT JOIN application a ON (c.id = a.company_id OR c.id = a.recruiter_id) \n"
 
 	return coalesceString, joinString
 }

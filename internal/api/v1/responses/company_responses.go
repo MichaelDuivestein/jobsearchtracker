@@ -83,6 +83,7 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 		return nil, internalErrors.NewInternalServiceError("Error building response: Company is nil")
 	}
 
+	// can return InternalServiceError
 	companyDTO, err := NewCompanyDTO(companyModel)
 	if err != nil {
 		return nil, err
@@ -90,6 +91,7 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 
 	var applicationDTOs []*ApplicationDTO = nil
 	if companyModel.Applications != nil && len(*companyModel.Applications) >= 0 {
+		// can return InternalServiceError
 		applicationDTOs, err = NewApplicationDTOs(*companyModel.Applications)
 		if err != nil {
 			return nil, err
@@ -98,6 +100,7 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 
 	var persons []*PersonDTO = nil
 	if companyModel.Persons != nil {
+		// can return InternalServiceError
 		persons, err = NewPersonDTOs(*companyModel.Persons)
 		if err != nil {
 			return nil, err

@@ -66,9 +66,9 @@ func TestCreateCompanyRequestValidate_ShouldReturnValidationError(t *testing.T) 
 			err := request.Validate()
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-			assert.Equal(t, test.expectedErrorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.expectedErrorMessage, validationError.Error())
 		})
 	}
 }
@@ -119,7 +119,6 @@ func TestCreateCompanyRequestToModel_ShouldConvertToModelWithNilValues(t *testin
 
 func TestUpdateCompanyRequestValidate_ShouldValidateRequest(t *testing.T) {
 	var companyType CompanyType = CompanyTypeConsultancy
-
 	request := UpdateCompanyRequest{
 		ID:          uuid.New(),
 		Name:        testutil.ToPtr("Some big corp"),
@@ -138,10 +137,9 @@ func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfNothingToUpda
 	err := request.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
-	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfCompanyTypeIsInvalid(t *testing.T) {
@@ -154,10 +152,10 @@ func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfCompanyTypeIs
 	err := request.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 
-	assert.Equal(t, "validation error on field 'CompanyType': CompanyType is invalid", validationErr.Error())
+	assert.Equal(t, "validation error on field 'CompanyType': CompanyType is invalid", validationError.Error())
 }
 
 func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) {
@@ -239,7 +237,6 @@ func TestUpdateCompanyRequestValidate_ShouldValidatePartialModels(t *testing.T) 
 
 func TestUpdateCompanyRequestToModel_ShouldConvertToModel(t *testing.T) {
 	var companyType CompanyType = CompanyTypeRecruiter
-
 	updateRequest := UpdateCompanyRequest{
 		ID:          uuid.New(),
 		Name:        testutil.ToPtr("Nameless"),
@@ -282,10 +279,9 @@ func TestUpdateCompanyRequestToModel_ShouldReturnValidationErrorIfNothingToUpdat
 	assert.Nil(t, model)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 // -------- CompanyType tests: --------
@@ -334,22 +330,20 @@ func TestCompanyTypeToModel_ShouldReturnValidationErrorOnInvalidCompanyType(t *t
 	emptyModel, err := empty.ToModel()
 	assert.NotNil(t, emptyModel)
 	assert.NotNil(t, err)
-
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", emptyModel.String())
-	assert.Equal(t, "validation error on field 'CompanyType': invalid CompanyType: ''", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'CompanyType': invalid CompanyType: ''", validationError.Error())
 
 	scammer := CompanyType("scammer")
 	scammerModel, err := scammer.ToModel()
 	assert.NotNil(t, scammerModel)
 	assert.NotNil(t, err)
-
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", scammerModel.String())
-	assert.Equal(t, "validation error on field 'CompanyType': invalid CompanyType: 'scammer'", err.Error())
+
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'CompanyType': invalid CompanyType: 'scammer'", validationError.Error())
 }
 
 func TestNewCompanyType_ShouldConvertFromModel(t *testing.T) {
@@ -379,10 +373,13 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnNilCompanyType(t *test
 	assert.NotNil(t, err)
 
 	assert.Equal(t, "", companyType.String())
+
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error trying to convert internal companyType to external CompanyType.",
-		err.Error())
+		internalServiceError.Error())
 }
 
 func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *testing.T) {
@@ -397,7 +394,7 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal CompanyType to external CompanyType: ''",
-		err.Error())
+		internalServiceError.Error())
 
 	scammer := models.CompanyType("scammer")
 	scammerV1, err := NewCompanyType(&scammer)
@@ -409,5 +406,5 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal CompanyType to external CompanyType: 'scammer'",
-		err.Error())
+		internalServiceError.Error())
 }

@@ -66,10 +66,10 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T
 	assert.Nil(t, nilDTO)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 
-	assert.Equal(t, "internal service error: Error building DTO: Company is nil", internalServiceErr.Error())
+	assert.Equal(t, "internal service error: Error building DTO: Company is nil", internalServiceError.Error())
 }
 
 func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t *testing.T) {
@@ -85,12 +85,12 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 	assert.Nil(t, nilDTO)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 
 	assert.Equal(t,
 		"internal service error: Error converting internal CompanyType to external CompanyType: ''",
-		internalServiceErr.Error())
+		internalServiceError.Error())
 
 	var badCompanyType models.CompanyType = "BadData"
 	badCompanyTypeModel := models.Company{
@@ -104,11 +104,10 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 	assert.Nil(t, badDataResponse)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal CompanyType to external CompanyType: 'BadData'",
-		internalServiceErr.Error())
+		internalServiceError.Error())
 }
 
 // -------- NewCompaniesDTO tests: --------
@@ -174,12 +173,11 @@ func TestNewCompaniesDTO_ShouldReturnInternalServiceErrorIfOneCompanyTypeIsInval
 	assert.Nil(t, nilDTOs)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal CompanyType to external CompanyType: ''",
-		err.Error())
+		internalServiceError.Error())
 }
 
 // -------- NewCompanyResponse tests: --------
@@ -214,10 +212,9 @@ func TestNewCompanyResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *test
 	assert.Nil(t, nilModel)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(t, "internal service error: Error building response: Company is nil", internalServiceErr.Error())
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(t, "internal service error: Error building response: Company is nil", internalServiceError.Error())
 }
 
 func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
@@ -249,16 +246,9 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 		&application2,
 	}
 
-	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:           companyId,
-		Name:         testutil.ToPtr("Randomized Company"),
-		CompanyType:  &companyType,
-		Notes:        testutil.ToPtr("some notes"),
-		LastContact:  testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 		Applications: &applications,
-		CreatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
-		UpdatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 	}
 
 	response, err := NewCompanyResponse(&model)
@@ -266,12 +256,6 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.Equal(t, model.ID, response.ID)
-	assert.Equal(t, model.Name, response.Name)
-	assert.Equal(t, model.CompanyType.String(), response.CompanyType.String())
-	assert.Equal(t, model.Notes, response.Notes)
-	assert.Equal(t, model.LastContact, response.LastContact)
-	assert.Equal(t, model.CreatedDate, response.CreatedDate)
-	assert.Equal(t, model.UpdatedDate, response.UpdatedDate)
 
 	assert.Equal(t, application1.ID, (*response.Applications)[0].ID)
 	assert.Equal(t, companyId, *(*response.Applications)[0].CompanyID)
@@ -295,8 +279,6 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 }
 
 func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
-	companyID := uuid.New()
-
 	person1 := models.Person{
 		ID: uuid.New(),
 	}
@@ -318,13 +300,9 @@ func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
 		&person2,
 	}
 
-	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
-		ID:          companyID,
-		Name:        testutil.ToPtr("CompanyName"),
-		CompanyType: &companyType,
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
-		Persons:     &persons,
+		ID:      uuid.New(),
+		Persons: &persons,
 	}
 
 	response, err := NewCompanyResponse(&model)
@@ -332,13 +310,6 @@ func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.Equal(t, model.ID, response.ID)
-	assert.Equal(t, model.Name, response.Name)
-	assert.Equal(t, model.CompanyType.String(), response.CompanyType.String())
-	assert.Nil(t, response.Notes)
-	assert.Nil(t, response.LastContact)
-	assert.Equal(t, model.CreatedDate, response.CreatedDate)
-	assert.Nil(t, response.UpdatedDate)
-	assert.Len(t, *response.Applications, 0)
 	assert.Len(t, *response.Persons, 2)
 
 	assert.Equal(t, person1.ID, (*response.Persons)[0].ID)
@@ -360,21 +331,9 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 		CompanyID: &companyId,
 	}
 
-	var application2RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeOffice
 	application2 := models.Application{
-		ID:                   uuid.New(),
-		RecruiterID:          &companyId,
-		JobTitle:             testutil.ToPtr("Application2JobTitle"),
-		JobAdURL:             testutil.ToPtr("Application2JobAdURL"),
-		Country:              testutil.ToPtr("Application2Country"),
-		Area:                 testutil.ToPtr("Application2Area"),
-		RemoteStatusType:     &application2RemoteStatusType,
-		WeekdaysInOffice:     testutil.ToPtr(3),
-		EstimatedCycleTime:   testutil.ToPtr(2),
-		EstimatedCommuteTime: testutil.ToPtr(1),
-		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
-		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
-		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, -1)),
+		ID:          uuid.New(),
+		RecruiterID: &companyId,
 	}
 	applications := []*models.Application{
 		&application1,
@@ -387,16 +346,8 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 	}
 
 	person2ID := uuid.New()
-	var person2Type models.PersonType = models.PersonTypeHR
 	person2 := models.Person{
-		ID:          person2ID,
-		Name:        testutil.ToPtr("Person2Name"),
-		PersonType:  &person2Type,
-		Email:       testutil.ToPtr("Person2Email"),
-		Phone:       testutil.ToPtr("Person2Phone"),
-		Notes:       testutil.ToPtr("Person2Notes"),
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
-		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
+		ID: person2ID,
 	}
 
 	persons := []*models.Person{
@@ -404,15 +355,8 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 		&person2,
 	}
 
-	var companyType models.CompanyType = models.CompanyTypeEmployer
 	model := models.Company{
 		ID:           companyId,
-		Name:         testutil.ToPtr("Randomized Company"),
-		CompanyType:  &companyType,
-		Notes:        testutil.ToPtr("some notes"),
-		LastContact:  testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
-		CreatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -4)),
-		UpdatedDate:  testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
 		Applications: &applications,
 		Persons:      &persons,
 	}
@@ -422,12 +366,6 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.Equal(t, model.ID, response.ID)
-	assert.Equal(t, model.Name, response.Name)
-	assert.Equal(t, model.CompanyType.String(), response.CompanyType.String())
-	assert.Equal(t, model.Notes, response.Notes)
-	assert.Equal(t, model.LastContact, response.LastContact)
-	assert.Equal(t, model.CreatedDate, response.CreatedDate)
-	assert.Equal(t, model.UpdatedDate, response.UpdatedDate)
 	assert.Len(t, *response.Applications, 2)
 	assert.Len(t, *response.Persons, 2)
 

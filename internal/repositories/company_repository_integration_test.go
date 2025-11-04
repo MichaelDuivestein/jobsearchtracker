@@ -113,9 +113,6 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       testutil.ToPtr("some notes"),
-		LastContact: testutil.ToPtr(time.Now()),
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -5, 0)),
 	}
 	firstInsertedCompany, err := companyRepository.Create(&firstCompany)
 	assert.NoError(t, err)
@@ -126,9 +123,6 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 		ID:          &id,
 		Name:        "companyName",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       testutil.ToPtr("Other notes"),
-		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -2)),
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 	shouldBeNil, err := companyRepository.Create(&secondCompany)
 	assert.Nil(t, shouldBeNil)
@@ -138,7 +132,7 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 	assert.True(t, errors.As(err, &conflictError))
 	assert.Equal(t,
 		"conflict error on insert: ID already exists in database: '"+id.String()+"'",
-		err.Error())
+		conflictError.Error())
 }
 
 // -------- GetById tests: --------
@@ -179,7 +173,10 @@ func TestGetById_ShouldReturnErrorIfCompanyIDIsNil(t *testing.T) {
 	response, err := companyRepository.GetById(nil)
 	assert.Nil(t, response)
 	assert.NotNil(t, err)
-	assert.Equal(t, "validation error on field 'ID': ID is nil", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'ID': ID is nil", validationError.Error())
 }
 
 func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
@@ -188,8 +185,11 @@ func TestGetById_ShouldReturnErrorIfCompanyIDDoesNotExist(t *testing.T) {
 	id := uuid.New()
 	response, err := companyRepository.GetById(&id)
 	assert.Nil(t, response)
-	assert.NotNil(t, err, err.Error())
-	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
+	assert.NotNil(t, err, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
 }
 
 // -------- GetAllByName tests: --------
@@ -219,7 +219,10 @@ func TestGetAllByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *testing.T
 	retrievedCompanies, err := companyRepository.GetAllByName(nil)
 	assert.Nil(t, retrievedCompanies)
 	assert.NotNil(t, err)
-	assert.Equal(t, "validation error: name is nil", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: name is nil", validationError.Error())
 }
 
 func TestGetAllByName_ShouldReturnNotFoundErrorIfCompanyNameDoesNotExist(t *testing.T) {
@@ -230,10 +233,13 @@ func TestGetAllByName_ShouldReturnNotFoundErrorIfCompanyNameDoesNotExist(t *test
 	company, err := companyRepository.GetAllByName(&name)
 	assert.Nil(t, company)
 	assert.NotNil(t, err)
-	assert.Equal(t, "error: object not found: Name: '"+name+"'", err.Error())
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: Name: '"+name+"'", notFoundError.Error())
 }
 
-func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameName(t *testing.T) {
+func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameNameSubstring(t *testing.T) {
 	companyRepository, _, _, _ := setupCompanyRepository(t)
 
 	// insert some companies
@@ -279,49 +285,6 @@ func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameName(t *testing.T) {
 	assert.Equal(t, insertedCompany1.ID, foundCompany2.ID)
 }
 
-func TestGetAllByName_ShouldReturnMultipleCompaniesWithSameNamePart(t *testing.T) {
-	companyRepository, _, _, _ := setupCompanyRepository(t)
-
-	// insert some companies
-
-	company1 := models.CreateCompany{
-		ID:          testutil.ToPtr(uuid.New()),
-		Name:        "Some AB",
-		CompanyType: models.CompanyTypeRecruiter,
-	}
-	insertedCompany1, err := companyRepository.Create(&company1)
-	assert.NoError(t, err)
-	assert.NotNil(t, insertedCompany1)
-
-	company2 := models.CreateCompany{
-		ID:          testutil.ToPtr(uuid.New()),
-		Name:        "Absolutely not a company name",
-		CompanyType: models.CompanyTypeConsultancy,
-	}
-	insertedCompany2, err := companyRepository.Create(&company2)
-	assert.NoError(t, err)
-	assert.NotNil(t, insertedCompany2)
-
-	company3 := models.CreateCompany{
-		ID:          testutil.ToPtr(uuid.New()),
-		Name:        "Different AB",
-		CompanyType: models.CompanyTypeEmployer,
-	}
-	insertedCompany3, err := companyRepository.Create(&company3)
-	assert.NoError(t, err)
-	assert.NotNil(t, insertedCompany3)
-
-	// get companies containing "ab"
-
-	retrievedCompanies, err := companyRepository.GetAllByName(testutil.ToPtr("ab"))
-	assert.NoError(t, err)
-	assert.NotNil(t, retrievedCompanies)
-	assert.Len(t, retrievedCompanies, 3)
-	assert.Equal(t, insertedCompany2.ID, retrievedCompanies[0].ID)
-	assert.Equal(t, insertedCompany3.ID, retrievedCompanies[1].ID)
-	assert.Equal(t, insertedCompany1.ID, retrievedCompanies[2].ID)
-}
-
 // -------- GetAll tests: --------
 
 func TestGetAll_ShouldReturnAllCompanies(t *testing.T) {
@@ -344,10 +307,6 @@ func TestGetAll_ShouldReturnAllCompanies(t *testing.T) {
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "company2Name",
 		CompanyType: models.CompanyTypeConsultancy,
-		Notes:       testutil.ToPtr("some notes"),
-		LastContact: testutil.ToPtr(time.Now().AddDate(-1, 0, 0)),
-		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, -4, 22)),
-		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -3)),
 	}
 	insertedCompany2, err := companyRepository.Create(&company2ToInsert)
 	assert.NoError(t, err)
@@ -358,7 +317,14 @@ func TestGetAll_ShouldReturnAllCompanies(t *testing.T) {
 	assert.NotNil(t, results)
 	assert.Len(t, results, 2)
 	assert.Equal(t, *company2ToInsert.ID, results[0].ID)
+
 	assert.Equal(t, *company1ToInsert.ID, results[1].ID)
+	assert.Equal(t, company1ToInsert.Name, *results[1].Name)
+	assert.Equal(t, company1ToInsert.CompanyType.String(), results[1].CompanyType.String())
+	assert.Equal(t, company1ToInsert.Notes, results[1].Notes, results)
+	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.LastContact, results[1].LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.CreatedDate, results[1].CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company1ToInsert.UpdatedDate, results[1].UpdatedDate)
 }
 
 func TestGetAll_ShouldReturnNilIfNoCompaniesInDatabase(t *testing.T) {
@@ -1079,12 +1045,11 @@ func TestUpdate_ShouldUpdateCompany(t *testing.T) {
 	// create a company
 
 	id := uuid.New()
-	notes := "More notes"
 	companyToInsert := models.CreateCompany{
 		ID:          &id,
 		Name:        "Some AB",
 		CompanyType: models.CompanyTypeRecruiter,
-		Notes:       &notes,
+		Notes:       testutil.ToPtr("More notes"),
 		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
 		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
@@ -1096,16 +1061,14 @@ func TestUpdate_ShouldUpdateCompany(t *testing.T) {
 
 	// update a company
 
-	nameToUpdate := "a different name"
 	companyTypeToUpdate := models.CompanyType(models.CompanyTypeConsultancy)
-	notesToUpdate := "Different notes"
 	lastContactToUpdate := time.Now().AddDate(0, 2, 0)
 
 	updateModel := models.UpdateCompany{
 		ID:          id,
-		Name:        &nameToUpdate,
+		Name:        testutil.ToPtr("a different name"),
 		CompanyType: &companyTypeToUpdate,
-		Notes:       &notesToUpdate,
+		Notes:       testutil.ToPtr("Different notes"),
 		LastContact: &lastContactToUpdate,
 	}
 
@@ -1149,13 +1112,12 @@ func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
 
 	// update Name
 
-	nameToUpdate := "a different name"
 	nameUpdateModel := models.UpdateCompany{
 		ID:   id,
-		Name: &nameToUpdate,
+		Name: testutil.ToPtr("a different name"),
 	}
 	retrievedCompany := updateAndGetCompany(t, companyRepository, nameUpdateModel)
-	assert.Equal(t, nameToUpdate, *retrievedCompany.Name)
+	assert.Equal(t, nameUpdateModel.Name, retrievedCompany.Name)
 
 	// update CompanyType
 
@@ -1169,13 +1131,12 @@ func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
 
 	// update CompanyType
 
-	notesToUpdate := "additional notes"
 	notesUpdateModel := models.UpdateCompany{
 		ID:    id,
-		Notes: &notesToUpdate,
+		Notes: testutil.ToPtr("additional notes"),
 	}
 	retrievedCompany = updateAndGetCompany(t, companyRepository, notesUpdateModel)
-	assert.Equal(t, notesToUpdate, *retrievedCompany.Notes)
+	assert.Equal(t, notesUpdateModel.Notes, retrievedCompany.Notes)
 
 	// update CompanyType
 
@@ -1236,9 +1197,12 @@ func TestDelete_ShouldDeleteCompany(t *testing.T) {
 	assert.NoError(t, err)
 
 	deletedCompany, err := companyRepository.GetById(&id)
-	assert.NotNil(t, err)
-	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", err.Error())
 	assert.Nil(t, deletedCompany)
+	assert.NotNil(t, err)
+
+	var notFoundError *internalErrors.NotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
 }
 
 func TestDelete_ShouldReturnErrorIfCompanyIdIsNil(t *testing.T) {
@@ -1247,9 +1211,9 @@ func TestDelete_ShouldReturnErrorIfCompanyIdIsNil(t *testing.T) {
 	err := companyRepository.Delete(nil)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error on field 'ID': ID is nil", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'ID': ID is nil", validationError.Error())
 }
 
 func TestDelete_ShouldReturnNotFoundErrorIfCompanyIdDoesNotExist(t *testing.T) {
@@ -1262,5 +1226,5 @@ func TestDelete_ShouldReturnNotFoundErrorIfCompanyIdDoesNotExist(t *testing.T) {
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
-	assert.Equal(t, "error: object not found: Company does not exist. ID: "+id.String(), err.Error())
+	assert.Equal(t, "error: object not found: Company does not exist. ID: "+id.String(), notFoundError.Error())
 }
