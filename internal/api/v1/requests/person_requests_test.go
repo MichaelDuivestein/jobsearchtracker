@@ -4,6 +4,7 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/testutil"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,20 +14,14 @@ import (
 // -------- CreatePersonRequest tests: --------
 
 func TestCreatePersonRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	email := "no email here"
-	phone := "6839023748"
-	notes := "Something not noteworthy"
-
 	request := CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Nameless",
 		PersonType: PersonTypeDeveloper,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("no email here"),
+		Phone:      testutil.ToPtr("6839023748"),
+		Notes:      testutil.ToPtr("Something not noteworthy"),
 	}
-
 	err := request.validate()
 	assert.NoError(t, err)
 }
@@ -57,54 +52,43 @@ func TestCreatePersonRequestValidate_ShouldReturnValidationErrors(t *testing.T) 
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			email := "name@domain.tld"
-			notes := "Lots of text"
-			phone := "345023485"
-
 			request := CreatePersonRequest{
 				Name:       test.name,
 				PersonType: test.personType,
-				Email:      &email,
-				Phone:      &phone,
-				Notes:      &notes,
+				Email:      testutil.ToPtr("name@domain.tld"),
+				Phone:      testutil.ToPtr("Lots of text"),
+				Notes:      testutil.ToPtr("345023485"),
 			}
-
 			err := request.validate()
 			assert.NotNil(t, err)
 
-			var validationErr *internalErrors.ValidationError
-			assert.True(t, errors.As(err, &validationErr))
-
-			assert.Equal(t, test.expectedErrorMessage, err.Error())
+			var validationError *internalErrors.ValidationError
+			assert.True(t, errors.As(err, &validationError))
+			assert.Equal(t, test.expectedErrorMessage, validationError.Error())
 		})
 	}
 }
 
 func TestCreatePersonRequestToModel_ShouldConvertToModel(t *testing.T) {
-	id := uuid.New()
-	email := "email@email.email"
-	phone := "34543534"
-	notes := "Blah Blah"
-
 	request := CreatePersonRequest{
-		ID:         &id,
+		ID:         testutil.ToPtr(uuid.New()),
 		Name:       "Jane Doe",
 		PersonType: PersonTypeCEO,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("email@email.email"),
+		Phone:      testutil.ToPtr("34543534"),
+		Notes:      testutil.ToPtr("Blah Blah"),
 	}
 
 	model, err := request.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id.String(), model.ID.String())
+	assert.Equal(t, request.ID, model.ID)
 	assert.Equal(t, request.Name, model.Name)
 	assert.Equal(t, request.PersonType.String(), model.PersonType.String())
-	assert.Equal(t, &email, model.Email)
-	assert.Equal(t, &phone, model.Phone)
-	assert.Equal(t, &notes, model.Notes)
+	assert.Equal(t, request.Email, model.Email)
+	assert.Equal(t, request.Phone, model.Phone)
+	assert.Equal(t, request.Notes, model.Notes)
 }
 
 func TestCreatePersonRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
@@ -128,20 +112,14 @@ func TestCreatePersonRequestToModel_ShouldConvertToModelWithNilValues(t *testing
 // --------UpdatePersonRequest tests: --------
 
 func TestUpdatePersonRequestValidate_ShouldValidateRequest(t *testing.T) {
-	id := uuid.New()
-	name := "Blue Gray"
 	var personType PersonType = PersonTypeJobAdvertiser
-	email := "blue@grey.se"
-	phone := "3459083459"
-	notes := "Notes about Blue Gray"
-
 	request := UpdatePersonRequest{
-		ID:         id,
-		Name:       &name,
+		ID:         uuid.New(),
+		Name:       testutil.ToPtr("Blue Gray"),
 		PersonType: &personType,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("blue@grey.se"),
+		Phone:      testutil.ToPtr("3459083459"),
+		Notes:      testutil.ToPtr("Notes about Blue Gray"),
 	}
 
 	err := request.validate()
@@ -149,83 +127,69 @@ func TestUpdatePersonRequestValidate_ShouldValidateRequest(t *testing.T) {
 }
 
 func TestUpdatePersonRequestValidate_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
-	id := uuid.New()
-
 	request := UpdatePersonRequest{
-		ID: id,
+		ID: uuid.New(),
 	}
 
 	err := request.validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
 
-	assert.Equal(t, "validation error: nothing to update", validationErr.Error())
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 func TestUpdatePersonRequestToModel_ShouldReturnValidationErrorIfPersonTypeIsInvalid(t *testing.T) {
-	id := uuid.New()
 	var fakePersonType PersonType = "something that should never happen"
-
 	request := UpdatePersonRequest{
-		ID:         id,
+		ID:         uuid.New(),
 		PersonType: &fakePersonType,
 	}
 
 	err := request.validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
-	assert.Equal(t, "validation error on field 'PersonType': PersonType is invalid", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'PersonType': PersonType is invalid", validationError.Error())
 }
 
 func TestUpdatePersonRequestToModel_ShouldConvertToModel(t *testing.T) {
-	id := uuid.New()
-	name := "Blah Rah"
 	var personType PersonType = PersonTypeCEO
-	email := "blah@email.sd"
-	phone := "23972314945"
-	notes := "Nothing to do here"
-
 	request := UpdatePersonRequest{
-		ID:         id,
-		Name:       &name,
+		ID:         uuid.New(),
+		Name:       testutil.ToPtr("Blah Rah"),
 		PersonType: &personType,
-		Email:      &email,
-		Phone:      &phone,
-		Notes:      &notes,
+		Email:      testutil.ToPtr("blah@email.sd"),
+		Phone:      testutil.ToPtr("23972314945"),
+		Notes:      testutil.ToPtr("Nothing to do here"),
 	}
 
 	model, err := request.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id, model.ID)
-	assert.Equal(t, name, *model.Name)
-	assert.Equal(t, personType.String(), model.PersonType.String())
-	assert.Equal(t, email, *model.Email)
-	assert.Equal(t, phone, *model.Phone)
-	assert.Equal(t, notes, *model.Notes)
+	assert.Equal(t, request.ID, model.ID)
+	assert.Equal(t, request.Name, model.Name)
+	assert.Equal(t, request.PersonType.String(), model.PersonType.String())
+	assert.Equal(t, request.Email, model.Email)
+	assert.Equal(t, request.Phone, model.Phone)
+	assert.Equal(t, request.Notes, model.Notes)
 }
 
 func TestUpdatePersonRequestToModel_ShouldConvertToModelWithNilValues(t *testing.T) {
-	id := uuid.New()
-	name := "No Name Today"
-
 	request := UpdatePersonRequest{
-		ID:   id,
-		Name: &name,
+		ID:   uuid.New(),
+		Name: testutil.ToPtr("No Name Today"),
 	}
 
 	model, err := request.ToModel()
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 
-	assert.Equal(t, id, model.ID)
-	assert.Equal(t, name, *model.Name)
+	assert.Equal(t, request.ID, model.ID)
+	assert.Equal(t, request.Name, model.Name)
 	assert.Nil(t, model.PersonType)
 	assert.Nil(t, model.Email)
 	assert.Nil(t, model.Phone)
@@ -233,20 +197,17 @@ func TestUpdatePersonRequestToModel_ShouldConvertToModelWithNilValues(t *testing
 }
 
 func TestUpdatePersonRequestToModel_ShouldReturnValidationErrorIfNothingToUpdate(t *testing.T) {
-	id := uuid.New()
-
 	request := UpdatePersonRequest{
-		ID: id,
+		ID: uuid.New(),
 	}
 
 	model, err := request.ToModel()
 	assert.Nil(t, model)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
-	assert.Equal(t, "validation error: nothing to update", err.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: nothing to update", validationError.Error())
 }
 
 // -------- PersonType tests: --------
@@ -284,7 +245,6 @@ func TestPersonTypeIsValid_ShouldReturnTrue(t *testing.T) {
 }
 
 func TestPersonTypeIsValid_ShouldReturnFalseOnInvalidPersonType(t *testing.T) {
-
 	empty := PersonType("")
 	assert.False(t, empty.IsValid())
 
@@ -325,21 +285,21 @@ func TestPersonTypeToModel_ShouldReturnValidationErrorOnInvalidPersonType(t *tes
 	assert.NotNil(t, emptyModel)
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", emptyModel.String())
-	assert.Equal(t, "validation error on field 'PersonType': invalid PersonType: ''", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'PersonType': invalid PersonType: ''", validationError.Error())
 
 	blah := PersonType("Blah")
 	blahModel, err := blah.ToModel()
 	assert.NotNil(t, blahModel)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &validationErr))
-
 	assert.Equal(t, "", blahModel.String())
-	assert.Equal(t, "validation error on field 'PersonType': invalid PersonType: 'Blah'", err.Error())
+
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error on field 'PersonType': invalid PersonType: 'Blah'", validationError.Error())
 }
 
 func TestNewPersonType_ShouldConvertFromModel(t *testing.T) {
@@ -374,11 +334,14 @@ func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnNilPersonType(t *te
 	assert.NotNil(t, personType)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
 	assert.Equal(t, "", personType.String())
-	assert.Equal(t, "internal service error: Error trying to convert internal personType to external PersonType.", err.Error())
+
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(
+		t,
+		"internal service error: Error trying to convert internal personType to external PersonType.",
+		internalServiceError.Error())
 }
 
 func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnInvalidPersonType(t *testing.T) {
@@ -386,22 +349,24 @@ func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnInvalidPersonType(t
 	emptyPerson, err := NewPersonType(&emptyModel)
 	assert.NotNil(t, err)
 	assert.NotNil(t, emptyPerson)
-	assert.Equal(t, "", emptyPerson.String())
-
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
 
 	assert.Equal(t, "", emptyPerson.String())
+
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(t,
+		"internal service error: Error converting internal PersonType to external PersonType: ''",
+		internalServiceError.Error())
 
 	specialistModel := models.PersonType("specialist")
 	specialist, err := NewPersonType(&specialistModel)
 	assert.NotNil(t, err)
 	assert.NotNil(t, specialist)
+
 	assert.Equal(t, "", specialist.String())
 
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
 		"internal service error: Error converting internal PersonType to external PersonType: 'specialist'",
-		err.Error())
+		internalServiceError.Error())
 }

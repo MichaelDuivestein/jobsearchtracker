@@ -16,7 +16,6 @@ import (
 
 func TestNewPersonDTO_ShouldWork(t *testing.T) {
 	var personType models.PersonType = models.PersonTypeJobContact
-
 	model := models.Person{
 		ID:          uuid.New(),
 		Name:        testutil.ToPtr("Blah blah"),
@@ -70,10 +69,9 @@ func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T)
 	assert.Nil(t, nilDTO)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(t, err.Error(), "internal service error: Error building DTO: Person is nil")
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(t, internalServiceError.Error(), "internal service error: Error building DTO: Person is nil")
 }
 
 func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *testing.T) {
@@ -88,13 +86,12 @@ func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *t
 	assert.Nil(t, nilDTO)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal PersonType to external PersonType: ''",
-		err.Error())
+		internalServiceError.Error())
 
 	var personTypeBlah models.PersonType = "Blah"
 	invalidPersonType := models.Person{
@@ -107,15 +104,14 @@ func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *t
 	assert.Nil(t, invalidDTO)
 	assert.NotNil(t, err)
 
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal PersonType to external PersonType: 'Blah'",
-		err.Error())
+		internalServiceError.Error())
 }
 
-// -------- NewPersonDTO tests: --------
+// -------- NewPersonDTOs tests: --------
 
 func TestNewPersonDTOs_ShouldWork(t *testing.T) {
 	var personTypeUnknown models.PersonType = models.PersonTypeUnknown
@@ -156,7 +152,7 @@ func TestNewPersonDTOs_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	assert.Len(t, emptyDTOs, 0)
 }
 
-func TestNewPersonDTOs_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing.T) {
+func TestNewPersonDTOs_ShouldReturnNilIfOnePersonTypeIsInvalid(t *testing.T) {
 	var personTypeJobAdvertiser models.PersonType = models.PersonTypeJobAdvertiser
 	var personTypeEmpty models.PersonType = ""
 
@@ -179,20 +175,18 @@ func TestNewPersonDTOs_ShouldReturnEmptySliceIfOnePersonTypeIsInvalid(t *testing
 	assert.Nil(t, persons)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
 		t,
 		"internal service error: Error converting internal PersonType to external PersonType: ''",
-		err.Error())
+		internalServiceError.Error())
 }
 
 // -------- NewPersonResponse tests: --------
 
 func TestNewPersonResponse_ShouldWork(t *testing.T) {
 	var personType models.PersonType = models.PersonTypeJobContact
-
 	model := models.Person{
 		ID:          uuid.New(),
 		Name:        testutil.ToPtr("Blah blah"),
@@ -246,14 +240,12 @@ func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testi
 	assert.Nil(t, nilModel)
 	assert.NotNil(t, err)
 
-	var internalServiceErr *internalErrors.InternalServiceError
-	assert.True(t, errors.As(err, &internalServiceErr))
-
-	assert.Equal(t, err.Error(), "internal service error: Error building response: Person is nil")
+	var internalServiceError *internalErrors.InternalServiceError
+	assert.True(t, errors.As(err, &internalServiceError))
+	assert.Equal(t, internalServiceError.Error(), "internal service error: Error building response: Person is nil")
 }
 
 func TestNewPersonResponse_ShouldHandleCompanies(t *testing.T) {
-
 	var company1CompanyType models.CompanyType = models.CompanyTypeRecruiter
 	company1Model := models.Company{
 		ID:          uuid.New(),

@@ -27,10 +27,11 @@ func NewPersonRepository(database *sql.DB) *PersonRepository {
 
 // Create can return ConflictError, InternalServiceError
 func (repository *PersonRepository) Create(person *models.CreatePerson) (*models.Person, error) {
-	sqlInsert :=
-		"INSERT INTO person (id, name, person_type, email, phone, notes, created_date, updated_date) " +
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
-			"RETURNING id, name, person_type, email, phone, notes, created_date, updated_date, null"
+	sqlInsert := `
+		INSERT INTO person (
+			id, name, person_type, email, phone, notes, created_date, updated_date
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		RETURNING id, name, person_type, email, phone, notes, created_date, updated_date, null`
 
 	var personID uuid.UUID
 	if person.ID != nil {
@@ -90,10 +91,10 @@ func (repository *PersonRepository) GetById(id *uuid.UUID) (*models.Person, erro
 		return nil, internalErrors.NewValidationError(&id, "ID is nil")
 	}
 
-	sqlSelect :=
-		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null " +
-			"FROM person " +
-			"WHERE id = ?"
+	sqlSelect := `
+		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null 
+		FROM person
+		WHERE id = ? `
 
 	row := repository.database.QueryRow(sqlSelect, id)
 	result, err := repository.mapRow(row, "GetById")
@@ -118,11 +119,11 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 
 	wildcardName := "%" + *name + "%"
 
-	sqlSelect :=
-		"SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null " +
-			"FROM person " +
-			"WHERE name LIKE ?" +
-			"ORDER BY name ASC"
+	sqlSelect := `
+		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null
+		FROM person
+		WHERE name LIKE ?
+		ORDER BY name ASC `
 
 	rows, err := repository.database.Query(sqlSelect, wildcardName)
 	if err != nil {
@@ -162,7 +163,7 @@ func (repository *PersonRepository) GetAll(includeCompanies models.IncludeExtraD
         SELECT p.id, p.name, p.person_type, p.email, p.phone, p.notes, p.created_date, p.updated_date, %s
         FROM person p %s
         GROUP BY p.id, p.name, p.person_type
-        ORDER BY p.created_date DESC;`
+        ORDER BY p.created_date DESC; `
 
 	companiesCoalesceString := "null \n"
 	companiesJoinString := ""
@@ -204,12 +205,14 @@ func (repository *PersonRepository) GetAll(includeCompanies models.IncludeExtraD
 
 // Update can return InternalServiceError, ValidationError
 func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
+	var sqlString strings.Builder
 	var sqlParts []string
 	var sqlVars []interface{}
 
-	var sqlString strings.Builder
-	sqlString.WriteString("UPDATE person SET ")
-	sqlString.WriteString("updated_date = ?, ")
+	sqlString.WriteString(`
+		UPDATE person SET 
+			updated_date = ?, 
+			`)
 	sqlVars = append(sqlVars, time.Now().Format(timeutil.RFC3339Milli_Write))
 
 	updateItemCount := 0
@@ -249,7 +252,7 @@ func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
 		return internalErrors.NewValidationError(nil, "nothing to update")
 	}
 
-	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", ", nil)
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, ", \n\t\t\t", nil)
 	if err != nil {
 		var message = "unable to join SQL statement string"
 		slog.Error("person_repository.Update: unable to join SQL statement string", "error", err)
@@ -258,7 +261,8 @@ func (repository *PersonRepository) Update(person *models.UpdatePerson) error {
 
 	sqlString.WriteString(sqlPayload)
 
-	sqlString.WriteString(" WHERE id = ?")
+	sqlString.WriteString(`
+		WHERE id = ? `)
 	sqlVars = append(sqlVars, person.ID)
 
 	_, err = repository.database.Exec(
@@ -365,36 +369,38 @@ func (repository *PersonRepository) mapRow(
 	return &result, nil
 }
 
-func (repository *PersonRepository) buildCompaniesCoalesceAndJoin(includeCompanies models.IncludeExtraDataType) (string, string) {
+func (repository *PersonRepository) buildCompaniesCoalesceAndJoin(
+	includeCompanies models.IncludeExtraDataType) (string, string) {
+
 	if includeCompanies == models.IncludeExtraDataTypeNone {
 		return "null \n", ""
 	}
 
 	coalesceString := `
-        COALESCE(
-            JSON_GROUP_ARRAY(
-                JSON_OBJECT(
-                    'ID', c.id%s
-                ) ORDER BY c.created_date DESC
-            ) FILTER (WHERE c.id IS NOT NULL),
-            JSON_ARRAY()
-        ) as companies`
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', c.id%s
+				) ORDER BY c.created_date DESC
+			) FILTER (WHERE c.id IS NOT NULL),
+			JSON_ARRAY()
+		) as companies`
 
 	allColumns := ""
 	if includeCompanies == models.IncludeExtraDataTypeAll {
 		allColumns = `, 
-                    'Name', c.name, 
-                    'CompanyType', c.company_type, 
-                    'Notes', c.notes, 
-                    'LastContact', c.last_contact, 
-                    'CreatedDate', c.created_date, 
-                    'UpdatedDate', c.updated_date `
+					'Name', c.name, 
+					'CompanyType', c.company_type, 
+					'Notes', c.notes, 
+					'LastContact', c.last_contact, 
+					'CreatedDate', c.created_date, 
+					'UpdatedDate', c.updated_date `
 	}
 	coalesceString = fmt.Sprintf(coalesceString, allColumns)
 
-	joinString := `    
-        LEFT JOIN company_person cp ON cp.person_id = p.id 
-        LEFT JOIN company c ON c.id = cp.company_id `
+	joinString := `
+		LEFT JOIN company_person cp ON cp.person_id = p.id 
+		LEFT JOIN company c ON c.id = cp.company_id `
 
 	return coalesceString, joinString
 }
