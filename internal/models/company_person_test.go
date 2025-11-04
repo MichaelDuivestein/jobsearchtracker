@@ -19,7 +19,6 @@ func TestAssociateCompanyPersonValidate_ShouldReturnNilIfAssociateCompanyPersonI
 		PersonID:    uuid.New(),
 		CreatedDate: testutil.ToPtr(time.Now()),
 	}
-
 	err := model.Validate()
 	assert.NoError(t, err)
 }
@@ -29,7 +28,6 @@ func TestAssociateCompanyPersonValidate_ShouldReturnNilIfOnlyRequiredFieldsExist
 		CompanyID: uuid.New(),
 		PersonID:  uuid.New(),
 	}
-
 	err := model.Validate()
 	assert.NoError(t, err)
 }
@@ -41,14 +39,12 @@ func TestAssociateCompanyPersonValidate_ShouldReturnValidationErrorIfCompanyIDIs
 		PersonID:    uuid.New(),
 		CreatedDate: testutil.ToPtr(time.Now()),
 	}
-
 	err := model.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: CompanyID is empty", validationErr.Error())
-
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: CompanyID is empty", validationError.Error())
 }
 
 func TestAssociateCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsEmpty(t *testing.T) {
@@ -58,14 +54,12 @@ func TestAssociateCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsE
 		PersonID:    personID,
 		CreatedDate: testutil.ToPtr(time.Now()),
 	}
-
 	err := model.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: PersonID is empty", validationErr.Error())
-
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: PersonID is empty", validationError.Error())
 }
 
 // -------- DeleteCompanyPerson.Validate tests: --------
@@ -75,7 +69,6 @@ func TestDeleteCompanyPersonValidate_ShouldReturnNilIfAssociateCompanyPersonIsVa
 		CompanyID: uuid.New(),
 		PersonID:  uuid.New(),
 	}
-
 	err := model.Validate()
 	assert.NoError(t, err)
 }
@@ -86,14 +79,12 @@ func TestDeleteCompanyPersonValidate_ShouldReturnValidationErrorIfCompanyIDIsEmp
 		CompanyID: companyID,
 		PersonID:  uuid.New(),
 	}
-
 	err := model.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: CompanyID cannot be empty", validationErr.Error())
-
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: CompanyID cannot be empty", validationError.Error())
 }
 
 func TestDeleteCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsEmpty(t *testing.T) {
@@ -102,12 +93,10 @@ func TestDeleteCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsEmpt
 		CompanyID: uuid.New(),
 		PersonID:  personID,
 	}
-
 	err := model.Validate()
 	assert.NotNil(t, err)
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: PersonID cannot be empty", validationErr.Error())
-
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: PersonID cannot be empty", validationError.Error())
 }

@@ -5,9 +5,11 @@ import (
 	"errors"
 	internalErrors "jobsearchtracker/internal/errors"
 	"jobsearchtracker/internal/models"
+	"jobsearchtracker/internal/utils"
 	"jobsearchtracker/pkg/timeutil"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,12 +28,10 @@ func (repository *CompanyPersonRepository) AssociateCompanyPerson(
 	associateModel *models.AssociateCompanyPerson) (*models.CompanyPerson, error) {
 
 	sqlInsert := `
-			INSERT INTO company_person (
-				company_id, person_id, created_date
-			) VALUES (
-				?, ?, ?
-			) RETURNING company_id, person_id, created_date;
-		`
+		INSERT INTO company_person (
+			company_id, person_id, created_date
+		) VALUES (?, ?, ?) 
+		RETURNING company_id, person_id, created_date; `
 
 	var createdDate string
 	if associateModel.CreatedDate != nil {
@@ -88,30 +88,42 @@ func (repository *CompanyPersonRepository) GetByID(
 		return nil, internalErrors.NewValidationError(nil, "companyID and personID cannot both be empty")
 	}
 
-	sqlSelect := `
-		SELECT company_id, person_id, created_date
-		FROM company_person WHERE
-	`
+	var sqlString strings.Builder
+	var sqlParts []string
+	var sqlVars []interface{}
 
-	var args []interface{}
+	sqlString.WriteString(`
+		SELECT company_id, person_id, created_date 
+		FROM company_person 
+		WHERE `)
+
 	companyIDAdded := false
 	if companyID != nil && *companyID != uuid.Nil {
-		sqlSelect += " company_id = ? "
-		args = append(args, companyID)
+		sqlParts = append(sqlParts, "company_id = ? ")
+		sqlVars = append(sqlVars, companyID)
 		companyIDAdded = true
 	}
 
 	if personID != nil && *personID != uuid.Nil {
 		if companyIDAdded {
-			sqlSelect += " AND "
+			sqlParts = append(sqlParts, "\n\t\tAND ")
 		}
-		sqlSelect += " person_id = ? "
-		args = append(args, personID)
+		sqlParts = append(sqlParts, "person_id = ? ")
+		sqlVars = append(sqlVars, personID)
 	}
 
-	sqlSelect += " ORDER BY created_date DESC"
+	sqlPayload, err := utils.JoinToString(&sqlParts, nil, " ", nil)
+	if err != nil {
+		//var message = "unable to join SQL statement string"
+		slog.Error("company_person_repository.GetByID: unable to join SQL statement string", "error", err)
+		//return internalErrors.NewInternalServiceError(message)
+	}
 
-	rows, err := repository.database.Query(sqlSelect, args...)
+	sqlString.WriteString(sqlPayload)
+
+	sqlString.WriteString("\n\t\tORDER BY created_date DESC ")
+
+	rows, err := repository.database.Query(sqlString.String(), sqlVars...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -144,7 +156,10 @@ func (repository *CompanyPersonRepository) GetByID(
 
 // GetAll can return InternalServiceError
 func (repository *CompanyPersonRepository) GetAll() ([]*models.CompanyPerson, error) {
-	sqlSelect := "SELECT company_id, person_id, created_date FROM company_person ORDER BY created_date DESC;"
+	sqlSelect := `
+		SELECT company_id, person_id, created_date 
+		FROM company_person 
+		ORDER BY created_date DESC; `
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -179,7 +194,10 @@ func (repository *CompanyPersonRepository) GetAll() ([]*models.CompanyPerson, er
 
 // Delete can return InternalServiceError, NotFoundError
 func (repository *CompanyPersonRepository) Delete(model *models.DeleteCompanyPerson) error {
-	sqlDelete := "DELETE FROM company_person WHERE company_id = ? AND person_id = ?;"
+	sqlDelete := `
+		DELETE FROM company_person 
+		WHERE company_id = ? 
+		AND person_id = ?; `
 
 	result, err := repository.database.Exec(sqlDelete, model.CompanyID, model.PersonID)
 	if err != nil {

@@ -32,9 +32,9 @@ func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 
 	assert.Equal(t, "", emptyType.String())
 
-	var validationErr *internalErrors.ValidationError
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: invalid Type ''", validationErr.Error())
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: invalid Type ''", validationError.Error())
 
 	namesType, err := NewIncludeExtraDataType("names")
 	assert.NotNil(t, namesType)
@@ -42,8 +42,8 @@ func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 
 	assert.Equal(t, "", namesType.String())
 
-	assert.True(t, errors.As(err, &validationErr))
-	assert.Equal(t, "validation error: invalid Type 'names'", validationErr.Error())
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: invalid Type 'names'", validationError.Error())
 }
 
 func TestIncludeExtraDataTypeIsValid_ShouldReturnTrue(t *testing.T) {

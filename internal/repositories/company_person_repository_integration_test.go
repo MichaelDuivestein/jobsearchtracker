@@ -182,10 +182,12 @@ func TestAssociateCompanyToPerson_ShouldReturnConflictErrorIfCompanyIDAndPersonI
 	_, err = companyPersonRepository.AssociateCompanyPerson(&companyPerson)
 	assert.NotNil(t, err)
 
+	var conflictError *internalErrors.ConflictError
+	assert.True(t, errors.As(err, &conflictError))
 	assert.Equal(
 		t,
 		"conflict error on insert: CompanyID and PersonID combination already exists in database.",
-		err.Error())
+		conflictError.Error())
 }
 
 func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfPersonIDDoesNotExist(t *testing.T) {
@@ -199,7 +201,10 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfPersonIDDoesNotEx
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
 	assert.NotNil(t, err)
-	assert.Equal(t, "validation error: Foreign key does not exist", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: Foreign key does not exist", validationError.Error())
 }
 
 func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDDoesNotExist(t *testing.T) {
@@ -213,7 +218,10 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDDoesNotE
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
 	assert.NotNil(t, err)
-	assert.Equal(t, "validation error: Foreign key does not exist", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: Foreign key does not exist", validationError.Error())
 }
 
 func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDAndPersonIDDoNotExist(t *testing.T) {
@@ -225,7 +233,10 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDAndPerso
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
 	assert.NotNil(t, err)
-	assert.Equal(t, "validation error: Foreign key does not exist", err.Error())
+
+	var validationError *internalErrors.ValidationError
+	assert.True(t, errors.As(err, &validationError))
+	assert.Equal(t, "validation error: Foreign key does not exist", validationError.Error())
 }
 
 // -------- GetByID tests: --------

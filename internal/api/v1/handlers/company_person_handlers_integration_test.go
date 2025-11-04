@@ -26,7 +26,6 @@ func setupCompanyPersonHandler(t *testing.T) (
 		DatabaseMigrationsPath:               "../../../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
 	}
-
 	container := dependencyinjection.SetupCompanyPersonHandlerTestContainer(t, config)
 
 	var companyPersonHandler *handlers.CompanyPersonHandler
