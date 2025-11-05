@@ -157,7 +157,7 @@ func TestGetByID_ShouldGetRecordsMatchingCompanyID(t *testing.T) {
 	assert.Equal(t, companyPersons[1].PersonID, person1.ID)
 }
 
-func TestGetByID_ShouldGetRecordsMatchingPersonID(t *testing.T) {
+func TestCompanyPersonGetByID_ShouldGetRecordsMatchingPersonID(t *testing.T) {
 	companyPersonService, companyRepository, personRepository := setupCompanyPersonService(t)
 
 	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)

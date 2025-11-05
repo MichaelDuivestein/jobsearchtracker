@@ -285,7 +285,7 @@ func TestGetByID_ShouldGetRecordsMatchingCompanyID(t *testing.T) {
 	assert.Equal(t, companyPersons[1].PersonID, person1.ID)
 }
 
-func TestGetByID_ShouldGetRecordsMatchingPersonID(t *testing.T) {
+func TestCompanyPersonGetByID_ShouldGetRecordsMatchingPersonID(t *testing.T) {
 	companyPersonRepository, companyRepository, personRepository := setupCompanyPersonRepository(t)
 
 	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
@@ -401,7 +401,7 @@ func TestGetByID_ShouldGetNoRecordsIfCompanyIDDoesNotMatch(t *testing.T) {
 	assert.Nil(t, persons)
 }
 
-func TestGetByID_ShouldGetNoRecordsIfPersonIDDoesNotMatch(t *testing.T) {
+func TestCompanyPersonGetByID_ShouldGetNoRecordsIfPersonIDDoesNotMatch(t *testing.T) {
 	companyPersonRepository, companyRepository, personRepository := setupCompanyPersonRepository(t)
 
 	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
@@ -471,7 +471,7 @@ func TestGetByID_ShouldGetNoRecordsIfCompanyIDAndPersonIDDoesNotMatch(t *testing
 	assert.Nil(t, persons)
 }
 
-func TestGetByID_ShouldGetNoRecordsIfNoRecordsInDB(t *testing.T) {
+func TestCompanyPersonGetByID_ShouldGetNoRecordsIfNoRecordsInDB(t *testing.T) {
 	companyPersonRepository, companyRepository, personRepository := setupCompanyPersonRepository(t)
 
 	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
