@@ -284,3 +284,68 @@ func SetupCompanyPersonHandlerTestContainer(t *testing.T, config configPackage.C
 
 	return container
 }
+
+// -------- ApplicationPerson containers: --------
+
+func SetupApplicationPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.ApplicationPersonRepository {
+		return repositories.NewApplicationPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationPersonRepository", err)
+	}
+
+	// Add PersonRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personRepository", err)
+	}
+
+	// Add CompanyRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	// Add ApplicationRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationRepository", err)
+	}
+
+	return container
+}
+
+func SetupApplicationPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationPersonRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(repository *repositories.ApplicationPersonRepository) *services.ApplicationPersonService {
+		return services.NewApplicationPersonService(repository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationPersonService", err)
+	}
+
+	return container
+}
+
+func SetupApplicationPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationPersonServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.ApplicationPersonService) *apiV1.ApplicationPersonHandler {
+		return apiV1.NewApplicationPersonHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationPersonHandler", err)
+	}
+
+	return container
+}

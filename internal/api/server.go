@@ -39,6 +39,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	companyPersonService := services.NewCompanyPersonService(companyPersonRepository)
 	companyPersonHandler := apiV1.NewCompanyPersonHandler(companyPersonService)
 
+	applicationPersonRepository := repositories.NewApplicationPersonRepository(database)
+	applicationPersonService := services.NewApplicationPersonService(applicationPersonRepository)
+	applicationPersonHandler := apiV1.NewApplicationPersonHandler(applicationPersonService)
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
@@ -66,6 +70,11 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/company-person/get/", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/company-person/get/all", companyPersonHandler.GetAllCompanyPersons).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/company-person/delete", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/application-person/associate", applicationPersonHandler.AssociateApplicationPerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/application-person/get/", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-person/get/all", applicationPersonHandler.GetAllApplicationPersons).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-person/delete", applicationPersonHandler.DeleteApplicationPerson).Methods(http.MethodDelete)
 
 	// Swagger documentation
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)

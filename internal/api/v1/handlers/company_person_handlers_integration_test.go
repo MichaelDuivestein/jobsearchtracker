@@ -90,7 +90,7 @@ func TestGetCompanyPersonsByID_ShouldWork(t *testing.T) {
 	companyPersonHandler, companyRepository, personRepository := setupCompanyPersonHandler(t)
 
 	_, company2ID, person1ID, _ :=
-		setupTestData(t, companyPersonHandler, companyRepository, personRepository, false)
+		setupCompanyPersonTestData(t, companyPersonHandler, companyRepository, personRepository, false)
 
 	queryParams := "company-id=" + company2ID.String() + "&person-id=" + person1ID.String()
 
@@ -121,7 +121,7 @@ func TestGetCompanyPersonsByID_ShouldReturnAllMatchingCompanies(t *testing.T) {
 	companyPersonHandler, companyRepository, personRepository := setupCompanyPersonHandler(t)
 
 	_, company2ID, person1ID, person2ID :=
-		setupTestData(t, companyPersonHandler, companyRepository, personRepository, true)
+		setupCompanyPersonTestData(t, companyPersonHandler, companyRepository, personRepository, true)
 
 	queryParams := "company-id=" + company2ID.String()
 
@@ -156,7 +156,7 @@ func TestGetCompanyPersonsByID_ShouldReturnAllMatchingPersons(t *testing.T) {
 	companyPersonHandler, companyRepository, personRepository := setupCompanyPersonHandler(t)
 
 	company1ID, company2ID, person1ID, _ :=
-		setupTestData(t, companyPersonHandler, companyRepository, personRepository, true)
+		setupCompanyPersonTestData(t, companyPersonHandler, companyRepository, personRepository, true)
 
 	queryParams := "person-id=" + person1ID.String()
 
@@ -190,7 +190,7 @@ func TestGetCompanyPersonsByID_ShouldReturnAllMatchingPersons(t *testing.T) {
 func TestGetCompanyPersonsByID_ShouldReturnEmptyResponseIfNoMatchingCompanyPersons(t *testing.T) {
 	companyPersonHandler, companyRepository, personRepository := setupCompanyPersonHandler(t)
 
-	setupTestData(t, companyPersonHandler, companyRepository, personRepository, false)
+	setupCompanyPersonTestData(t, companyPersonHandler, companyRepository, personRepository, false)
 
 	queryParams := "company-id=" + uuid.New().String() + "&person-id=" + uuid.New().String()
 
@@ -219,7 +219,7 @@ func TestGetAllCompanyPersons_ShouldReturnAllCompanyPersons(t *testing.T) {
 	companyPersonHandler, companyRepository, personRepository := setupCompanyPersonHandler(t)
 
 	company1ID, company2ID, person1ID, person2ID :=
-		setupTestData(t, companyPersonHandler, companyRepository, personRepository, true)
+		setupCompanyPersonTestData(t, companyPersonHandler, companyRepository, personRepository, true)
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/company/company-person/get/all", nil)
 	assert.NoError(t, err)
@@ -345,7 +345,7 @@ func TestDeleteCompanyPerson_ShouldReturnErrorIfNoMatchingCompanyPersonToDelete(
 
 // -------- test helpers: --------
 
-func setupTestData(
+func setupCompanyPersonTestData(
 	t *testing.T,
 	companyPersonHandler *handlers.CompanyPersonHandler,
 	companyRepository *repositories.CompanyRepository,
