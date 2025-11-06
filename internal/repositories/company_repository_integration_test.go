@@ -881,7 +881,7 @@ func TestGetAll_ShouldReturnNilPersonsIfIncludePersonsIsSetToIDsAndThereAreNoCom
 	assert.Nil(t, companies[1].Persons)
 }
 
-func TestGetAll_ShouldReturnPersonsIfIncludePersonsIsSetToAll(t *testing.T) {
+func TestCompanyRepositoryGetAll_ShouldReturnPersonsIfIncludePersonsIsSetToAll(t *testing.T) {
 	companyRepository, _, personRepository, companyPersonRepository := setupCompanyRepository(t)
 
 	// create companies

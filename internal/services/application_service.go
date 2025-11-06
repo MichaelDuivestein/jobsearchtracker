@@ -114,10 +114,12 @@ func (applicationService *ApplicationService) GetApplicationsByJobTitle(
 // GetAllApplications can return InternalServiceError
 func (applicationService *ApplicationService) GetAllApplications(
 	includeCompany models.IncludeExtraDataType,
-	includeRecruiter models.IncludeExtraDataType) ([]*models.Application, error) {
+	includeRecruiter models.IncludeExtraDataType,
+	includePersons models.IncludeExtraDataType) ([]*models.Application, error) {
 
 	// can return InternalServiceError
-	applications, err := applicationService.applicationRepository.GetAll(includeCompany, includeRecruiter)
+	applications, err :=
+		applicationService.applicationRepository.GetAll(includeCompany, includeRecruiter, includePersons)
 	if err != nil {
 		return nil, err
 	}

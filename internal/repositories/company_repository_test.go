@@ -105,7 +105,7 @@ func TestBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataT
 
 }
 
-func TestBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
@@ -129,7 +129,7 @@ func TestBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTyp
 	assert.Equal(t, expectedCoalesce, coalesce)
 }
 
-func TestBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeAll)

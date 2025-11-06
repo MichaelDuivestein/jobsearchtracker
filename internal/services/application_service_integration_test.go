@@ -17,7 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupApplicationService(t *testing.T) (*services.ApplicationService, *repositories.CompanyRepository) {
+func setupApplicationService(t *testing.T) (
+	*services.ApplicationService,
+	*repositories.CompanyRepository,
+	*repositories.PersonRepository,
+	*repositories.ApplicationPersonRepository) {
+
 	config := &configPackage.Config{
 		DatabaseMigrationsPath:               "../../migrations",
 		IsDatabaseMigrationsPathAbsolutePath: false,
@@ -37,13 +42,25 @@ func setupApplicationService(t *testing.T) (*services.ApplicationService, *repos
 	})
 	assert.NoError(t, err)
 
-	return applicationService, companyRepository
+	var personRepository *repositories.PersonRepository
+	err = container.Invoke(func(repository *repositories.PersonRepository) {
+		personRepository = repository
+	})
+	assert.NoError(t, err)
+
+	var applicationPersonRepository *repositories.ApplicationPersonRepository
+	err = container.Invoke(func(repository *repositories.ApplicationPersonRepository) {
+		applicationPersonRepository = repository
+	})
+	assert.NoError(t, err)
+
+	return applicationService, companyRepository, personRepository, applicationPersonRepository
 }
 
 // -------- CreateApplication tests: --------
 
 func TestCreateApplication_ShouldWork(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
@@ -86,7 +103,7 @@ func TestCreateApplication_ShouldWork(t *testing.T) {
 }
 
 func TestCreateApplication_ShouldHandleEmptyFields(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 
@@ -118,7 +135,7 @@ func TestCreateApplication_ShouldHandleEmptyFields(t *testing.T) {
 }
 
 func TestCreateApplication_ShouldReturnErrorIfCompanyIdIsNotInCompany(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	application := models.CreateApplication{
 		CompanyID:        testutil.ToPtr(uuid.New()),
@@ -135,7 +152,7 @@ func TestCreateApplication_ShouldReturnErrorIfCompanyIdIsNotInCompany(t *testing
 }
 
 func TestCreateApplication_ShouldReturnErrorIfRecruiterIdIsNotInCompany(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	application := models.CreateApplication{
 		RecruiterID:      testutil.ToPtr(uuid.New()),
@@ -154,7 +171,7 @@ func TestCreateApplication_ShouldReturnErrorIfRecruiterIdIsNotInCompany(t *testi
 // -------- GetApplicationById tests: --------
 
 func TestGetApplicationById_ShouldWork(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	company := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
 	recruiter := repositoryhelpers.CreateCompany(t, companyRepository, testutil.ToPtr(uuid.New()), nil)
@@ -200,7 +217,7 @@ func TestGetApplicationById_ShouldWork(t *testing.T) {
 }
 
 func TestGetApplicationById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	id := uuid.New()
 	nilApplication, err := applicationService.GetApplicationById(&id)
@@ -215,7 +232,7 @@ func TestGetApplicationById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *
 // -------- GetApplicationsByJobTitle tests: --------
 
 func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// insert applications
 
@@ -285,7 +302,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnApplications(t *testing.T) {
 }
 
 func TestGetApplicationsByJobTitle_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// insert applications
 
@@ -312,10 +329,10 @@ func TestGetApplicationsByJobTitle_ShouldReturnNotFoundErrorIfNoNamesMatch(t *te
 	assert.Equal(t, "error: object not found: JobTitle: '"+jobTitleToGet+"'", notFoundError.Error())
 }
 
-// -------- GetAllApplications tests: --------
+// -------- GetAllApplications - Base tests: --------
 
 func TestGetAlLApplications_ShouldWork(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// insert applications
 
@@ -354,6 +371,7 @@ func TestGetAlLApplications_ShouldWork(t *testing.T) {
 
 	applications, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -380,9 +398,10 @@ func TestGetAlLApplications_ShouldWork(t *testing.T) {
 }
 
 func TestGetAlLApplications_ShouldReturnNilIfNoApplicationsInDatabase(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	applications, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
@@ -390,8 +409,10 @@ func TestGetAlLApplications_ShouldReturnNilIfNoApplicationsInDatabase(t *testing
 	assert.Nil(t, applications)
 }
 
+// -------- GetAllApplications - Company tests: --------
+
 func TestGetAllApplications_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// create an application
 
@@ -421,6 +442,7 @@ func TestGetAllApplications_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *tes
 
 	results, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -433,7 +455,7 @@ func TestGetAllApplications_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *tes
 	assert.Equal(t, companyToInsert.ID, retrievedApplication.CompanyID)
 	assert.NotNil(t, retrievedApplication.Company)
 
-	assert.Equal(t, companyToInsert.ID, retrievedApplication.CompanyID)
+	assert.Equal(t, *companyToInsert.ID, retrievedApplication.Company.ID)
 	assert.Equal(t, companyToInsert.Name, *retrievedApplication.Company.Name)
 	assert.Equal(t, companyToInsert.CompanyType.String(), retrievedApplication.Company.CompanyType.String())
 	assert.Equal(t, companyToInsert.Notes, retrievedApplication.Company.Notes)
@@ -443,7 +465,7 @@ func TestGetAllApplications_ShouldReturnCompanyIfIncludeCompanyIsSetToAll(t *tes
 }
 
 func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToAllAndThereIsNoCompany(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// create an application
 
@@ -464,6 +486,7 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToAllAndTh
 
 	results, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -478,7 +501,7 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToAllAndTh
 }
 
 func TestGetAllApplications_ShouldReturnCompanyWithOnlyIDIfIncludeCompanyIsSetToIDs(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// create an application
 
@@ -508,6 +531,7 @@ func TestGetAllApplications_ShouldReturnCompanyWithOnlyIDIfIncludeCompanyIsSetTo
 
 	results, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -529,8 +553,8 @@ func TestGetAllApplications_ShouldReturnCompanyWithOnlyIDIfIncludeCompanyIsSetTo
 	assert.Nil(t, retrievedApplication.Company.UpdatedDate)
 }
 
-func TestGetAllApplications_ShouldReturnNoCompanyIncludeCompanyIsSetToIDsAndThereIsNoCompany(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToIDsAndThereIsNoCompany(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// create an application
 
@@ -551,6 +575,7 @@ func TestGetAllApplications_ShouldReturnNoCompanyIncludeCompanyIsSetToIDsAndTher
 
 	results, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -565,7 +590,7 @@ func TestGetAllApplications_ShouldReturnNoCompanyIncludeCompanyIsSetToIDsAndTher
 }
 
 func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToNone(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// create an application
 
@@ -595,6 +620,7 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToNone(t *
 
 	results, err := applicationService.GetAllApplications(
 		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
 		models.IncludeExtraDataTypeNone)
 
 	assert.NoError(t, err)
@@ -608,10 +634,504 @@ func TestGetAllApplications_ShouldReturnNoCompanyIfIncludeCompanyIsSetToNone(t *
 	assert.Nil(t, retrievedApplication.Company)
 }
 
+// -------- GetAllApplications - Recruiter tests: --------
+
+func TestGetAllApplications_ShouldReturnRecruiterIfIncludeRecruiterIsSetToAll(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
+
+	// create an application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      companyToInsert.ID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.RecruiterID)
+	assert.NotNil(t, retrievedApplication.RecruiterID)
+
+	assert.Equal(t, *companyToInsert.ID, retrievedApplication.Recruiter.ID)
+	assert.Equal(t, companyToInsert.Name, *retrievedApplication.Recruiter.Name)
+	assert.Equal(t, companyToInsert.CompanyType.String(), retrievedApplication.Recruiter.CompanyType.String())
+	assert.Equal(t, companyToInsert.Notes, retrievedApplication.Recruiter.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.LastContact, retrievedApplication.Recruiter.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.CreatedDate, retrievedApplication.Recruiter.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, companyToInsert.UpdatedDate, retrievedApplication.Recruiter.UpdatedDate)
+}
+
+func TestGetAllApplications_ShouldReturnNoRecruiterIfIncludeRecruiterIsSetToAllAndThereIsNoRecruiter(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
+
+	// create an application
+
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        companyID,
+		RecruiterID:      nil,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.RecruiterID)
+	assert.Nil(t, retrievedApplication.Recruiter)
+}
+
+func TestGetAllApplications_ShouldReturnRecruiterWithOnlyIDIfIncludeRecruiterIsSetToIDs(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
+
+	// create an application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      companyToInsert.ID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.RecruiterID)
+	assert.NotNil(t, retrievedApplication.Recruiter)
+
+	assert.Equal(t, *companyToInsert.ID, retrievedApplication.Recruiter.ID)
+	assert.Nil(t, retrievedApplication.Recruiter.Name)
+	assert.Nil(t, retrievedApplication.Recruiter.CompanyType)
+	assert.Nil(t, retrievedApplication.Recruiter.Notes)
+	assert.Nil(t, retrievedApplication.Recruiter.LastContact)
+	assert.Nil(t, retrievedApplication.Recruiter.CreatedDate)
+	assert.Nil(t, retrievedApplication.Recruiter.UpdatedDate)
+}
+
+func TestGetAllApplications_ShouldReturnNoRecruiterIfIncludeRecruiterIsSetToIDsAndThereIsNoRecruiter(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
+
+	// create an application
+
+	companyID := &repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		CompanyID:        companyID,
+		RecruiterID:      nil,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.RecruiterID)
+	assert.Nil(t, retrievedApplication.Recruiter)
+}
+
+func TestGetAllApplications_ShouldReturnNoRecruiterIfIncludeRecruiterIsSetToNone(t *testing.T) {
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
+
+	// create an application
+
+	companyToInsert := models.CreateCompany{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeRecruiter,
+		Notes:       testutil.ToPtr("CompanyNotes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, -7)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -6)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, -5)),
+	}
+	_, err := companyRepository.Create(&companyToInsert)
+	assert.NoError(t, err)
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      companyToInsert.ID,
+		JobTitle:         testutil.ToPtr("Job Title1"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication1, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication1)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Equal(t, companyToInsert.ID, retrievedApplication.RecruiterID)
+	assert.Nil(t, retrievedApplication.Recruiter)
+}
+
+// -------- GetAllApplications - Persons tests: --------
+
+func TestGetAllApplications_ShouldReturnPersonsIfIncludePersonsIsSetToAll(t *testing.T) {
+	applicationService, companyRepository, personRepository, applicationPersonRepository :=
+		setupApplicationService(t)
+
+	// create application
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      &companyID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	person1ToInsert := models.CreatePerson{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "Person1Name",
+		PersonType:  models.PersonTypeOther,
+		Email:       testutil.ToPtr("Person1Email"),
+		Phone:       testutil.ToPtr("Person1Phone"),
+		Notes:       testutil.ToPtr("Person1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+	}
+	_, err = personRepository.Create(&person1ToInsert)
+	assert.NoError(t, err)
+
+	person2ID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	repositoryhelpers.AssociateApplicationPerson(
+		t,
+		applicationPersonRepository,
+		insertedApplication.ID,
+		*person1ToInsert.ID,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5)))
+
+	repositoryhelpers.AssociateApplicationPerson(
+		t,
+		applicationPersonRepository,
+		insertedApplication.ID,
+		person2ID,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 6)))
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.NotNil(t, retrievedApplication.Persons)
+	assert.Len(t, *retrievedApplication.Persons, 2)
+
+	assert.Equal(t, person2ID, (*retrievedApplication.Persons)[1].ID)
+
+	person1 := (*retrievedApplication.Persons)[0]
+	assert.Equal(t, *person1ToInsert.ID, person1.ID)
+	assert.Equal(t, person1ToInsert.Name, *person1.Name)
+	assert.Equal(t, person1ToInsert.PersonType.String(), person1.PersonType.String())
+	assert.Equal(t, person1ToInsert.Email, person1.Email)
+	assert.Equal(t, person1ToInsert.Phone, person1.Phone)
+	assert.Equal(t, person1ToInsert.Notes, person1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, person1ToInsert.CreatedDate, person1.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, person1ToInsert.UpdatedDate, person1.UpdatedDate)
+	assert.Nil(t, person1.Companies)
+}
+
+func TestGetAllApplications_ShouldReturnNoPersonsIfIncludePersonsIsSetToAllAndThereAreNoApplicationPersons(t *testing.T) {
+	applicationService, companyRepository, personRepository, _ := setupApplicationService(t)
+
+	// create application
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      &companyID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.Persons)
+}
+
+func TestGetAllApplications_ShouldReturnPersonIDsIfIncludePersonsIsSetToIDs(t *testing.T) {
+	applicationService, companyRepository, personRepository, applicationPersonRepository :=
+		setupApplicationService(t)
+
+	// create application
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      &companyID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	person1ToInsert := models.CreatePerson{
+		ID:          testutil.ToPtr(uuid.New()),
+		Name:        "Person1Name",
+		PersonType:  models.PersonTypeOther,
+		Email:       testutil.ToPtr("Person1Email"),
+		Phone:       testutil.ToPtr("Person1Phone"),
+		Notes:       testutil.ToPtr("Person1Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+	}
+	_, err = personRepository.Create(&person1ToInsert)
+	assert.NoError(t, err)
+
+	person2ID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	repositoryhelpers.AssociateApplicationPerson(
+		t,
+		applicationPersonRepository,
+		insertedApplication.ID,
+		*person1ToInsert.ID,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5)))
+
+	repositoryhelpers.AssociateApplicationPerson(
+		t,
+		applicationPersonRepository,
+		insertedApplication.ID,
+		person2ID,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 6)))
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.NotNil(t, retrievedApplication.Persons)
+	assert.Len(t, *retrievedApplication.Persons, 2)
+
+	assert.Equal(t, person2ID, (*retrievedApplication.Persons)[1].ID)
+
+	person1 := (*retrievedApplication.Persons)[0]
+	assert.Equal(t, *person1ToInsert.ID, person1.ID)
+	assert.Nil(t, person1.Name)
+	assert.Nil(t, person1.PersonType)
+	assert.Nil(t, person1.Email)
+	assert.Nil(t, person1.Phone)
+	assert.Nil(t, person1.Notes)
+	assert.Nil(t, person1.CreatedDate)
+	assert.Nil(t, person1.CreatedDate)
+	assert.Nil(t, person1.Companies)
+}
+
+func TestGetAllApplications_ShouldReturnNoPersonsIfIncludePersonsIsSetToIDsAndThereAreNoApplicationPersons(t *testing.T) {
+	applicationService, companyRepository, personRepository, _ := setupApplicationService(t)
+
+	// create application
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      &companyID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	repositoryhelpers.CreatePerson(t, personRepository, nil, nil)
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.Persons)
+}
+
+func TestGetAllApplications_ShouldReturnNoPersonsIfIncludePersonsIsSetToNone(t *testing.T) {
+	applicationService, companyRepository, personRepository, applicationPersonRepository :=
+		setupApplicationService(t)
+
+	// create application
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	applicationToInsert := models.CreateApplication{
+		ID:               testutil.ToPtr(uuid.New()),
+		RecruiterID:      &companyID,
+		JobTitle:         testutil.ToPtr("Job Title"),
+		RemoteStatusType: models.RemoteStatusTypeUnknown,
+	}
+	insertedApplication, err := applicationService.CreateApplication(&applicationToInsert)
+	assert.NoError(t, err)
+	assert.NotNil(t, insertedApplication)
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	repositoryhelpers.AssociateApplicationPerson(
+		t,
+		applicationPersonRepository,
+		insertedApplication.ID,
+		personID,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 6)))
+
+	// get all applications
+
+	results, err := applicationService.GetAllApplications(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	retrievedApplication := results[0]
+	assert.Equal(t, *applicationToInsert.ID, retrievedApplication.ID)
+	assert.Nil(t, retrievedApplication.Persons)
+}
+
 // -------- UpdateApplication tests: --------
 
 func TestUpdateApplication_ShouldWork(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// insert application
 
@@ -685,7 +1205,7 @@ func TestUpdateApplication_ShouldWork(t *testing.T) {
 }
 
 func TestUpdateApplication_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	applicationToUpdate := models.UpdateApplication{
 		ID:       uuid.New(),
@@ -699,7 +1219,7 @@ func TestUpdateApplication_ShouldNotReturnErrorIfIdToUpdateDoesNotExist(t *testi
 // -------- DeleteApplication tests: --------
 
 func TestDeleteApplication_ShouldWork(t *testing.T) {
-	applicationService, companyRepository := setupApplicationService(t)
+	applicationService, companyRepository, _, _ := setupApplicationService(t)
 
 	// insert application
 
@@ -731,7 +1251,7 @@ func TestDeleteApplication_ShouldWork(t *testing.T) {
 }
 
 func TestDeleteApplication_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testing.T) {
-	applicationService, _ := setupApplicationService(t)
+	applicationService, _, _, _ := setupApplicationService(t)
 
 	id := uuid.New()
 	err := applicationService.DeleteApplication(&id)

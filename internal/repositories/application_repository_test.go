@@ -59,7 +59,7 @@ func TestBuildCompanyCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraData
 
 // -------- buildRecruiterCoalesceAndJoin tests: --------
 
-func TestBuildRecruiterCoalesceAndJoin_ShouldReturnEmprtStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestBuildRecruiterCoalesceAndJoin_ShouldReturnEmpryStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	applicationRepository := NewApplicationRepository(nil)
 
 	coalesce, join := applicationRepository.buildRecruiterCoalesceAndJoin(models.IncludeExtraDataTypeNone)
@@ -104,5 +104,65 @@ func TestBuildRecruiterCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDa
 			)
 			ELSE NULL
 		END as recruiter`
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+// -------- buildPersonsCoalesceAndJoin tests: --------
+
+func TestBuildPersonsCoalesceAndJoin_ShouldReturnEmpryStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+	assert.Equal(t, "null \n", coalesce)
+	assert.Equal(t, "", join)
+}
+
+func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	assert.Equal(
+		t,
+		"LEFT JOIN application_person ap ON (ap.application_id = a.id)\n\t\tLEFT JOIN person p ON (ap.person_id = p.id)\n",
+		join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', p.id
+				) ORDER BY p.created_date DESC
+			) FILTER (WHERE p.id IS NOT NULL),
+			JSON_ARRAY()
+		) as persons
+`
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	assert.Equal(t, "LEFT JOIN application_person ap ON (ap.application_id = a.id)\n\t\tLEFT JOIN person p ON (ap.person_id = p.id)\n", join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', p.id,
+					'Name', p.name,
+					'PersonType', p.person_type,
+					'Email', p.email,
+					'Phone', p.phone,
+					'Notes', p.notes,
+					'CreatedDate', p.created_date,
+					'UpdatedDate', p.updated_date
+				) ORDER BY p.created_date DESC
+			) FILTER (WHERE p.id IS NOT NULL),
+			JSON_ARRAY()
+		) as persons
+`
 	assert.Equal(t, expectedCoalesce, coalesce)
 }

@@ -86,8 +86,9 @@ func NewApplicationDTOs(applications []*models.Application) ([]*ApplicationDTO, 
 // ApplicationResponse represents an application with additional metadata
 type ApplicationResponse struct {
 	ApplicationDTO
-	Company   *CompanyDTO
-	Recruiter *CompanyDTO
+	Company   *CompanyDTO   `json:"company" extensions:"x-order=14"`
+	Recruiter *CompanyDTO   `json:"recruiter" extensions:"x-order=15"`
+	Persons   *[]*PersonDTO `json:"persons" extensions:"x-order=16"`
 }
 
 // NewApplicationResponse can return InternalServerError
@@ -121,10 +122,20 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		}
 	}
 
+	var persons []*PersonDTO = nil
+	if applicationModel.Persons != nil {
+		// can return InternalServiceError
+		persons, err = NewPersonDTOs(*applicationModel.Persons)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	applicationResponse := ApplicationResponse{
 		ApplicationDTO: *applicationDTO,
 		Company:        companyDTO,
 		Recruiter:      recruiterDTO,
+		Persons:        &persons,
 	}
 
 	return &applicationResponse, nil

@@ -35,7 +35,7 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 	  	RETURNING 
 			id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		    weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		    updated_date, null, null; `
+		    updated_date, null, null, null; `
 
 	var applicationID uuid.UUID
 	if application.ID != nil {
@@ -78,7 +78,7 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 		updatedDate,
 	)
 
-	result, err := repository.mapRow(row, "Create", &applicationID)
+	result, err := repository.mapRow(row, "Create")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			slog.Info("application_repository.Create: No result found for ID",
@@ -118,14 +118,14 @@ func (repository *ApplicationRepository) GetById(id *uuid.UUID) (*models.Applica
 	sqlSelect := `
 		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		   updated_date, null, null 
+		   updated_date, null, null, null 
 		FROM application 
 		WHERE id = ? `
 
 	row := repository.database.QueryRow(sqlSelect, id)
 
 	// can return ConflictError, InternalServiceError
-	result, err := repository.mapRow(row, "GetById", id)
+	result, err := repository.mapRow(row, "GetById")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			slog.Info("application_repository.GetById: No result found for ID", "ID", id, "error", err.Error())
@@ -147,7 +147,7 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 	sqlSelect := `
 		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		   updated_date, null, null 
+		   updated_date, null, null, null 
 		FROM application 
 		WHERE job_title LIKE ? 
 		ORDER BY updated_Date DESC `
@@ -162,7 +162,7 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 
 	for rows.Next() {
 		// can return ConflictError, InternalServiceError
-		result, err := repository.mapRow(rows, "GetAllByJobTitle", nil)
+		result, err := repository.mapRow(rows, "GetAllByJobTitle")
 		if err != nil {
 			slog.Error("application_repository.GetAllByJobTitle: Error mapping row", "error", err)
 			return nil, internalErrors.NewInternalServiceError("Error processing application data: " + err.Error())
@@ -189,19 +189,28 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 // GetAll can return InternalServiceError
 func (repository *ApplicationRepository) GetAll(
 	includeCompany models.IncludeExtraDataType,
-	includeRecruiter models.IncludeExtraDataType) ([]*models.Application, error) {
+	includeRecruiter models.IncludeExtraDataType,
+	includePersons models.IncludeExtraDataType) ([]*models.Application, error) {
 
 	sqlSelect := `
 		SELECT a.id, a.company_id, a.recruiter_id, a.job_title, a.job_ad_url, a.country, a.area, a.remote_status_type, 
 			a.weekdays_in_office, a.estimated_cycle_time, a.estimated_commute_time, a.application_date, a.created_date, 
-			a.updated_date, %s, %s
-		FROM application a %s %s
+			a.updated_date, %s, %s, %s
+		FROM application a %s %s %s
 		ORDER BY a.created_date DESC `
 
 	companyCoalesceString, companyJoinString := repository.buildCompanyCoalesceAndJoin(includeCompany)
 	recruiterCoalesceString, recruiterJoinString := repository.buildRecruiterCoalesceAndJoin(includeRecruiter)
+	personsCoalesceString, personsJoinString := repository.buildPersonsCoalesceAndJoin(includePersons)
 
-	sqlSelect = fmt.Sprintf(sqlSelect, companyCoalesceString, recruiterCoalesceString, companyJoinString, recruiterJoinString)
+	sqlSelect = fmt.Sprintf(
+		sqlSelect,
+		companyCoalesceString,
+		recruiterCoalesceString,
+		personsCoalesceString,
+		companyJoinString,
+		recruiterJoinString,
+		personsJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -214,7 +223,7 @@ func (repository *ApplicationRepository) GetAll(
 	var results []*models.Application
 	for rows.Next() {
 		// can return ConflictError, InternalServiceError
-		result, err := repository.mapRow(rows, "GetAll", nil)
+		result, err := repository.mapRow(rows, "GetAll")
 		if err != nil {
 			slog.Error("application_repository.GetAll: Error mapping row", "error", err)
 			return nil, internalErrors.NewInternalServiceError("Error processing application data: " + err.Error())
@@ -384,10 +393,10 @@ func (repository *ApplicationRepository) Delete(id *uuid.UUID) error {
 }
 
 func (repository *ApplicationRepository) mapRow(
-	scanner interface{ Scan(...interface{}) error }, methodName string, ID *uuid.UUID) (*models.Application, error) {
+	scanner interface{ Scan(...interface{}) error }, methodName string) (*models.Application, error) {
 
 	var result models.Application
-	var applicationDate, createdDate, updatedDate, companyString, recruiterString sql.NullString
+	var applicationDate, createdDate, updatedDate, companyString, recruiterString, personsString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -406,6 +415,7 @@ func (repository *ApplicationRepository) mapRow(
 		&updatedDate,
 		&companyString,
 		&recruiterString,
+		&personsString,
 	)
 
 	if err != nil {
@@ -463,6 +473,17 @@ func (repository *ApplicationRepository) mapRow(
 		}
 		if recruiter != nil {
 			result.Recruiter = recruiter
+		}
+	}
+
+	if personsString.Valid {
+		var persons []*models.Person
+		if err := json.NewDecoder(strings.NewReader(personsString.String)).Decode(&persons); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing persons: " + err.Error())
+		}
+
+		if len(persons) > 0 {
+			result.Persons = &persons
 		}
 	}
 
@@ -529,6 +550,46 @@ func (repository *ApplicationRepository) buildRecruiterCoalesceAndJoin(
 	coalesceString = fmt.Sprintf(coalesceString, allColumns)
 
 	joinString := "\n\t\tLEFT JOIN company r ON (a.recruiter_id = r.id)"
+
+	return coalesceString, joinString
+}
+
+func (repository *ApplicationRepository) buildPersonsCoalesceAndJoin(
+	includePersons models.IncludeExtraDataType) (string, string) {
+
+	if includePersons == models.IncludeExtraDataTypeNone {
+		return "null \n", ""
+	}
+
+	coalesceString := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				JSON_OBJECT(
+					'ID', p.id%s
+				) ORDER BY p.created_date DESC
+			) FILTER (WHERE p.id IS NOT NULL),
+			JSON_ARRAY()
+		) as persons
+`
+
+	allColumns := ""
+	if includePersons == models.IncludeExtraDataTypeAll {
+		allColumns = `,
+					'Name', p.name,
+					'PersonType', p.person_type,
+					'Email', p.email,
+					'Phone', p.phone,
+					'Notes', p.notes,
+					'CreatedDate', p.created_date,
+					'UpdatedDate', p.updated_date`
+
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString :=
+		`LEFT JOIN application_person ap ON (ap.application_id = a.id)
+		LEFT JOIN person p ON (ap.person_id = p.id)
+`
 
 	return coalesceString, joinString
 }

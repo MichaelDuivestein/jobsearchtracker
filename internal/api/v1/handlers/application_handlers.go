@@ -315,8 +315,25 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 		return
 	}
 
+	includePersons, err := GetExtraDataTypeParam(query.Get("include_persons"))
+	if err != nil {
+		slog.Error("v1.applicationHandler.GetAllApplications: Could not parse include_persons param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_persons. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	applications, err := applicationHandler.applicationService.GetAllApplications(*includeCompany, *includeRecruiter)
+	applications, err := applicationHandler.applicationService.GetAllApplications(
+		*includeCompany,
+		*includeRecruiter,
+		*includePersons)
+
 	if err != nil {
 		errorMessage := "Internal service error while getting all applications"
 		status := http.StatusInternalServerError

@@ -24,6 +24,7 @@ type Application struct {
 	UpdatedDate          *time.Time
 	Company              *Company
 	Recruiter            *Company
+	Persons              *[]*Person
 }
 
 type CreateApplication struct {

@@ -70,3 +70,22 @@ func CreatePerson(
 
 	return insertedPerson
 }
+
+func AssociateApplicationPerson(
+	t *testing.T,
+	repository *repositories.ApplicationPersonRepository,
+	applicationID uuid.UUID,
+	personID uuid.UUID,
+	createdDate *time.Time) *models.ApplicationPerson {
+
+	model := models.AssociateApplicationPerson{
+		ApplicationID: applicationID,
+		PersonID:      personID,
+		CreatedDate:   createdDate,
+	}
+
+	associatedApplicationPerson, err := repository.AssociateApplicationPerson(&model)
+	assert.NoError(t, err)
+
+	return associatedApplicationPerson
+}
