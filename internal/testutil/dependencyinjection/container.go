@@ -365,3 +365,42 @@ func SetupApplicationPersonHandlerTestContainer(t *testing.T, config configPacka
 
 	return container
 }
+
+// -------- Event containers: --------
+
+func SetupEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventRepository", err)
+	}
+
+	return container
+}
+
+func SetupEventServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupEventRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(repository *repositories.EventRepository) *services.EventService {
+		return services.NewEventService(repository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventService", err)
+	}
+	return container
+}
+
+func SetupEventHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupEventServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.EventService) *apiV1.EventHandler {
+		return apiV1.NewEventHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventHandler", err)
+	}
+	return container
+}
