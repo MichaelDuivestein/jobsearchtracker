@@ -48,7 +48,7 @@ func TestGetIncludeExtraDataParam_ShouldMapToNoneIfUrlParamValueIsEmpty(t *testi
 func TestGetIncludeExtraDataParam_ShouldReturnValidationErrIfUrlParamValueIsNotMappable(t *testing.T) {
 	dataType, err := GetExtraDataTypeParam("names")
 	assert.Nil(t, dataType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

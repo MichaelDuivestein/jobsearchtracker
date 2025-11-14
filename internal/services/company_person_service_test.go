@@ -61,7 +61,7 @@ func TestGetByID_ShouldReturnValidationErrorIfCompanyIDAndPersonIDAreEmpty(t *te
 			personCompanies, err := service.GetByID(test.companyID, test.personID)
 			assert.Nil(t, personCompanies)
 
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Equal(t, internalErrors.NewValidationError(nil, "companyID and personID cannot both be empty"), err)
 		})
 	}
@@ -106,7 +106,7 @@ func TestDelete_ShouldReturnValidationErrorIfCompanyIDOrPersonIDisEmpty(t *testi
 			}
 
 			err := service.Delete(&deleteModel)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.ErrorAs(t, err, &validationError)

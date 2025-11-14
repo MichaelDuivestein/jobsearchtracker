@@ -101,7 +101,7 @@ func TestAssociateCompanyToPerson_ShouldReturnConflictErrorIfCompanyIDAndPersonI
 	assert.NoError(t, err)
 
 	_, err = companyPersonService.AssociateCompanyPerson(&companyPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
@@ -345,7 +345,7 @@ func TestDeleteCompanyPerson_ShouldReturnNotFoundErrorIfNoMatchingCompanyPersonI
 	}
 
 	err = companyPersonService.Delete(&deleteModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

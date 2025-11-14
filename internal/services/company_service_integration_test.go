@@ -176,7 +176,7 @@ func TestGetCompanyById_ShouldReturnNotFoundErrorForAnIDThatDoesNotExist(t *test
 
 	nonExistingId := uuid.New()
 	retrievedCompany, err := companyService.GetCompanyById(&nonExistingId)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, retrievedCompany)
 
 	var notFoundError *internalErrors.NotFoundError
@@ -260,7 +260,7 @@ func TestGetCompaniesByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T
 	nameToGet := "Bee"
 	companies, err := companyService.GetCompaniesByName(&nameToGet)
 	assert.Nil(t, companies)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -1164,7 +1164,7 @@ func TestDeleteCompany_ShouldWork(t *testing.T) {
 	// this should return an error as the company no longer exists.
 
 	deletedCompany, err := companyService.GetCompanyById(&id)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, deletedCompany)
 
 	var notFoundError *internalErrors.NotFoundError
@@ -1178,7 +1178,7 @@ func TestDeleteCompany_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *test
 	id := uuid.New()
 
 	err := companyService.DeleteCompany(&id)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

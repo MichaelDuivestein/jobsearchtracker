@@ -64,7 +64,7 @@ func TestCreateCompanyRequestValidate_ShouldReturnValidationError(t *testing.T) 
 			}
 
 			err := request.Validate()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))
@@ -135,7 +135,7 @@ func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfNothingToUpda
 		ID: uuid.New(),
 	}
 	err := request.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -150,7 +150,7 @@ func TestUpdateCompanyRequestValidate_ShouldReturnValidationErrorIfCompanyTypeIs
 		CompanyType: &fakeCompanyType,
 	}
 	err := request.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -277,7 +277,7 @@ func TestUpdateCompanyRequestToModel_ShouldReturnValidationErrorIfNothingToUpdat
 	}
 	model, err := updateRequest.ToModel()
 	assert.Nil(t, model)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -329,7 +329,7 @@ func TestCompanyTypeToModel_ShouldReturnValidationErrorOnInvalidCompanyType(t *t
 	empty := CompanyType("")
 	emptyModel, err := empty.ToModel()
 	assert.NotNil(t, emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, "", emptyModel.String())
 
 	var validationError *internalErrors.ValidationError
@@ -339,7 +339,7 @@ func TestCompanyTypeToModel_ShouldReturnValidationErrorOnInvalidCompanyType(t *t
 	scammer := CompanyType("scammer")
 	scammerModel, err := scammer.ToModel()
 	assert.NotNil(t, scammerModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, "", scammerModel.String())
 
 	assert.True(t, errors.As(err, &validationError))
@@ -370,7 +370,7 @@ func TestNewCompanyType_ShouldConvertFromModel(t *testing.T) {
 func TestNewCompanyType_ShouldReturnInternalServiceErrorOnNilCompanyType(t *testing.T) {
 	companyType, err := NewCompanyType(nil)
 	assert.NotNil(t, companyType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", companyType.String())
 
@@ -386,7 +386,7 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 	empty := models.CompanyType("")
 	emptyV1, err := NewCompanyType(&empty)
 	assert.NotNil(t, emptyV1)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, "", emptyV1.String())
 
 	var internalServiceError *internalErrors.InternalServiceError
@@ -399,7 +399,7 @@ func TestNewCompanyType_ShouldReturnInternalServiceErrorOnInvalidCompanyType(t *
 	scammer := models.CompanyType("scammer")
 	scammerV1, err := NewCompanyType(&scammer)
 	assert.NotNil(t, scammerV1)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, "", scammerV1.String())
 
 	assert.True(t, errors.As(err, &internalServiceError))

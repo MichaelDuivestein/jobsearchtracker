@@ -71,14 +71,14 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/application/delete/{id}", applicationHandler.DeleteApplication).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/company-person/associate", companyPersonHandler.AssociateCompanyPerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/company-person/get/", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-person/get/id/{id}", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/company-person/get/all", companyPersonHandler.GetAllCompanyPersons).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company-person/delete", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
+	router.HandleFunc("/api/v1/company-person/delete/{id}", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/application-person/associate", applicationPersonHandler.AssociateApplicationPerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/application-person/get/", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-person/get/id/{id}", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-person/get/all", applicationPersonHandler.GetAllApplicationPersons).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/application-person/delete", applicationPersonHandler.DeleteApplicationPerson).Methods(http.MethodDelete)
+	router.HandleFunc("/api/v1/application-person/delete/{id}", applicationPersonHandler.DeleteApplicationPerson).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/event/new", eventHandler.CreateEvent).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/event/get/id/{id}", eventHandler.GetEventByID).Methods(http.MethodGet)

@@ -67,7 +67,7 @@ func TestNewPersonDTO_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilDTO, err := NewPersonDTO(nil)
 	assert.Nil(t, nilDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -84,7 +84,7 @@ func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *t
 	}
 	nilDTO, err := NewPersonDTO(&emptyPersonType)
 	assert.Nil(t, nilDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -102,7 +102,7 @@ func TestNewPersonDTO_ShouldReturnInternalServiceErrorIfPersonTypeIsInvalid(t *t
 	}
 	invalidDTO, err := NewPersonDTO(&invalidPersonType)
 	assert.Nil(t, invalidDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(
@@ -152,7 +152,7 @@ func TestNewPersonDTOs_ShouldReturnEmptySliceIfModelIsEmpty(t *testing.T) {
 	assert.Len(t, emptyDTOs, 0)
 }
 
-func TestNewPersonDTOs_ShouldReturnNilIfOnePersonTypeIsInvalid(t *testing.T) {
+func TestNewPersonDTOs_ShouldReturnInternalServiceErrorIfOnePersonTypeIsInvalid(t *testing.T) {
 	var personTypeJobAdvertiser models.PersonType = models.PersonTypeJobAdvertiser
 	var personTypeEmpty models.PersonType = ""
 
@@ -170,10 +170,9 @@ func TestNewPersonDTOs_ShouldReturnNilIfOnePersonTypeIsInvalid(t *testing.T) {
 			CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 0)),
 		},
 	}
-
 	persons, err := NewPersonDTOs(personModels)
 	assert.Nil(t, persons)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -238,7 +237,7 @@ func TestNewPersonResponse_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 func TestNewPersonResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilModel, err := NewPersonResponse(nil)
 	assert.Nil(t, nilModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))

@@ -223,7 +223,7 @@ func TestGetApplicationById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *
 	nilApplication, err := applicationService.GetApplicationById(&id)
 	assert.Nil(t, nilApplication)
 
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
@@ -322,7 +322,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnNotFoundErrorIfNoNamesMatch(t *te
 	jobTitleToGet := "Developer"
 	applications, err := applicationService.GetApplicationsByJobTitle(&jobTitleToGet)
 	assert.Nil(t, applications)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -1243,7 +1243,7 @@ func TestDeleteApplication_ShouldWork(t *testing.T) {
 
 	retrievedApplication, err := applicationService.GetApplicationById(&id)
 	assert.Nil(t, retrievedApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -1255,7 +1255,7 @@ func TestDeleteApplication_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *
 
 	id := uuid.New()
 	err := applicationService.DeleteApplication(&id)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

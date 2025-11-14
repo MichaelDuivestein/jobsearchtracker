@@ -19,7 +19,7 @@ func TestCreateCompany_ShouldReturnValidationErrorOnNilCompany(t *testing.T) {
 
 	nilCompany, err := companyService.CreateCompany(nil)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -41,7 +41,7 @@ func TestCreateCompany_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
 
 	nilCompany, err := companyService.CreateCompany(company)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -62,7 +62,7 @@ func TestCreateCompany_ShouldReturnValidationErrorOnEmptyCompanyType(t *testing.
 
 	nilCompany, err := companyService.CreateCompany(company)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -84,7 +84,7 @@ func TestCreateCompany_ShouldReturnValidationErrorOnInvalidCompanyType(t *testin
 
 	nilCompany, err := companyService.CreateCompany(company)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -106,7 +106,7 @@ func TestCreateCompany_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.
 
 	nilCompany, err := companyService.CreateCompany(company)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -123,7 +123,7 @@ func TestGetCompanyById_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T
 
 	company, err := companyService.GetCompanyById(nil)
 	assert.Nil(t, company)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -136,7 +136,7 @@ func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *tes
 
 	nilCompany, err := companyService.GetCompaniesByName(nil)
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error: companyName is required", validationError.Error())
@@ -147,7 +147,7 @@ func TestGetCompaniesByName_ShouldReturnValidationErrorIfCompanyNameIsEmpty(t *t
 
 	nilCompany, err := companyService.GetCompaniesByName(testutil.ToPtr(""))
 	assert.Nil(t, nilCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error: companyName is required", validationError.Error())
@@ -159,7 +159,7 @@ func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyIsNil(t *testing.T) {
 	companyService := NewCompanyService(nil)
 
 	err := companyService.UpdateCompany(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -174,7 +174,7 @@ func TestUpdateCompany_ShouldReturnValidationErrorIfCompanyContainsNothingToUpda
 	}
 
 	err := companyService.UpdateCompany(companyToUpdate)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -187,7 +187,7 @@ func TestDeleteCompany_ShouldReturnValidationErrorIfCompanyIdIsNil(t *testing.T)
 	companyService := NewCompanyService(nil)
 
 	err := companyService.DeleteCompany(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error on field 'company ID': companyId is required", validationError.Error())

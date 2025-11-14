@@ -321,7 +321,7 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 // @Tags person
 // @Accept json
 // @Produce json
-// @Param person body requests.UpdatePersonRequest true "Update Company Request"
+// @Param person body requests.UpdatePersonRequest true "Update Person Request"
 // @Success 200
 // @Failure 400
 // @Failure 404

@@ -113,7 +113,7 @@ func TestAssociateApplicationToPerson_ShouldReturnConflictErrorIfApplicationIDAn
 	assert.NoError(t, err)
 
 	_, err = applicationPersonService.AssociateApplicationPerson(&applicationPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
@@ -363,7 +363,7 @@ func TestDeleteApplicationPerson_ShouldReturnNotFoundErrorIfNoMatchingApplicatio
 	}
 
 	err = applicationPersonService.Delete(&deleteModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

@@ -17,7 +17,7 @@ func TestGetById_ShouldReturnValidationErrorIfPersonIDIsNil(t *testing.T) {
 
 	person, err := personRepository.GetById(nil)
 	assert.Nil(t, person)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -31,7 +31,7 @@ func TestGetAllByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testing.T)
 
 	retrievedPersons, err := personRepository.GetAllByName(nil)
 	assert.Nil(t, retrievedPersons)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

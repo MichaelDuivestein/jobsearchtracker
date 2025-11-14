@@ -161,7 +161,7 @@ func TestGetById_ShouldReturnNotFoundErrorIfPersonIDDoesNotExist(t *testing.T) {
 
 	person, err := personRepository.GetById(&id)
 	assert.Nil(t, person)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -202,7 +202,7 @@ func TestGetAllByName_ShouldReturnNotFoundErrorIfPersonNameDoesNotExist(t *testi
 
 	person, err := personRepository.GetAllByName(&name)
 	assert.Nil(t, person)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

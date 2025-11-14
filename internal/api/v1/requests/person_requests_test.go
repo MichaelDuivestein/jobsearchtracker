@@ -60,7 +60,7 @@ func TestCreatePersonRequestValidate_ShouldReturnValidationErrors(t *testing.T) 
 				Notes:      testutil.ToPtr("345023485"),
 			}
 			err := request.validate()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))
@@ -132,7 +132,7 @@ func TestUpdatePersonRequestValidate_ShouldReturnValidationErrorIfNothingToUpdat
 	}
 
 	err := request.validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -148,7 +148,7 @@ func TestUpdatePersonRequestToModel_ShouldReturnValidationErrorIfPersonTypeIsInv
 	}
 
 	err := request.validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -203,7 +203,7 @@ func TestUpdatePersonRequestToModel_ShouldReturnValidationErrorIfNothingToUpdate
 
 	model, err := request.ToModel()
 	assert.Nil(t, model)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -254,9 +254,9 @@ func TestPersonTypeIsValid_ShouldReturnFalseOnInvalidPersonType(t *testing.T) {
 
 func TestPersonTypeToModel_ShouldConvertToModel(t *testing.T) {
 	tests := []struct {
-		testName        string
-		personType      PersonType
-		modelPersonType models.PersonType
+		testName                string
+		personType              PersonType
+		expectedModelPersonType models.PersonType
 	}{
 		{"CEO", PersonTypeCEO, models.PersonTypeCEO},
 		{"CTO", PersonTypeCTO, models.PersonTypeCTO},
@@ -274,6 +274,7 @@ func TestPersonTypeToModel_ShouldConvertToModel(t *testing.T) {
 			modelPersonType, err := test.personType.ToModel()
 			assert.NoError(t, err)
 			assert.NotNil(t, modelPersonType)
+			assert.Equal(t, test.expectedModelPersonType.String(), modelPersonType.String())
 			assert.Equal(t, test.personType.String(), modelPersonType.String())
 		})
 	}
@@ -283,7 +284,7 @@ func TestPersonTypeToModel_ShouldReturnValidationErrorOnInvalidPersonType(t *tes
 	empty := PersonType("")
 	emptyModel, err := empty.ToModel()
 	assert.NotNil(t, emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", emptyModel.String())
 
@@ -294,7 +295,7 @@ func TestPersonTypeToModel_ShouldReturnValidationErrorOnInvalidPersonType(t *tes
 	blah := PersonType("Blah")
 	blahModel, err := blah.ToModel()
 	assert.NotNil(t, blahModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", blahModel.String())
 
@@ -325,14 +326,15 @@ func TestNewPersonType_ShouldConvertFromModel(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, personType)
 			assert.Equal(t, test.personType.String(), personType.String())
+			assert.Equal(t, test.modelPersonType.String(), personType.String())
 		})
 	}
 }
 
-func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnNilPersonType(t *testing.T) {
+func TestNewPersonType_ShouldReturnInternalServiceErrorOnNilPersonType(t *testing.T) {
 	personType, err := NewPersonType(nil)
 	assert.NotNil(t, personType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", personType.String())
 
@@ -344,10 +346,10 @@ func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnNilPersonType(t *te
 		internalServiceError.Error())
 }
 
-func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnInvalidPersonType(t *testing.T) {
+func TestNewPersonType_ShouldReturnInternalServiceErrorOnInvalidPersonType(t *testing.T) {
 	emptyModel := models.PersonType("")
 	emptyPerson, err := NewPersonType(&emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, emptyPerson)
 
 	assert.Equal(t, "", emptyPerson.String())
@@ -360,7 +362,7 @@ func TestPersonTypeToModel_ShouldReturnInternalServiceErrorOnInvalidPersonType(t
 
 	specialistModel := models.PersonType("specialist")
 	specialist, err := NewPersonType(&specialistModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, specialist)
 
 	assert.Equal(t, "", specialist.String())

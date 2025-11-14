@@ -40,7 +40,7 @@ func TestAssociateCompanyPersonValidate_ShouldReturnValidationErrorIfCompanyIDIs
 		CreatedDate: testutil.ToPtr(time.Now()),
 	}
 	err := model.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -55,7 +55,7 @@ func TestAssociateCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsE
 		CreatedDate: testutil.ToPtr(time.Now()),
 	}
 	err := model.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -80,7 +80,7 @@ func TestDeleteCompanyPersonValidate_ShouldReturnValidationErrorIfCompanyIDIsEmp
 		PersonID:  uuid.New(),
 	}
 	err := model.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -94,7 +94,7 @@ func TestDeleteCompanyPersonValidate_ShouldReturnValidationErrorIfPersonIDIsEmpt
 		PersonID:  personID,
 	}
 	err := model.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

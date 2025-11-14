@@ -19,7 +19,7 @@ func TestUpdate_ShouldReturnValidationErrorIfNoCompanyFieldsToUpdate(t *testing.
 		ID: uuid.New(),
 	}
 	err := companyRepository.Update(&updateModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

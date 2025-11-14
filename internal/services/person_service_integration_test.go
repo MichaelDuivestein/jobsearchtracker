@@ -139,7 +139,7 @@ func TestGetPersonById_ShouldReturnNotFoundErrorForAnIdThatDoesNotExist(t *testi
 	nilPerson, err := personService.GetPersonById(&id)
 	assert.Nil(t, nilPerson)
 
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
 	assert.Equal(t, "error: object not found: ID: '"+id.String()+"'", notFoundError.Error())
@@ -223,7 +223,7 @@ func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) 
 	nameToGet := "Bee"
 	persons, err := personService.GetPersonsByName(testutil.ToPtr(nameToGet))
 	assert.Nil(t, persons)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -231,7 +231,8 @@ func TestGetPersonsByName_ShouldReturnNotFoundErrorIfNoNamesMatch(t *testing.T) 
 }
 
 // -------- GetAllPersons tests: --------
-func TestGetAlLPersons_ShouldWork(t *testing.T) {
+
+func TestGetAllPersons_ShouldWork(t *testing.T) {
 	personService, _, _ := setupPersonService(t)
 
 	// insert persons
@@ -275,7 +276,7 @@ func TestGetAlLPersons_ShouldWork(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, personToInsert1.UpdatedDate, persons[1].UpdatedDate)
 }
 
-func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
+func TestGetAllPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
 	personService, _, _ := setupPersonService(t)
 
 	persons, err := personService.GetAllPersons(models.IncludeExtraDataTypeNone)
@@ -283,7 +284,7 @@ func TestGetAlLPersons_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
 	assert.Nil(t, persons)
 }
 
-func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
+func TestGetAllPersons_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
 	personService, companyRepository, companyPersonRepository := setupPersonService(t)
 
 	// setup persons
@@ -389,7 +390,7 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	assert.Nil(t, persons[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
 	personService, companyRepository, _ := setupPersonService(t)
 
 	// setup persons
@@ -463,7 +464,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	assert.Nil(t, persons[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
+func TestGetAllPersons_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
 	personService, companyRepository, companyPersonRepository := setupPersonService(t)
 
 	// setup persons
@@ -567,7 +568,7 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	assert.Nil(t, persons[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
 	personService, companyRepository, _ := setupPersonService(t)
 
 	// setup persons
@@ -641,7 +642,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	assert.Nil(t, persons[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
 	personService, companyRepository, companyPersonRepository := setupPersonService(t)
 
 	// setup persons
@@ -732,6 +733,7 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 }
 
 // -------- UpdatePerson tests: --------
+
 func TestUpdatePerson_ShouldWork(t *testing.T) {
 	personService, _, _ := setupPersonService(t)
 
@@ -817,7 +819,7 @@ func TestDeletePerson_ShouldWork(t *testing.T) {
 
 	retrievedPerson, err := personService.GetPersonById(personToInsert.ID)
 	assert.Nil(t, retrievedPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -829,7 +831,7 @@ func TestDeletePerson_ShouldReturnNotFoundErrorIfIdToDeleteDoesNotExist(t *testi
 
 	id := uuid.New()
 	err := personService.DeletePerson(&id)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

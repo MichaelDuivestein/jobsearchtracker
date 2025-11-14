@@ -69,7 +69,7 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 	if err != nil {
 		if err.Error() == "constraint failed: UNIQUE constraint failed: person.id (1555)" {
 			slog.Info(
-				"person_repository.createPerson: UNIQUE constraint failed",
+				"person_repository.CreatePerson: UNIQUE constraint failed",
 				"ID", personID)
 			return nil, internalErrors.NewConflictError(
 				"ID already exists in database: '" + personID.String() + "'")

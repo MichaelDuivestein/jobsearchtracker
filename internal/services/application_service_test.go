@@ -19,7 +19,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilApplication(t *testin
 
 	nilApplication, err := applicationService.CreateApplication(nil)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -38,7 +38,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilCompanyIDAndNilRecrui
 
 	nilApplication, err := applicationService.CreateApplication(&application)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -91,7 +91,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnNilOrEmptyCompanyIDAndNi
 			}
 			nilApplication, err := applicationService.CreateApplication(&application)
 			assert.Nil(t, nilApplication)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))
@@ -111,7 +111,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnInvalidRemoteStatusType(
 	}
 	nilApplication, err := applicationService.CreateApplication(&application)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -129,7 +129,7 @@ func TestCreateApplication_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *test
 	}
 	nilApplication, err := applicationService.CreateApplication(&application)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -146,7 +146,7 @@ func TestGetApplicationById_ShouldReturnValidationErrorIfApplicationIdIsNil(t *t
 
 	nilApplication, err := applicationService.GetApplicationById(nil)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -160,7 +160,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfJobTitleIsNil(t 
 
 	nilApplication, err := applicationService.GetApplicationsByJobTitle(nil)
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -175,7 +175,7 @@ func TestGetApplicationsByJobTitle_ShouldReturnValidationErrorIfJobTitleIsEmpty(
 
 	nilApplication, err := applicationService.GetApplicationsByJobTitle(testutil.ToPtr(""))
 	assert.Nil(t, nilApplication)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -191,7 +191,7 @@ func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationIsNil(t *test
 	applicationService := NewApplicationService(nil)
 
 	err := applicationService.UpdateApplication(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -206,7 +206,7 @@ func TestUpdateApplication_ShouldReturnValidationErrorIfApplicationContainsNothi
 	}
 
 	err := applicationService.UpdateApplication(&application)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -220,7 +220,7 @@ func TestDeleteApplication_ShouldReturnValidationErrorIfApplicationIdIsNil(t *te
 	applicationService := NewApplicationService(nil)
 
 	err := applicationService.DeleteApplication(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

@@ -138,7 +138,7 @@ func TestCreateApplicationRequestValidate_ShouldReturnValidationErrors(t *testin
 			}
 
 			err := request.validate()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))
@@ -235,7 +235,7 @@ func TestUpdateApplicationRequestValidate_ShouldReturnValidationErrorIfNothingTo
 	}
 
 	err := request.validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -251,7 +251,7 @@ func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfRemoteStat
 	}
 
 	err := request.validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -327,7 +327,7 @@ func TestUpdateApplicationRequestToModel_ShouldReturnValidationErrorIfNothingToU
 	}
 	model, err := request.ToModel()
 	assert.Nil(t, model)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -384,7 +384,7 @@ func TestRemoteStatusTypeToModel_ShouldReturnValidationErrorOnInvalidRemoteStatu
 	empty := RemoteStatusType("")
 	emptyModel, err := empty.ToModel()
 	assert.NotNil(t, emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", emptyModel.String())
 
@@ -398,7 +398,7 @@ func TestRemoteStatusTypeToModel_ShouldReturnValidationErrorOnInvalidRemoteStatu
 	blah := RemoteStatusType("Blah")
 	blahModel, err := blah.ToModel()
 	assert.NotNil(t, blahModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", blahModel.String())
 
@@ -434,7 +434,7 @@ func TestNewRemoteStatusType_ShouldConvertFromModel(t *testing.T) {
 func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnNilRemoteStatusType(t *testing.T) {
 	applicationType, err := NewRemoteStatusType(nil)
 	assert.NotNil(t, applicationType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", applicationType.String())
 
@@ -449,7 +449,7 @@ func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnNilRemoteStat
 func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnInvalidRemoteStatusType(t *testing.T) {
 	emptyModel := models.RemoteStatusType("")
 	emptyApplication, err := NewRemoteStatusType(&emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, emptyApplication)
 	assert.Equal(t, "", emptyApplication.String())
 
@@ -460,7 +460,7 @@ func TestRemoteStatusTypeToModel_ShouldReturnInternalServiceErrorOnInvalidRemote
 
 	specialistModel := models.RemoteStatusType("specialist")
 	specialist, err := NewRemoteStatusType(&specialistModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, specialist)
 	assert.Equal(t, "", specialist.String())
 

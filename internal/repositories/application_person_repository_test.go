@@ -44,7 +44,7 @@ func TestApplicationGetByID_ShouldReturnValidationError(t *testing.T) {
 			personCompanies, err := repository.GetByID(test.applicationID, test.personID)
 			assert.Nil(t, personCompanies)
 
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Equal(t, internalErrors.NewValidationError(nil, "applicationID and personID cannot both be empty"), err)
 		})
 	}

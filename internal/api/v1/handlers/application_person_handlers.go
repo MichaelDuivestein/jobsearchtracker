@@ -24,7 +24,7 @@ func NewApplicationPersonHandler(applicationPersonService *services.ApplicationP
 // AssociateApplicationPerson associates an application with a person and returns it
 //
 // @Summary associate an application with a person
-// @Description associate a `application` with a `person` and return it
+// @Description associate an `application` with a `person` and return it
 // @Tags applicationPerson
 // @Accept json
 // @Produce json

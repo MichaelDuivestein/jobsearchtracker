@@ -126,7 +126,7 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicateCompanyId(t *testing.T) {
 	}
 	shouldBeNil, err := companyRepository.Create(&secondCompany)
 	assert.Nil(t, shouldBeNil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
@@ -172,7 +172,7 @@ func TestGetById_ShouldReturnErrorIfCompanyIDIsNil(t *testing.T) {
 
 	response, err := companyRepository.GetById(nil)
 	assert.Nil(t, response)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -218,7 +218,7 @@ func TestGetAllByName_ShouldReturnValidationErrorIfCompanyNameIsNil(t *testing.T
 
 	retrievedCompanies, err := companyRepository.GetAllByName(nil)
 	assert.Nil(t, retrievedCompanies)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -232,7 +232,7 @@ func TestGetAllByName_ShouldReturnNotFoundErrorIfCompanyNameDoesNotExist(t *test
 
 	company, err := companyRepository.GetAllByName(&name)
 	assert.Nil(t, company)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -1091,7 +1091,7 @@ func TestUpdate_ShouldUpdateCompany(t *testing.T) {
 	testutil.AssertDateTimesWithinDelta(t, &updatedDateApproximation, retrievedCompany.UpdatedDate, time.Second)
 }
 
-func TestUpdate_ShouldUpdateASingleField(t *testing.T) {
+func TestUpdateCompany_ShouldUpdateASingleField(t *testing.T) {
 	companyRepository, _, _, _ := setupCompanyRepository(t)
 
 	// create a company
@@ -1198,7 +1198,7 @@ func TestDelete_ShouldDeleteCompany(t *testing.T) {
 
 	deletedCompany, err := companyRepository.GetById(&id)
 	assert.Nil(t, deletedCompany)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -1209,7 +1209,7 @@ func TestDelete_ShouldReturnErrorIfCompanyIdIsNil(t *testing.T) {
 	companyRepository, _, _, _ := setupCompanyRepository(t)
 
 	err := companyRepository.Delete(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -1222,7 +1222,7 @@ func TestDelete_ShouldReturnNotFoundErrorIfCompanyIdDoesNotExist(t *testing.T) {
 	id := uuid.New()
 
 	err := companyRepository.Delete(&id)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
