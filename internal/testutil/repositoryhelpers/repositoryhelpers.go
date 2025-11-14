@@ -89,3 +89,37 @@ func AssociateApplicationPerson(
 
 	return associatedApplicationPerson
 }
+
+func CreateEvent(
+	t *testing.T,
+	repository *repositories.EventRepository,
+	eventID *uuid.UUID,
+	eventType *models.EventType,
+	eventDate *time.Time) *models.Event {
+
+	eventIDToUse := eventID
+	if eventIDToUse == nil {
+		eventIDToUse = testutil.ToPtr(uuid.New())
+	}
+
+	eventTypeToUse := eventType
+	if eventTypeToUse == nil {
+		var eventTypeApplied models.EventType = models.EventTypeApplied
+		eventTypeToUse = testutil.ToPtr(eventTypeApplied)
+	}
+
+	eventDateToUse := eventDate
+	if eventDateToUse == nil {
+		eventDateToUse = &time.Time{}
+	}
+
+	event := models.CreateEvent{
+		ID:        eventIDToUse,
+		EventType: *eventTypeToUse,
+		EventDate: *eventDateToUse,
+	}
+	insertedEvent, err := repository.Create(&event)
+	assert.NoError(t, err)
+
+	return insertedEvent
+}
