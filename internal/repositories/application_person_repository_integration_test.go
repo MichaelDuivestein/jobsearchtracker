@@ -261,7 +261,7 @@ func TestAssociateApplicationToPerson_ShouldReturnValidationErrorIfApplicationID
 
 // -------- GetByID tests: --------
 
-func TestGetByID_ShouldGetRecordsMatchingApplicationID(t *testing.T) {
+func TestApplicationPersonGetByID_ShouldGetRecordsMatchingApplicationID(t *testing.T) {
 	applicationPersonRepository, applicationRepository, personRepository, companyRepository :=
 		setupApplicationPersonRepository(t)
 
@@ -392,7 +392,7 @@ func TestGetByID_ShouldGetRecordsMatchingApplicationIDAndPersonID(t *testing.T) 
 	assert.Equal(t, person1.ID, persons[0].PersonID)
 }
 
-func TestGetByID_ShouldGetNoRecordsIfApplicationIDDoesNotMatch(t *testing.T) {
+func TestApplicationPersonGetByID_ShouldGetNoRecordsIfApplicationIDDoesNotMatch(t *testing.T) {
 	applicationPersonRepository, applicationRepository, personRepository, companyRepository := setupApplicationPersonRepository(t)
 
 	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID

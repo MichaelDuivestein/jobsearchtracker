@@ -404,3 +404,70 @@ func SetupEventHandlerTestContainer(t *testing.T, config configPackage.Config) *
 	}
 	return container
 }
+
+// -------- ApplicationEvent containers: --------
+
+func SetupApplicationEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.ApplicationEventRepository {
+		return repositories.NewApplicationEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationEventRepository", err)
+	}
+
+	// Add EventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventRepository", err)
+	}
+
+	// Add CompanyRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	// Add ApplicationRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationRepository", err)
+	}
+
+	return container
+}
+
+func SetupApplicationEventServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationEventRepositoryTestContainer(t, config)
+
+	err := container.Provide(
+		func(repository *repositories.ApplicationEventRepository) *services.ApplicationEventService {
+
+			return services.NewApplicationEventService(repository)
+		})
+	if err != nil {
+		log.Fatal("Failed to provide applicationEventService", err)
+	}
+
+	return container
+}
+
+func SetupApplicationEventHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationEventServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.ApplicationEventService) *apiV1.ApplicationEventHandler {
+		return apiV1.NewApplicationEventHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationEventHandler", err)
+	}
+
+	return container
+}
