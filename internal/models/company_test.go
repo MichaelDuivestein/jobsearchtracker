@@ -50,7 +50,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyName(t *testing
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -68,7 +68,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnEmptyCompanyType(t *
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -87,7 +87,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnInvalidCompanyType(t
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -106,7 +106,7 @@ func TestCreateCompanyValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *
 	}
 
 	err := company.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

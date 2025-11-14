@@ -199,7 +199,7 @@ func TestAssociateApplicationToPerson_ShouldReturnConflictErrorIfApplicationIDAn
 	assert.NoError(t, err)
 
 	_, err = applicationPersonRepository.AssociateApplicationPerson(&applicationPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
@@ -220,7 +220,7 @@ func TestAssociateApplicationToPerson_ShouldReturnValidationErrorIfPersonIDDoesN
 		PersonID:      uuid.New(),
 	}
 	_, err := applicationPersonRepository.AssociateApplicationPerson(&applicationPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -237,7 +237,7 @@ func TestAssociateApplicationToPerson_ShouldReturnValidationErrorIfApplicationID
 		PersonID:      person.ID,
 	}
 	_, err := applicationPersonRepository.AssociateApplicationPerson(&applicationPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -252,7 +252,7 @@ func TestAssociateApplicationToPerson_ShouldReturnValidationErrorIfApplicationID
 		PersonID:      uuid.New(),
 	}
 	_, err := applicationPersonRepository.AssociateApplicationPerson(&applicationPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -625,7 +625,7 @@ func TestDeleteApplicationPerson_ShouldReturnNotFoundErrorIfNoMatchingApplicatio
 	}
 
 	err = applicationPersonRepository.Delete(&model)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

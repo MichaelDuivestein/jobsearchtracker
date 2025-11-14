@@ -180,7 +180,7 @@ func TestAssociateCompanyToPerson_ShouldReturnConflictErrorIfCompanyIDAndPersonI
 	assert.NoError(t, err)
 
 	_, err = companyPersonRepository.AssociateCompanyPerson(&companyPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var conflictError *internalErrors.ConflictError
 	assert.True(t, errors.As(err, &conflictError))
@@ -200,7 +200,7 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfPersonIDDoesNotEx
 		PersonID:  uuid.New(),
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -217,7 +217,7 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDDoesNotE
 		PersonID:  person.ID,
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -232,7 +232,7 @@ func TestAssociateCompanyToPerson_ShouldReturnValidationErrorIfCompanyIDAndPerso
 		PersonID:  uuid.New(),
 	}
 	_, err := companyPersonRepository.AssociateCompanyPerson(&companyPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -592,7 +592,7 @@ func TestDeleteCompanyPerson_ShouldReturnNotFoundErrorIfNoMatchingCompanyPersonI
 	}
 
 	err = companyPersonRepository.Delete(&model)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))

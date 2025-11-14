@@ -31,7 +31,7 @@ func TestNewIncludeExtraDataType_ShouldReturnIncludeExtraDataType(t *testing.T) 
 func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 	emptyType, err := NewIncludeExtraDataType("")
 	assert.NotNil(t, emptyType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", emptyType.String())
 
@@ -41,7 +41,7 @@ func TestNewIncludeExtraDataType_ShouldReturnErrorForWrongValue(t *testing.T) {
 
 	namesType, err := NewIncludeExtraDataType("names")
 	assert.NotNil(t, namesType)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", namesType.String())
 
@@ -92,7 +92,7 @@ func TestIncludeExtraDataTypeToModel_ShouldReturnValidationErrorOnInvalidType(t 
 	empty := IncludeExtraDataType("")
 	emptyModel, err := empty.ToModel()
 	assert.NotNil(t, emptyModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", emptyModel.String())
 
@@ -106,7 +106,7 @@ func TestIncludeExtraDataTypeToModel_ShouldReturnValidationErrorOnInvalidType(t 
 	name := IncludeExtraDataType("name")
 	nameModel, err := name.ToModel()
 	assert.NotNil(t, nameModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, "", nameModel.String())
 

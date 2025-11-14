@@ -64,7 +64,7 @@ func TestNewCompanyDTO_ShouldWorkWithOnlyRequiredFields(t *testing.T) {
 func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilDTO, err := NewCompanyDTO(nil)
 	assert.Nil(t, nilDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -83,7 +83,7 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 
 	nilDTO, err := NewCompanyDTO(&emptyCompanyTypeModel)
 	assert.Nil(t, nilDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -102,7 +102,7 @@ func TestNewCompanyDTO_ShouldReturnInternalServiceErrorIfCompanyTypeIsInvalid(t 
 
 	badDataResponse, err := NewCompanyResponse(&badCompanyTypeModel)
 	assert.Nil(t, badDataResponse)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
@@ -171,7 +171,7 @@ func TestNewCompaniesDTO_ShouldReturnInternalServiceErrorIfOneCompanyTypeIsInval
 
 	nilDTOs, err := NewCompanyDTOs(companyModels)
 	assert.Nil(t, nilDTOs)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -210,7 +210,7 @@ func TestNewCompanyResponse_ShouldWork(t *testing.T) {
 func TestNewCompanyResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilModel, err := NewCompanyResponse(nil)
 	assert.Nil(t, nilModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))

@@ -43,7 +43,7 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyName(t *testing.
 		PersonType: PersonTypeUnknown,
 	}
 	err := person.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -55,7 +55,7 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnEmptyPersonType(t *te
 		Name: "Name Names",
 	}
 	err := person.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -69,7 +69,7 @@ func TestCreatePersonValidate_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *t
 		UpdatedDate: &time.Time{},
 	}
 	err := person.Validate()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))

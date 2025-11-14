@@ -18,7 +18,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnNilPerson(t *testing.T) {
 
 	nilPerson, err := personService.CreatePerson(nil)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -35,7 +35,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnEmptyName(t *testing.T) {
 
 	nilPerson, err := personService.CreatePerson(&person)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -51,7 +51,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnNilPersonType(t *testing.T) {
 
 	nilPerson, err := personService.CreatePerson(&person)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -69,7 +69,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnInvalidPersonType(t *testing.
 
 	nilPerson, err := personService.CreatePerson(&person)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -87,7 +87,7 @@ func TestCreatePerson_ShouldReturnValidationErrorOnUnsetUpdatedDate(t *testing.T
 
 	nilPerson, err := personService.CreatePerson(&person)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t,
@@ -102,7 +102,7 @@ func TestGetPersonById_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) 
 
 	nilPerson, err := personService.GetPersonById(nil)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error on field 'person ID': personId is required", validationError.Error())
@@ -115,7 +115,7 @@ func TestGetPersonsByName_ShouldReturnValidationErrorIfPersonNameIsNil(t *testin
 
 	nilPerson, err := personService.GetPersonsByName(nil)
 	assert.Nil(t, nilPerson)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error on field 'personName': personName is required", validationError.Error())
@@ -127,7 +127,7 @@ func TestUpdatePerson_ShouldReturnValidationErrorIfPersonIsNil(t *testing.T) {
 	personService := NewPersonService(nil)
 
 	err := personService.UpdatePerson(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error: UpdatePerson model is nil", validationError.Error())
@@ -142,7 +142,7 @@ func TestUpdatePerson_ShouldReturnValidationErrorIfPersonContainsNothingToUpdate
 	}
 
 	err := personService.UpdatePerson(&person)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -155,7 +155,7 @@ func TestDeletePerson_ShouldReturnValidationErrorIfPersonIdIsNil(t *testing.T) {
 	personService := NewPersonService(nil)
 
 	err := personService.DeletePerson(nil)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
 	assert.Equal(t, "validation error on field 'person ID': personId is required", validationError.Error())

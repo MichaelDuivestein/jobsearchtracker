@@ -80,7 +80,7 @@ func TestNewApplicationDTO_ShouldWorkWithOnlyID(t *testing.T) {
 func TestNewApplicationDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilModel, err := NewApplicationDTO(nil)
 	assert.Nil(t, nilModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -95,7 +95,7 @@ func TestNewApplicationDTO_ShouldReturnInternalServiceErrorIfRemoteStatusTypeIsI
 	}
 	emptyDTO, err := NewApplicationDTO(&emptyRemoteStatusType)
 	assert.Nil(t, emptyDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -110,7 +110,7 @@ func TestNewApplicationDTO_ShouldReturnInternalServiceErrorIfRemoteStatusTypeIsI
 	}
 	invalidDTO, err := NewApplicationDTO(&invalidRemoteStatusType)
 	assert.Nil(t, invalidDTO)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	assert.True(t, errors.As(err, &internalServiceError))
 	assert.Equal(t,
@@ -183,7 +183,7 @@ func TestNewApplicationDTOs_ShouldReturnNilIfOneRemoteStatusTypeIsInvalid(t *tes
 
 	nilDTOs, err := NewApplicationDTOs(applicationModels)
 	assert.Nil(t, nilDTOs)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))
@@ -237,7 +237,7 @@ func TestNewApplicationResponse_ShouldWork(t *testing.T) {
 func TestNewApplicationResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
 	nilModel, err := NewApplicationResponse(nil)
 	assert.Nil(t, nilModel)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var internalServiceError *internalErrors.InternalServiceError
 	assert.True(t, errors.As(err, &internalServiceError))

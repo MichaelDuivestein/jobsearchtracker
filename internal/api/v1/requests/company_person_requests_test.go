@@ -48,7 +48,7 @@ func TestAssociateCompanyPersonRequestValidate_ShouldReturnValidationErrors(t *t
 			}
 
 			err := request.validate()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))
@@ -113,7 +113,7 @@ func TestDeleteCompanyPersonRequestValidate_ShouldReturnValidationErrors(t *test
 			}
 
 			err := request.validate()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 
 			var validationError *internalErrors.ValidationError
 			assert.True(t, errors.As(err, &validationError))

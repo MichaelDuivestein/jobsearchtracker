@@ -263,7 +263,7 @@ func TestGetById_ShouldReturnErrorIfApplicationIDIsNil(t *testing.T) {
 
 	response, err := applicationRepository.GetById(nil)
 	assert.Nil(t, response)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -277,7 +277,7 @@ func TestGetById_ShouldReturnErrorIfApplicationIDDoesNotExist(t *testing.T) {
 
 	response, err := applicationRepository.GetById(&id)
 	assert.Nil(t, response)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notfoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notfoundError))
@@ -349,7 +349,7 @@ func TestGetAllByJobTitle_ShouldReturnValidationErrorIfApplicationNameIsNil(t *t
 
 	retrievedApplications, err := applicationRepository.GetAllByJobTitle(nil)
 	assert.Nil(t, retrievedApplications)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var validationError *internalErrors.ValidationError
 	assert.True(t, errors.As(err, &validationError))
@@ -363,7 +363,7 @@ func TestGetAllByJobTitle_ShouldReturnNotFoundErrorIfApplicationNameDoesNotExist
 
 	application, err := applicationRepository.GetAllByJobTitle(&jobTitle)
 	assert.Nil(t, application)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	var notFoundError *internalErrors.NotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
