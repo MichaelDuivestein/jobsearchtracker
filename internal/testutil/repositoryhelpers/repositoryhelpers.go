@@ -11,25 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func CreateCompany(
-	t *testing.T,
-	companyRepository *repositories.CompanyRepository,
-	companyID *uuid.UUID,
-	createdDate *time.Time) *models.Company {
-
-	company := models.CreateCompany{
-		ID:          companyID,
-		Name:        "CompanyName",
-		CompanyType: models.CompanyTypeEmployer,
-		CreatedDate: createdDate,
-	}
-
-	insertedCompany, err := companyRepository.Create(&company)
-	assert.NoError(t, err)
-
-	return insertedCompany
-}
-
 func CreateApplication(
 	t *testing.T,
 	applicationRepository *repositories.ApplicationRepository,
@@ -52,25 +33,6 @@ func CreateApplication(
 	return insertedApplication
 }
 
-func CreatePerson(
-	t *testing.T,
-	repository *repositories.PersonRepository,
-	personID *uuid.UUID,
-	createdDate *time.Time) *models.Person {
-
-	person := models.CreatePerson{
-		ID:          personID,
-		Name:        "PersonName",
-		PersonType:  models.PersonTypeUnknown,
-		CreatedDate: createdDate,
-	}
-
-	insertedPerson, err := repository.Create(&person)
-	assert.NoError(t, err)
-
-	return insertedPerson
-}
-
 func AssociateApplicationPerson(
 	t *testing.T,
 	repository *repositories.ApplicationPersonRepository,
@@ -88,6 +50,25 @@ func AssociateApplicationPerson(
 	assert.NoError(t, err)
 
 	return associatedApplicationPerson
+}
+
+func CreateCompany(
+	t *testing.T,
+	companyRepository *repositories.CompanyRepository,
+	companyID *uuid.UUID,
+	createdDate *time.Time) *models.Company {
+
+	company := models.CreateCompany{
+		ID:          companyID,
+		Name:        "CompanyName",
+		CompanyType: models.CompanyTypeEmployer,
+		CreatedDate: createdDate,
+	}
+
+	insertedCompany, err := companyRepository.Create(&company)
+	assert.NoError(t, err)
+
+	return insertedCompany
 }
 
 func CreateEvent(
@@ -122,4 +103,23 @@ func CreateEvent(
 	assert.NoError(t, err)
 
 	return insertedEvent
+}
+
+func CreatePerson(
+	t *testing.T,
+	repository *repositories.PersonRepository,
+	personID *uuid.UUID,
+	createdDate *time.Time) *models.Person {
+
+	person := models.CreatePerson{
+		ID:          personID,
+		Name:        "PersonName",
+		PersonType:  models.PersonTypeUnknown,
+		CreatedDate: createdDate,
+	}
+
+	insertedPerson, err := repository.Create(&person)
+	assert.NoError(t, err)
+
+	return insertedPerson
 }

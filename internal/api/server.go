@@ -23,49 +23,34 @@ type Server struct {
 func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	slog.SetDefault(logger)
 
-	companyRepository := repositories.NewCompanyRepository(database)
-	companyService := services.NewCompanyService(companyRepository)
-	companyHandler := apiV1.NewCompanyHandler(companyService)
-
-	personRepository := repositories.NewPersonRepository(database)
-	personService := services.NewPersonService(personRepository)
-	personHandler := apiV1.NewPersonHandler(personService)
-
 	applicationRepository := repositories.NewApplicationRepository(database)
 	applicationService := services.NewApplicationService(applicationRepository)
 	applicationHandler := apiV1.NewApplicationHandler(applicationService)
-
-	companyPersonRepository := repositories.NewCompanyPersonRepository(database)
-	companyPersonService := services.NewCompanyPersonService(companyPersonRepository)
-	companyPersonHandler := apiV1.NewCompanyPersonHandler(companyPersonService)
-
-	applicationPersonRepository := repositories.NewApplicationPersonRepository(database)
-	applicationPersonService := services.NewApplicationPersonService(applicationPersonRepository)
-	applicationPersonHandler := apiV1.NewApplicationPersonHandler(applicationPersonService)
-
-	eventRepository := repositories.NewEventRepository(database)
-	eventService := services.NewEventService(eventRepository)
-	eventHandler := apiV1.NewEventHandler(eventService)
 
 	applicationEventRepository := repositories.NewApplicationEventRepository(database)
 	applicationEventService := services.NewApplicationEventService(applicationEventRepository)
 	applicationEventHandler := apiV1.NewApplicationEventHandler(applicationEventService)
 
+	applicationPersonRepository := repositories.NewApplicationPersonRepository(database)
+	applicationPersonService := services.NewApplicationPersonService(applicationPersonRepository)
+	applicationPersonHandler := apiV1.NewApplicationPersonHandler(applicationPersonService)
+
+	companyRepository := repositories.NewCompanyRepository(database)
+	companyService := services.NewCompanyService(companyRepository)
+	companyHandler := apiV1.NewCompanyHandler(companyService)
+
+	companyPersonRepository := repositories.NewCompanyPersonRepository(database)
+	companyPersonService := services.NewCompanyPersonService(companyPersonRepository)
+	companyPersonHandler := apiV1.NewCompanyPersonHandler(companyPersonService)
+
+	eventRepository := repositories.NewEventRepository(database)
+	eventService := services.NewEventService(eventRepository)
+	eventHandler := apiV1.NewEventHandler(eventService)
+
+	personRepository := repositories.NewPersonRepository(database)
+	personService := services.NewPersonService(personRepository)
+	personHandler := apiV1.NewPersonHandler(personService)
 	router := mux.NewRouter()
-
-	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/company/get/id/{id}", companyHandler.GetCompanyById).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company/get/name/{name}", companyHandler.GetCompaniesByName).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company/get/all", companyHandler.GetAllCompanies).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company/update", companyHandler.UpdateCompany).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/company/delete/{id}", companyHandler.DeleteCompany).Methods(http.MethodDelete)
-
-	router.HandleFunc("/api/v1/person/new", personHandler.CreatePerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/person/get/id/{id}", personHandler.GetPersonByID).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/person/get/name/{name}", personHandler.GetPersonsByName).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/person/get/all", personHandler.GetAllPersons).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/person/update", personHandler.UpdatePerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/person/delete/{id}", personHandler.DeletePerson).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/application/new", applicationHandler.CreateApplication).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/application/get/id/{id}", applicationHandler.GetApplicationByID).Methods(http.MethodGet)
@@ -74,15 +59,27 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/application/update", applicationHandler.UpdateApplication).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/application/delete/{id}", applicationHandler.DeleteApplication).Methods(http.MethodDelete)
 
-	router.HandleFunc("/api/v1/company-person/associate", companyPersonHandler.AssociateCompanyPerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/company-person/get/id/{id}", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company-person/get/all", companyPersonHandler.GetAllCompanyPersons).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/company-person/delete/{id}", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
+	router.HandleFunc("/api/v1/application-event/associate", applicationEventHandler.AssociateApplicationEvent).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/application-event/get/id/{id}", applicationEventHandler.GetApplicationEventsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-event/get/all", applicationEventHandler.GetAllApplicationEvents).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-event/delete/{id}", applicationEventHandler.DeleteApplicationEvent).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/application-person/associate", applicationPersonHandler.AssociateApplicationPerson).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/application-person/get/id/{id}", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-person/get/all", applicationPersonHandler.GetAllApplicationPersons).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-person/delete/{id}", applicationPersonHandler.DeleteApplicationPerson).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company/get/id/{id}", companyHandler.GetCompanyById).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company/get/name/{name}", companyHandler.GetCompaniesByName).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company/get/all", companyHandler.GetAllCompanies).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company/update", companyHandler.UpdateCompany).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company/delete/{id}", companyHandler.DeleteCompany).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/company-person/associate", companyPersonHandler.AssociateCompanyPerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company-person/get/id/{id}", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-person/get/all", companyPersonHandler.GetAllCompanyPersons).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-person/delete/{id}", companyPersonHandler.DeleteCompanyPerson).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/event/new", eventHandler.CreateEvent).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/event/get/id/{id}", eventHandler.GetEventByID).Methods(http.MethodGet)
@@ -90,10 +87,12 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/event/update", eventHandler.UpdateEvent).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/event/delete/{id}", eventHandler.DeleteEvent).Methods(http.MethodDelete)
 
-	router.HandleFunc("/api/v1/application-event/associate", applicationEventHandler.AssociateApplicationEvent).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/application-event/get/id/{id}", applicationEventHandler.GetApplicationEventsByID).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/application-event/get/all", applicationEventHandler.GetAllApplicationEvents).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/application-event/delete/{id}", applicationEventHandler.DeleteApplicationEvent).Methods(http.MethodDelete)
+	router.HandleFunc("/api/v1/person/new", personHandler.CreatePerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/person/get/id/{id}", personHandler.GetPersonByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/person/get/name/{name}", personHandler.GetPersonsByName).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/person/get/all", personHandler.GetAllPersons).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/person/update", personHandler.UpdatePerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/person/delete/{id}", personHandler.DeletePerson).Methods(http.MethodDelete)
 
 	// Swagger documentation
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
