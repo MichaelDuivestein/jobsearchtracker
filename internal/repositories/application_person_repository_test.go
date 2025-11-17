@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApplicationGetByID_ShouldReturnValidationError(t *testing.T) {
+func TestApplicationPersonGetByID_ShouldReturnValidationError(t *testing.T) {
 	tests := []struct {
 		testName      string
 		applicationID *uuid.UUID

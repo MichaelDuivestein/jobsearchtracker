@@ -47,6 +47,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	eventService := services.NewEventService(eventRepository)
 	eventHandler := apiV1.NewEventHandler(eventService)
 
+	applicationEventRepository := repositories.NewApplicationEventRepository(database)
+	applicationEventService := services.NewApplicationEventService(applicationEventRepository)
+	applicationEventHandler := apiV1.NewApplicationEventHandler(applicationEventService)
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/v1/company/new", companyHandler.CreateCompany).Methods(http.MethodPost)
@@ -85,6 +89,11 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/event/get/all", eventHandler.GetAllEvents).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/event/update", eventHandler.UpdateEvent).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/event/delete/{id}", eventHandler.DeleteEvent).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/application-event/associate", applicationEventHandler.AssociateApplicationEvent).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/application-event/get/id/{id}", applicationEventHandler.GetApplicationEventsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-event/get/all", applicationEventHandler.GetAllApplicationEvents).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-event/delete/{id}", applicationEventHandler.DeleteApplicationEvent).Methods(http.MethodDelete)
 
 	// Swagger documentation
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
