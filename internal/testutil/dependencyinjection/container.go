@@ -417,6 +417,63 @@ func SetupEventHandlerTestContainer(t *testing.T, config configPackage.Config) *
 	return container
 }
 
+// -------- EventPerson containers: --------
+
+func SetupEventPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.EventPersonRepository {
+		return repositories.NewEventPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventPersonRepository", err)
+	}
+
+	// Add PersonRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personRepository", err)
+	}
+
+	// Add EventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventRepository", err)
+	}
+
+	return container
+}
+
+func SetupEventPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupEventPersonRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(repository *repositories.EventPersonRepository) *services.EventPersonService {
+		return services.NewEventPersonService(repository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventPersonService", err)
+	}
+
+	return container
+}
+
+func SetupEventPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupEventPersonServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.EventPersonService) *apiV1.EventPersonHandler {
+		return apiV1.NewEventPersonHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide EventPersonHandler", err)
+	}
+
+	return container
+}
+
 // -------- Person containers: --------
 
 func SetupPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {

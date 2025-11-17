@@ -47,6 +47,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	eventService := services.NewEventService(eventRepository)
 	eventHandler := apiV1.NewEventHandler(eventService)
 
+	eventPersonRepository := repositories.NewEventPersonRepository(database)
+	eventPersonService := services.NewEventPersonService(eventPersonRepository)
+	eventPersonHandler := apiV1.NewEventPersonHandler(eventPersonService)
+
 	personRepository := repositories.NewPersonRepository(database)
 	personService := services.NewPersonService(personRepository)
 	personHandler := apiV1.NewPersonHandler(personService)
@@ -60,12 +64,12 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/application/delete/{id}", applicationHandler.DeleteApplication).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/application-event/associate", applicationEventHandler.AssociateApplicationEvent).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/application-event/get/id", applicationEventHandler.GetApplicationEventsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-event/get", applicationEventHandler.GetApplicationEventsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-event/get/all", applicationEventHandler.GetAllApplicationEvents).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-event/delete", applicationEventHandler.DeleteApplicationEvent).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/application-person/associate", applicationPersonHandler.AssociateApplicationPerson).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/application-person/get/id", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/application-person/get", applicationPersonHandler.GetApplicationPersonsByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-person/get/all", applicationPersonHandler.GetAllApplicationPersons).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/application-person/delete", applicationPersonHandler.DeleteApplicationPerson).Methods(http.MethodDelete)
 
@@ -86,6 +90,11 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/event/get/all", eventHandler.GetAllEvents).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/event/update", eventHandler.UpdateEvent).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/event/delete/{id}", eventHandler.DeleteEvent).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/event-person/associate", eventPersonHandler.AssociateEventPerson).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/event-person/get", eventPersonHandler.GetEventPersonsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/event-person/get/all", eventPersonHandler.GetAllEventPersons).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/event-person/delete", eventPersonHandler.DeleteEventPerson).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/person/new", personHandler.CreatePerson).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/person/get/id/{id}", personHandler.GetPersonByID).Methods(http.MethodGet)
