@@ -61,6 +61,7 @@ func setupApplicationEventHandler(t *testing.T) (
 	err = container.Invoke(func(repository *repositories.ApplicationEventRepository) {
 		applicationEventRepository = repository
 	})
+	assert.NoError(t, err)
 
 	return applicationEventHandler,
 		applicationRepository,
