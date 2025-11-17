@@ -60,125 +60,6 @@ func SetupDatabaseTestContainer(t *testing.T, config configPackage.Config) *dig.
 	return container
 }
 
-// -------- Company containers: --------
-
-func SetupCompanyRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupDatabaseTestContainer(t, config)
-
-	err := container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
-		return repositories.NewCompanyRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide companyRepository", err)
-	}
-
-	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
-		return repositories.NewApplicationRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide ApplicationRepository", err)
-	}
-
-	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
-		return repositories.NewPersonRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide PersonRepository", err)
-	}
-
-	err = container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
-		return repositories.NewCompanyPersonRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide CompanyPersonRepository", err)
-	}
-
-	return container
-}
-
-func SetupCompanyServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupCompanyRepositoryTestContainer(t, config)
-
-	err := container.Provide(
-		func(
-			companyRepository *repositories.CompanyRepository) *services.CompanyService {
-			return services.NewCompanyService(companyRepository)
-		})
-	if err != nil {
-		log.Fatal("Failed to provide companyService", err)
-	}
-
-	return container
-}
-
-func SetupCompanyHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupCompanyServiceTestContainer(t, config)
-
-	err := container.Provide(func(companyService *services.CompanyService) *apiV1.CompanyHandler {
-		return apiV1.NewCompanyHandler(companyService)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide companyHandler", err)
-	}
-
-	return container
-}
-
-// -------- Person containers: --------
-
-func SetupPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupDatabaseTestContainer(t, config)
-
-	err := container.Provide(func(db *sql.DB) *repositories.PersonRepository {
-		return repositories.NewPersonRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide personRepository", err)
-	}
-
-	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
-		return repositories.NewCompanyRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide CompanyRepository", err)
-	}
-
-	err = container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
-		return repositories.NewCompanyPersonRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide CompanyPersonRepository", err)
-	}
-
-	return container
-}
-
-func SetupPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupPersonRepositoryTestContainer(t, config)
-
-	err := container.Provide(func(personRepository *repositories.PersonRepository) *services.PersonService {
-		return services.NewPersonService(personRepository)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide personService", err)
-	}
-
-	return container
-}
-
-func SetupPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupPersonServiceTestContainer(t, config)
-
-	err := container.Provide(func(personService *services.PersonService) *apiV1.PersonHandler {
-		return apiV1.NewPersonHandler(personService)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide personHandler", err)
-	}
-
-	return container
-}
-
 // -------- Application containers: --------
 
 func SetupApplicationRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
@@ -244,24 +125,24 @@ func SetupApplicationHandlerTestContainer(t *testing.T, config configPackage.Con
 	return container
 }
 
-// -------- CompanyPerson containers: --------
+// -------- ApplicationEvent containers: --------
 
-func SetupCompanyPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+func SetupApplicationEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
 	container := SetupDatabaseTestContainer(t, config)
 
-	err := container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
-		return repositories.NewCompanyPersonRepository(db)
+	err := container.Provide(func(db *sql.DB) *repositories.ApplicationEventRepository {
+		return repositories.NewApplicationEventRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide companyPersonRepository", err)
+		log.Fatal("Failed to provide applicationEventRepository", err)
 	}
 
-	// Add PersonRepository in order to insert data for testing
-	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
-		return repositories.NewPersonRepository(db)
+	// Add EventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide personRepository", err)
+		log.Fatal("Failed to provide eventRepository", err)
 	}
 
 	// Add CompanyRepository in order to insert data for testing
@@ -272,30 +153,40 @@ func SetupCompanyPersonRepositoryTestContainer(t *testing.T, config configPackag
 		log.Fatal("Failed to provide companyRepository", err)
 	}
 
-	return container
-}
-
-func SetupCompanyPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupCompanyPersonRepositoryTestContainer(t, config)
-
-	err := container.Provide(func(repository *repositories.CompanyPersonRepository) *services.CompanyPersonService {
-		return services.NewCompanyPersonService(repository)
+	// Add ApplicationRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide companyPersonService", err)
+		log.Fatal("Failed to provide applicationRepository", err)
 	}
 
 	return container
 }
 
-func SetupCompanyPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupCompanyPersonServiceTestContainer(t, config)
+func SetupApplicationEventServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationEventRepositoryTestContainer(t, config)
 
-	err := container.Provide(func(service *services.CompanyPersonService) *apiV1.CompanyPersonHandler {
-		return apiV1.NewCompanyPersonHandler(service)
+	err := container.Provide(
+		func(repository *repositories.ApplicationEventRepository) *services.ApplicationEventService {
+
+			return services.NewApplicationEventService(repository)
+		})
+	if err != nil {
+		log.Fatal("Failed to provide applicationEventService", err)
+	}
+
+	return container
+}
+
+func SetupApplicationEventHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupApplicationEventServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.ApplicationEventService) *apiV1.ApplicationEventHandler {
+		return apiV1.NewApplicationEventHandler(service)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide companyPersonHandler", err)
+		log.Fatal("Failed to provide applicationEventHandler", err)
 	}
 
 	return container
@@ -366,6 +257,127 @@ func SetupApplicationPersonHandlerTestContainer(t *testing.T, config configPacka
 	return container
 }
 
+// -------- Company containers: --------
+
+func SetupCompanyRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide ApplicationRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide PersonRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
+		return repositories.NewCompanyPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide CompanyPersonRepository", err)
+	}
+
+	return container
+}
+
+func SetupCompanyServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyRepositoryTestContainer(t, config)
+
+	err := container.Provide(
+		func(
+			companyRepository *repositories.CompanyRepository) *services.CompanyService {
+			return services.NewCompanyService(companyRepository)
+		})
+	if err != nil {
+		log.Fatal("Failed to provide companyService", err)
+	}
+
+	return container
+}
+
+func SetupCompanyHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyServiceTestContainer(t, config)
+
+	err := container.Provide(func(companyService *services.CompanyService) *apiV1.CompanyHandler {
+		return apiV1.NewCompanyHandler(companyService)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyHandler", err)
+	}
+
+	return container
+}
+
+// -------- CompanyPerson containers: --------
+
+func SetupCompanyPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
+		return repositories.NewCompanyPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyPersonRepository", err)
+	}
+
+	// Add PersonRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide personRepository", err)
+	}
+
+	// Add CompanyRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	return container
+}
+
+func SetupCompanyPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyPersonRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(repository *repositories.CompanyPersonRepository) *services.CompanyPersonService {
+		return services.NewCompanyPersonService(repository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyPersonService", err)
+	}
+
+	return container
+}
+
+func SetupCompanyPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyPersonServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.CompanyPersonService) *apiV1.CompanyPersonHandler {
+		return apiV1.NewCompanyPersonHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyPersonHandler", err)
+	}
+
+	return container
+}
+
 // -------- Event containers: --------
 
 func SetupEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
@@ -405,68 +417,56 @@ func SetupEventHandlerTestContainer(t *testing.T, config configPackage.Config) *
 	return container
 }
 
-// -------- ApplicationEvent containers: --------
+// -------- Person containers: --------
 
-func SetupApplicationEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+func SetupPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
 	container := SetupDatabaseTestContainer(t, config)
 
-	err := container.Provide(func(db *sql.DB) *repositories.ApplicationEventRepository {
-		return repositories.NewApplicationEventRepository(db)
+	err := container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide applicationEventRepository", err)
+		log.Fatal("Failed to provide personRepository", err)
 	}
 
-	// Add EventRepository in order to insert data for testing
-	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
-		return repositories.NewEventRepository(db)
-	})
-	if err != nil {
-		log.Fatal("Failed to provide eventRepository", err)
-	}
-
-	// Add CompanyRepository in order to insert data for testing
 	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
 		return repositories.NewCompanyRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide companyRepository", err)
+		log.Fatal("Failed to provide CompanyRepository", err)
 	}
 
-	// Add ApplicationRepository in order to insert data for testing
-	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
-		return repositories.NewApplicationRepository(db)
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyPersonRepository {
+		return repositories.NewCompanyPersonRepository(db)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide applicationRepository", err)
+		log.Fatal("Failed to provide CompanyPersonRepository", err)
 	}
 
 	return container
 }
 
-func SetupApplicationEventServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupApplicationEventRepositoryTestContainer(t, config)
+func SetupPersonServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupPersonRepositoryTestContainer(t, config)
 
-	err := container.Provide(
-		func(repository *repositories.ApplicationEventRepository) *services.ApplicationEventService {
-
-			return services.NewApplicationEventService(repository)
-		})
+	err := container.Provide(func(personRepository *repositories.PersonRepository) *services.PersonService {
+		return services.NewPersonService(personRepository)
+	})
 	if err != nil {
-		log.Fatal("Failed to provide applicationEventService", err)
+		log.Fatal("Failed to provide personService", err)
 	}
 
 	return container
 }
 
-func SetupApplicationEventHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
-	container := SetupApplicationEventServiceTestContainer(t, config)
+func SetupPersonHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupPersonServiceTestContainer(t, config)
 
-	err := container.Provide(func(service *services.ApplicationEventService) *apiV1.ApplicationEventHandler {
-		return apiV1.NewApplicationEventHandler(service)
+	err := container.Provide(func(personService *services.PersonService) *apiV1.PersonHandler {
+		return apiV1.NewPersonHandler(personService)
 	})
 	if err != nil {
-		log.Fatal("Failed to provide applicationEventHandler", err)
+		log.Fatal("Failed to provide personHandler", err)
 	}
 
 	return container
