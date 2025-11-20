@@ -164,7 +164,7 @@ func (repository *CompanyRepository) GetAll(
 	sqlSelect := `
 		SELECT c.id, c.name, c.company_type, c.notes, c.last_contact, c.created_date, c.updated_date, %s, %s
 		FROM company c %s %s
-		GROUP BY c.id, c.name, c.company_type
+		GROUP BY c.id
 		ORDER BY c.created_date DESC;
 		`
 
@@ -427,7 +427,7 @@ func (repository *CompanyRepository) buildApplicationsCoalesceAndJoin(
 	coalesceString := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', a.id,
 					'CompanyID', a.company_id,
 					'RecruiterID', a.recruiter_id%s
@@ -470,7 +470,7 @@ func (repository *CompanyRepository) buildPersonsCoalesceAndJoin(
 	coalesceString := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id%s
 				) ORDER BY p.created_date DESC
 			) FILTER (WHERE p.id IS NOT NULL),

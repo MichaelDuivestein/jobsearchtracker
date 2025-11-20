@@ -87,7 +87,7 @@ func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDat
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', c.id
 				) ORDER BY c.created_date DESC
 			) FILTER (WHERE c.id IS NOT NULL),
@@ -110,7 +110,7 @@ func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDat
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', c.id, 
 					'Name', c.name, 
 					'CompanyType', c.company_type, 
