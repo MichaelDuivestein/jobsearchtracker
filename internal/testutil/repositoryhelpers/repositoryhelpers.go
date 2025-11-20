@@ -33,6 +33,25 @@ func CreateApplication(
 	return insertedApplication
 }
 
+func AssociateApplicationEvent(
+	t *testing.T,
+	repository *repositories.ApplicationEventRepository,
+	applicationID uuid.UUID,
+	eventID uuid.UUID,
+	createdDate *time.Time) *models.ApplicationEvent {
+
+	model := models.AssociateApplicationEvent{
+		ApplicationID: applicationID,
+		EventID:       eventID,
+		CreatedDate:   createdDate,
+	}
+
+	associatedApplicationEvent, err := repository.AssociateApplicationEvent(&model)
+	assert.NoError(t, err)
+
+	return associatedApplicationEvent
+}
+
 func AssociateApplicationPerson(
 	t *testing.T,
 	repository *repositories.ApplicationPersonRepository,
@@ -50,6 +69,25 @@ func AssociateApplicationPerson(
 	assert.NoError(t, err)
 
 	return associatedApplicationPerson
+}
+
+func AssociateCompanyPerson(
+	t *testing.T,
+	repository *repositories.CompanyPersonRepository,
+	companyID uuid.UUID,
+	personID uuid.UUID,
+	createdDate *time.Time) *models.CompanyPerson {
+
+	model := models.AssociateCompanyPerson{
+		CompanyID:   companyID,
+		PersonID:    personID,
+		CreatedDate: createdDate,
+	}
+
+	associatedCompanyPerson, err := repository.AssociateCompanyPerson(&model)
+	assert.NoError(t, err)
+
+	return associatedCompanyPerson
 }
 
 func CreateCompany(

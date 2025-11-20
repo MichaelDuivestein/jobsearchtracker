@@ -89,6 +89,7 @@ type ApplicationResponse struct {
 	Company   *CompanyDTO   `json:"company" extensions:"x-order=14"`
 	Recruiter *CompanyDTO   `json:"recruiter" extensions:"x-order=15"`
 	Persons   *[]*PersonDTO `json:"persons" extensions:"x-order=16"`
+	Events    *[]*EventDTO  `json:"events" extensions:"x-order=17"`
 }
 
 // NewApplicationResponse can return InternalServerError
@@ -131,11 +132,21 @@ func NewApplicationResponse(applicationModel *models.Application) (*ApplicationR
 		}
 	}
 
+	var events []*EventDTO = nil
+	if applicationModel.Events != nil {
+		// can return InternalServiceError
+		events, err = NewEventDTOs(*applicationModel.Events)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	applicationResponse := ApplicationResponse{
 		ApplicationDTO: *applicationDTO,
 		Company:        companyDTO,
 		Recruiter:      recruiterDTO,
 		Persons:        &persons,
+		Events:         &events,
 	}
 
 	return &applicationResponse, nil

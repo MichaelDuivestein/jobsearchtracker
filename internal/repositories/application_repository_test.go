@@ -109,7 +109,7 @@ func TestBuildRecruiterCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDa
 
 // -------- buildPersonsCoalesceAndJoin tests: --------
 
-func TestBuildPersonsCoalesceAndJoin_ShouldReturnEmpryStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	applicationRepository := NewApplicationRepository(nil)
 
 	coalesce, join := applicationRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
@@ -130,7 +130,7 @@ func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDs
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id
 				) ORDER BY p.created_date DESC
 			) FILTER (WHERE p.id IS NOT NULL),
@@ -150,7 +150,7 @@ func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColu
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id,
 					'Name', p.name,
 					'PersonType', p.person_type,
@@ -163,6 +163,68 @@ func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColu
 			) FILTER (WHERE p.id IS NOT NULL),
 			JSON_ARRAY()
 		) as persons
+`
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+// -------- buildEventsCoalesceAndJoin tests: --------
+
+func TestBuildEventsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+	assert.Equal(t, "null \n", coalesce)
+	assert.Equal(t, "", join)
+}
+
+func TestApplicationRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	assert.Equal(
+		t,
+		"LEFT JOIN application_event ae ON (ae.application_id = a.id)\n\t\tLEFT JOIN event e ON (ae.event_id = e.id)\n",
+		join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events
+`
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+func TestApplicationRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+	applicationRepository := NewApplicationRepository(nil)
+
+	coalesce, join := applicationRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	assert.Equal(
+		t,
+		"LEFT JOIN application_event ae ON (ae.application_id = a.id)\n\t\tLEFT JOIN event e ON (ae.event_id = e.id)\n",
+		join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id,
+					'EventType', e.event_type,
+					'Description', e.description,
+					'Notes', e.notes,
+					'EventDate', e.event_date,
+					'CreatedDate', e.created_date,
+					'UpdatedDate', e.updated_date
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events
 `
 	assert.Equal(t, expectedCoalesce, coalesce)
 }

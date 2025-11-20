@@ -214,6 +214,24 @@ func TestGetAllApplications_ShouldReturnErrorIfIncludePersonsIsInvalid(t *testin
 		responseBodyString)
 }
 
+func TestGetAllApplications_ShouldReturnErrorIfIncludeEventsIsInvalid(t *testing.T) {
+	applicationHandler := v1.NewApplicationHandler(nil)
+
+	request, err := http.NewRequest(http.MethodPost, "/api/v1/application/get/all?include_events=names", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	applicationHandler.GetAllApplications(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_events. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdateApplication tests: --------
 
 func TestUpdateApplication_ShouldRespondWithBadRequestStatus(t *testing.T) {

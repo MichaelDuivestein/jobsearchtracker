@@ -80,12 +80,28 @@ func SetupApplicationRepositoryTestContainer(t *testing.T, config configPackage.
 		log.Fatal("Failed to provide companyRepository in SetupApplicationRepositoryTestContainer", err)
 	}
 
+	// Add EventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventRepository in SetupApplicationRepositoryTestContainer", err)
+	}
+
 	// Add PersonRepository in order to insert data for testing
 	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
 		return repositories.NewPersonRepository(db)
 	})
 	if err != nil {
 		log.Fatal("Failed to provide personRepository", err)
+	}
+
+	// Add ApplicationEventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationEventRepository {
+		return repositories.NewApplicationEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide applicationEventRepository", err)
 	}
 
 	// Add ApplicationPersonRepository in order to insert data for testing

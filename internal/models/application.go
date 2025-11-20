@@ -25,6 +25,7 @@ type Application struct {
 	Company              *Company
 	Recruiter            *Company
 	Persons              *[]*Person
+	Events               *[]*Event
 }
 
 type CreateApplication struct {
