@@ -379,7 +379,7 @@ func (repository *PersonRepository) buildCompaniesCoalesceAndJoin(
 	coalesceString := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', c.id%s
 				) ORDER BY c.created_date DESC
 			) FILTER (WHERE c.id IS NOT NULL),

@@ -47,7 +47,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDa
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', a.id,
 					'CompanyID', a.company_id,
 					'RecruiterID', a.recruiter_id
@@ -70,7 +70,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtr
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', a.id,
 					'CompanyID', a.company_id,
 					'RecruiterID', a.recruiter_id,
@@ -96,7 +96,7 @@ func TestBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtr
 
 // -------- buildPersonsCoalesceAndJoin tests: --------
 
-func TestBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
@@ -118,7 +118,7 @@ func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIn
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id
 				) ORDER BY p.created_date DESC
 			) FILTER (WHERE p.id IS NOT NULL),
@@ -139,7 +139,7 @@ func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColumnsI
 	expectedCoalesce := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id,
 					'Name', p.name,
 					'PersonType', p.person_type,
