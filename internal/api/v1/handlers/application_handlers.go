@@ -282,6 +282,12 @@ func (applicationHandler *ApplicationHandler) GetApplicationsByJobTitle(
 // @Description - include_recruiter=all: Returns associated `recruiter` (`company`) with all fields
 // @Description - include_recruiter=ids: Returns associated `recruiter` with only `id`. Note: this will also return the `recruiter_id` in the main response, resulting in duplicated data.
 // @Description - include_recruiter=none: No associated `recruiter` included (default). Note: this will still return the `recruiter_id` in the main response.
+// @Description - include_persons=all: Returns `person`s with all fields
+// @Description - include_persons=ids: Returns `person`s with only `id`
+// @Description - include_persons=none: No `person` data included (default)
+// @Description - include_events=all: Returns `event`s with all fields
+// @Description - include_events=ids: Returns `event`s with only `id`
+// @Description - include_events=none: No `event` data included (default)
 // @Tags application
 // @Produce json
 // @Success 200 {array} responses.ApplicationResponse
@@ -328,11 +334,25 @@ func (applicationHandler *ApplicationHandler) GetAllApplications(writer http.Res
 		return
 	}
 
+	includeEvents, err := GetExtraDataTypeParam(query.Get("include_events"))
+	if err != nil {
+		slog.Error("v1.applicationHandler.GetAllApplications: Could not parse include_events param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_events. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
 	applications, err := applicationHandler.applicationService.GetAllApplications(
 		*includeCompany,
 		*includeRecruiter,
-		*includePersons)
+		*includePersons,
+		*includeEvents)
 
 	if err != nil {
 		errorMessage := "Internal service error while getting all applications"

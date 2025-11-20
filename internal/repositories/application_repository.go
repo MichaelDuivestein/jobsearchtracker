@@ -35,7 +35,7 @@ func (repository *ApplicationRepository) Create(application *models.CreateApplic
 	  	RETURNING 
 			id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		    weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		    updated_date, null, null, null; `
+		    updated_date, null, null, null, null; `
 
 	var applicationID uuid.UUID
 	if application.ID != nil {
@@ -118,7 +118,7 @@ func (repository *ApplicationRepository) GetById(id *uuid.UUID) (*models.Applica
 	sqlSelect := `
 		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		   updated_date, null, null, null 
+		   updated_date, null, null, null, null 
 		FROM application 
 		WHERE id = ? `
 
@@ -147,7 +147,7 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 	sqlSelect := `
 		SELECT id, company_id, recruiter_id, job_title, job_ad_url, country, area, remote_status_type, 
 		   weekdays_in_office, estimated_cycle_time, estimated_commute_time, application_date, created_date, 
-		   updated_date, null, null, null 
+		   updated_date, null, null, null, null 
 		FROM application 
 		WHERE job_title LIKE ? 
 		ORDER BY updated_Date DESC `
@@ -190,27 +190,32 @@ func (repository *ApplicationRepository) GetAllByJobTitle(jobTitle *string) ([]*
 func (repository *ApplicationRepository) GetAll(
 	includeCompany models.IncludeExtraDataType,
 	includeRecruiter models.IncludeExtraDataType,
-	includePersons models.IncludeExtraDataType) ([]*models.Application, error) {
+	includePersons models.IncludeExtraDataType,
+	includeEvents models.IncludeExtraDataType) ([]*models.Application, error) {
 
 	sqlSelect := `
 		SELECT a.id, a.company_id, a.recruiter_id, a.job_title, a.job_ad_url, a.country, a.area, a.remote_status_type, 
 			a.weekdays_in_office, a.estimated_cycle_time, a.estimated_commute_time, a.application_date, a.created_date, 
-			a.updated_date, %s, %s, %s
-		FROM application a %s %s %s
+			a.updated_date, %s, %s, %s, %s
+		FROM application a %s %s %s %s
+		GROUP BY a.id
 		ORDER BY a.created_date DESC `
 
 	companyCoalesceString, companyJoinString := repository.buildCompanyCoalesceAndJoin(includeCompany)
 	recruiterCoalesceString, recruiterJoinString := repository.buildRecruiterCoalesceAndJoin(includeRecruiter)
 	personsCoalesceString, personsJoinString := repository.buildPersonsCoalesceAndJoin(includePersons)
+	eventsCoalesceString, eventsJoinString := repository.buildEventsCoalesceAndJoin(includeEvents)
 
 	sqlSelect = fmt.Sprintf(
 		sqlSelect,
 		companyCoalesceString,
 		recruiterCoalesceString,
 		personsCoalesceString,
+		eventsCoalesceString,
 		companyJoinString,
 		recruiterJoinString,
-		personsJoinString)
+		personsJoinString,
+		eventsJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -396,7 +401,13 @@ func (repository *ApplicationRepository) mapRow(
 	scanner interface{ Scan(...interface{}) error }, methodName string) (*models.Application, error) {
 
 	var result models.Application
-	var applicationDate, createdDate, updatedDate, companyString, recruiterString, personsString sql.NullString
+	var applicationDate,
+		createdDate,
+		updatedDate,
+		companyString,
+		recruiterString,
+		personsString,
+		eventsString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -416,6 +427,7 @@ func (repository *ApplicationRepository) mapRow(
 		&companyString,
 		&recruiterString,
 		&personsString,
+		&eventsString,
 	)
 
 	if err != nil {
@@ -484,6 +496,17 @@ func (repository *ApplicationRepository) mapRow(
 
 		if len(persons) > 0 {
 			result.Persons = &persons
+		}
+	}
+
+	if eventsString.Valid {
+		var events []*models.Event
+		if err := json.NewDecoder(strings.NewReader(eventsString.String)).Decode(&events); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing events: " + err.Error())
+		}
+
+		if len(events) > 0 {
+			result.Events = &events
 		}
 	}
 
@@ -564,7 +587,7 @@ func (repository *ApplicationRepository) buildPersonsCoalesceAndJoin(
 	coalesceString := `
 		COALESCE(
 			JSON_GROUP_ARRAY(
-				JSON_OBJECT(
+				DISTINCT JSON_OBJECT(
 					'ID', p.id%s
 				) ORDER BY p.created_date DESC
 			) FILTER (WHERE p.id IS NOT NULL),
@@ -589,6 +612,45 @@ func (repository *ApplicationRepository) buildPersonsCoalesceAndJoin(
 	joinString :=
 		`LEFT JOIN application_person ap ON (ap.application_id = a.id)
 		LEFT JOIN person p ON (ap.person_id = p.id)
+`
+
+	return coalesceString, joinString
+}
+
+func (repository *ApplicationRepository) buildEventsCoalesceAndJoin(
+	includeEvents models.IncludeExtraDataType) (string, string) {
+
+	if includeEvents == models.IncludeExtraDataTypeNone {
+		return "null \n", ""
+	}
+
+	coalesceString := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id%s
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events
+`
+
+	allColumns := ""
+	if includeEvents == models.IncludeExtraDataTypeAll {
+		allColumns = `,
+					'EventType', e.event_type,
+					'Description', e.description,
+					'Notes', e.notes,
+					'EventDate', e.event_date,
+					'CreatedDate', e.created_date,
+					'UpdatedDate', e.updated_date`
+
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString :=
+		`LEFT JOIN application_event ae ON (ae.application_id = a.id)
+		LEFT JOIN event e ON (ae.event_id = e.id)
 `
 
 	return coalesceString, joinString
