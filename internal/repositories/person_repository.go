@@ -31,7 +31,7 @@ func (repository *PersonRepository) Create(person *models.CreatePerson) (*models
 		INSERT INTO person (
 			id, name, person_type, email, phone, notes, created_date, updated_date
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id, name, person_type, email, phone, notes, created_date, updated_date, null`
+		RETURNING id, name, person_type, email, phone, notes, created_date, updated_date, null, null`
 
 	var personID uuid.UUID
 	if person.ID != nil {
@@ -92,7 +92,7 @@ func (repository *PersonRepository) GetById(id *uuid.UUID) (*models.Person, erro
 	}
 
 	sqlSelect := `
-		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null 
+		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null, null 
 		FROM person
 		WHERE id = ? `
 
@@ -120,7 +120,7 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 	wildcardName := "%" + *name + "%"
 
 	sqlSelect := `
-		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null
+		SELECT id, name, person_type, email, phone, notes, created_date, updated_date, null, null
 		FROM person
 		WHERE name LIKE ?
 		ORDER BY name ASC `
@@ -158,20 +158,24 @@ func (repository *PersonRepository) GetAllByName(name *string) ([]*models.Person
 }
 
 // GetAll can return InternalServiceError
-func (repository *PersonRepository) GetAll(includeCompanies models.IncludeExtraDataType) ([]*models.Person, error) {
+func (repository *PersonRepository) GetAll(
+	includeCompanies models.IncludeExtraDataType,
+	includeEvents models.IncludeExtraDataType) ([]*models.Person, error) {
 	sqlSelect := `
-        SELECT p.id, p.name, p.person_type, p.email, p.phone, p.notes, p.created_date, p.updated_date, %s
-        FROM person p %s
-        GROUP BY p.id, p.name, p.person_type
+        SELECT p.id, p.name, p.person_type, p.email, p.phone, p.notes, p.created_date, p.updated_date, %s, %s
+        FROM person p %s %s
+        GROUP BY p.id
         ORDER BY p.created_date DESC; `
 
-	companiesCoalesceString := "null \n"
-	companiesJoinString := ""
-	if includeCompanies != models.IncludeExtraDataTypeNone {
-		companiesCoalesceString, companiesJoinString = repository.buildCompaniesCoalesceAndJoin(includeCompanies)
-	}
+	companiesCoalesceString, companiesJoinString := repository.buildCompaniesCoalesceAndJoin(includeCompanies)
+	eventsCoalesceString, eventsJoinString := repository.buildEventsCoalesceAndJoin(includeEvents)
 
-	sqlSelect = fmt.Sprintf(sqlSelect, companiesCoalesceString, companiesJoinString)
+	sqlSelect = fmt.Sprintf(
+		sqlSelect,
+		companiesCoalesceString,
+		eventsCoalesceString,
+		companiesJoinString,
+		eventsJoinString)
 
 	rows, err := repository.database.Query(sqlSelect)
 	if err != nil {
@@ -315,7 +319,7 @@ func (repository *PersonRepository) mapRow(
 	methodName string) (*models.Person, error) {
 
 	var result models.Person
-	var createdDate, updatedDate, companiesString sql.NullString
+	var createdDate, updatedDate, companiesString, eventsString sql.NullString
 
 	err := scanner.Scan(
 		&result.ID,
@@ -327,6 +331,7 @@ func (repository *PersonRepository) mapRow(
 		&createdDate,
 		&updatedDate,
 		&companiesString,
+		&eventsString,
 	)
 
 	if err != nil {
@@ -366,6 +371,17 @@ func (repository *PersonRepository) mapRow(
 		}
 	}
 
+	if eventsString.Valid {
+		var events []*models.Event
+		if err = json.Unmarshal([]byte(eventsString.String), &events); err != nil {
+			return nil, internalErrors.NewInternalServiceError("Error parsing events: " + err.Error())
+		}
+
+		if len(events) > 0 {
+			result.Events = &events
+		}
+	}
+
 	return &result, nil
 }
 
@@ -401,6 +417,42 @@ func (repository *PersonRepository) buildCompaniesCoalesceAndJoin(
 	joinString := `
 		LEFT JOIN company_person cp ON cp.person_id = p.id 
 		LEFT JOIN company c ON c.id = cp.company_id `
+
+	return coalesceString, joinString
+}
+
+func (repository *PersonRepository) buildEventsCoalesceAndJoin(
+	includeEvents models.IncludeExtraDataType) (string, string) {
+
+	if includeEvents == models.IncludeExtraDataTypeNone {
+		return "null \n", ""
+	}
+
+	coalesceString := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id%s
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events`
+
+	allColumns := ""
+	if includeEvents == models.IncludeExtraDataTypeAll {
+		allColumns = `, 
+					'EventType', e.event_type, 
+					'Description', e.description,  
+					'Notes', e.notes, 
+					'EventDate', e.event_date, 
+					'CreatedDate', e.created_date, 
+					'UpdatedDate', e.updated_date `
+	}
+	coalesceString = fmt.Sprintf(coalesceString, allColumns)
+
+	joinString := `
+		LEFT JOIN event_person ep ON ep.person_id = p.id 
+		LEFT JOIN event e ON e.id = ep.event_id `
 
 	return coalesceString, joinString
 }

@@ -291,6 +291,53 @@ func TestNewPersonResponse_ShouldHandleCompanies(t *testing.T) {
 	assert.Equal(t, company2Model.ID, company2.ID)
 }
 
+func TestNewPersonResponse_ShouldHandleEvents(t *testing.T) {
+	var event1EventType models.EventType = models.EventTypeApplied
+	event1Model := models.Event{
+		ID:          uuid.New(),
+		EventType:   &event1EventType,
+		Description: testutil.ToPtr("Event1Description"),
+		Notes:       testutil.ToPtr("Event1Notes"),
+		EventDate:   testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+
+	event2Model := models.Event{
+		ID: uuid.New(),
+	}
+
+	eventModels := []*models.Event{&event1Model, &event2Model}
+	var personType models.PersonType = models.PersonTypeJobContact
+	model := models.Person{
+		ID:         uuid.New(),
+		Name:       testutil.ToPtr("PersonName"),
+		PersonType: &personType,
+		Events:     &eventModels,
+	}
+
+	response, err := NewPersonResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID.String(), response.ID.String())
+	assert.NotNil(t, response.Events)
+
+	assert.Len(t, *response.Events, 2)
+
+	event1 := (*response.Events)[0]
+	assert.Equal(t, event1Model.ID, *event1.ID)
+	assert.Equal(t, event1Model.EventType.String(), event1.EventType.String())
+	assert.Equal(t, event1Model.Description, event1.Description)
+	assert.Equal(t, event1Model.Notes, event1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, event1.EventDate, event1Model.EventDate)
+	testutil.AssertEqualFormattedDateTimes(t, event1.CreatedDate, event1Model.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, event1.UpdatedDate, event1Model.UpdatedDate)
+
+	event2 := (*response.Events)[1]
+	assert.Equal(t, event2Model.ID, *event2.ID)
+}
+
 // -------- NewPersonsResponse tests: --------
 
 func TestNewPersonsResponse_ShouldWork(t *testing.T) {
