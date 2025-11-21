@@ -262,6 +262,9 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 // @Description - include_companies=all: Returns `company`s with all fields
 // @Description - include_companies=ids: Returns `company`s with only `id` field
 // @Description - include_companies=none: No `company` data included (default)
+// @Description - include_events=all: Returns `event`s with all fields
+// @Description - include_events=ids: Returns `event`s with only `id` field
+// @Description - include_events=none: No `event` data included (default)
 // @Tags person
 // @Produce json
 // @Success 200 {array} responses.PersonResponse
@@ -270,9 +273,10 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 // @Router /v1/person/get/all [get]
 func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
+
 	includeCompanies, err := GetExtraDataTypeParam(query.Get("include_companies"))
 	if err != nil {
-		slog.Error("v1.personHandler.GetAllPersons: Could not parse include_company param", "error", err)
+		slog.Error("v1.personHandler.GetAllPersons: Could not parse include_companies param", "error", err)
 
 		status := http.StatusBadRequest
 		writer.WriteHeader(status)
@@ -283,8 +287,21 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 		return
 	}
 
+	includeEvents, err := GetExtraDataTypeParam(query.Get("include_events"))
+	if err != nil {
+		slog.Error("v1.personHandler.GetAllPersons: Could not parse include_events param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_events. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	persons, err := personHandler.personService.GetAllPersons(*includeCompanies)
+	persons, err := personHandler.personService.GetAllPersons(*includeCompanies, *includeEvents)
 	if err != nil {
 		errorMessage := "Internal service error while getting all persons"
 		status := http.StatusInternalServerError

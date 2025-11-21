@@ -101,10 +101,11 @@ func (personService *PersonService) GetPersonsByName(personName *string) ([]*mod
 
 // GetAllPersons can return InternalServiceError
 func (personService *PersonService) GetAllPersons(
-	includeCompanies models.IncludeExtraDataType) ([]*models.Person, error) {
+	includeCompanies models.IncludeExtraDataType,
+	includeEvents models.IncludeExtraDataType) ([]*models.Person, error) {
 
 	// can return InternalServiceError
-	persons, err := personService.personRepository.GetAll(includeCompanies)
+	persons, err := personService.personRepository.GetAll(includeCompanies, includeEvents)
 	if err != nil {
 		return nil, err
 	}

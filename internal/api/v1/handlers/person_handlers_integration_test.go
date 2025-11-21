@@ -11,6 +11,7 @@ import (
 	"jobsearchtracker/internal/repositories"
 	"jobsearchtracker/internal/testutil"
 	"jobsearchtracker/internal/testutil/dependencyinjection"
+	"jobsearchtracker/internal/testutil/repositoryhelpers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +25,10 @@ import (
 func setupPersonHandler(t *testing.T) (
 	*handlers.PersonHandler,
 	*repositories.CompanyRepository,
-	*repositories.CompanyPersonRepository) {
+	*repositories.EventRepository,
+	*repositories.PersonRepository,
+	*repositories.CompanyPersonRepository,
+	*repositories.EventPersonRepository) {
 
 	config := configPackage.Config{
 		DatabaseMigrationsPath:               "../../../../migrations",
@@ -44,19 +48,41 @@ func setupPersonHandler(t *testing.T) (
 	})
 	assert.NoError(t, err)
 
+	var eventRepository *repositories.EventRepository
+	err = container.Invoke(func(repository *repositories.EventRepository) {
+		eventRepository = repository
+	})
+
+	var personRepository *repositories.PersonRepository
+	err = container.Invoke(func(repository *repositories.PersonRepository) {
+		personRepository = repository
+	})
+	assert.NoError(t, err)
+
 	var companyPersonRepository *repositories.CompanyPersonRepository
 	err = container.Invoke(func(repository *repositories.CompanyPersonRepository) {
 		companyPersonRepository = repository
 	})
 	assert.NoError(t, err)
 
-	return personHandler, companyRepository, companyPersonRepository
+	var eventPersonRepository *repositories.EventPersonRepository
+	err = container.Invoke(func(repository *repositories.EventPersonRepository) {
+		eventPersonRepository = repository
+	})
+	assert.NoError(t, err)
+
+	return personHandler,
+		companyRepository,
+		eventRepository,
+		personRepository,
+		companyPersonRepository,
+		eventPersonRepository
 }
 
 // -------- CreatePerson tests: --------
 
 func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	requestBody := requests.CreatePersonRequest{
 		ID:         testutil.ToPtr(uuid.New()),
@@ -97,7 +123,7 @@ func TestCreatePerson_ShouldInsertAndReturnPerson(t *testing.T) {
 }
 
 func TestCreatePerson_ShouldReturnStatusConflictIfPersonIDIsDuplicate(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	personID := uuid.New()
 
@@ -148,7 +174,7 @@ func TestCreatePerson_ShouldReturnStatusConflictIfPersonIDIsDuplicate(t *testing
 // -------- GetPersonById tests: --------
 
 func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// insert a person:
 
@@ -195,7 +221,7 @@ func TestGetPersonById_ShouldReturnPerson(t *testing.T) {
 }
 
 func TestGetPersonById_ShouldReturnNotFoundIfPersonDoesNotExist(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	request, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/id", nil)
 	assert.NoError(t, err)
@@ -217,7 +243,7 @@ func TestGetPersonById_ShouldReturnNotFoundIfPersonDoesNotExist(t *testing.T) {
 // -------- GetPersonByName tests: --------
 
 func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// Insert a person:
 
@@ -265,7 +291,7 @@ func TestGetPersonsByName_ShouldReturnPerson(t *testing.T) {
 }
 
 func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// Insert two persons:
 
@@ -313,7 +339,7 @@ func TestGetPersonsByName_ShouldReturnPersons(t *testing.T) {
 }
 
 func TestGetPersonsByName_ShouldReturnNotFoundIfNoPersonsMatchingName(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/name", nil)
 	assert.NoError(t, err)
@@ -333,10 +359,10 @@ func TestGetPersonsByName_ShouldReturnNotFoundIfNoPersonsMatchingName(t *testing
 	assert.Equal(t, "No people [partially] matching this name found\n", responseBodyString)
 }
 
-// -------- GetAllPersons tests: --------
+// -------- GetAllPersons - base tests: --------
 
 func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// insert persons
 
@@ -407,7 +433,7 @@ func TestGetAllPersons_ShouldReturnAllPersons(t *testing.T) {
 }
 
 func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all", nil)
 	assert.NoError(t, err)
@@ -427,8 +453,10 @@ func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing
 	assert.Len(t, response, 0)
 }
 
+// -------- GetAllPersons - companies tests: --------
+
 func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
-	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
+	personHandler, companyRepository, _, _, companyPersonRepository, _ := setupPersonHandler(t)
 
 	// setup persons
 	person1 := requests.CreatePersonRequest{
@@ -547,8 +575,8 @@ func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) 
 	assert.Equal(t, *company2.ID, (*(response[2]).Companies)[1].ID)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
-	personHandler, companyRepository, _ := setupPersonHandler(t)
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+	personHandler, companyRepository, _, _, _, _ := setupPersonHandler(t)
 
 	// setup persons
 	person1 := requests.CreatePersonRequest{
@@ -635,8 +663,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndTher
 	assert.Nil(t, response[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
-	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
+func TestGetAllPersons_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
+	personHandler, companyRepository, _, _, companyPersonRepository, _ := setupPersonHandler(t)
 
 	// setup persons
 	person1 := requests.CreatePersonRequest{
@@ -756,8 +784,8 @@ func TestGetAllPerson_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *test
 	assert.Equal(t, *company2.ID, person1Company2.ID)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
-	personHandler, companyRepository, _ := setupPersonHandler(t)
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
+	personHandler, companyRepository, _, _, _, _ := setupPersonHandler(t)
 
 	// setup persons
 	person1 := requests.CreatePersonRequest{
@@ -844,8 +872,8 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndTher
 	assert.Nil(t, response[2].Companies)
 }
 
-func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
-	personHandler, companyRepository, companyPersonRepository := setupPersonHandler(t)
+func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
+	personHandler, companyRepository, _, _, companyPersonRepository, _ := setupPersonHandler(t)
 
 	// setup persons
 	person1 := requests.CreatePersonRequest{
@@ -952,10 +980,253 @@ func TestGetAllPerson_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *te
 	assert.Nil(t, response[2].Companies)
 }
 
+// -------- GetAllPersons - events tests: --------
+
+func TestGetAllPersons_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *testing.T) {
+	personHandler, _, eventRepository, personRepository, _, eventPersonRepository := setupPersonHandler(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add two events and associate them to the person
+
+	event1ToInsert := models.CreateEvent{
+		ID:          testutil.ToPtr(uuid.New()),
+		EventType:   models.EventTypeApplied,
+		Description: testutil.ToPtr("Event1Description"),
+		Notes:       testutil.ToPtr("Event1Notes"),
+		EventDate:   time.Now().AddDate(0, 0, 5),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := eventRepository.Create(&event1ToInsert)
+	assert.NoError(t, err)
+
+	event2ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 6))).ID
+
+	// associate persons and events
+
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, *event1ToInsert.ID, personID, nil)
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
+
+	// get all persons
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	retrievedPerson := response[0]
+	assert.Equal(t, personID, retrievedPerson.ID)
+	assert.NotNil(t, retrievedPerson.Events)
+	assert.Len(t, *retrievedPerson.Events, 2)
+
+	assert.Equal(t, event2ID, *(*retrievedPerson.Events)[0].ID)
+
+	event2 := (*retrievedPerson.Events)[1]
+	assert.Equal(t, event1ToInsert.ID, event2.ID)
+	assert.Equal(t, event1ToInsert.EventType.String(), event2.EventType.String())
+	assert.Equal(t, event1ToInsert.Description, event2.Description)
+	assert.Equal(t, event1ToInsert.Notes, event2.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, &event1ToInsert.EventDate, event2.EventDate)
+	testutil.AssertEqualFormattedDateTimes(t, event1ToInsert.CreatedDate, event2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, event1ToInsert.UpdatedDate, event2.UpdatedDate)
+}
+
+func TestGetAllPersons_ShouldReturnNoEventsIfIncludeEventsIsSetToAllAndThereAreNoEventPersonsInRepository(t *testing.T) {
+	personHandler, _, _, personRepository, _, _ := setupPersonHandler(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// get all persons
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=all", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	retrievedPerson := response[0]
+	assert.Equal(t, personID, retrievedPerson.ID)
+	assert.Nil(t, retrievedPerson.Events)
+}
+
+func TestGetAllPersons_ShouldReturnEventIDsIfIncludeEventsIsSetToIDs(t *testing.T) {
+	personHandler, _, eventRepository, personRepository, _, eventPersonRepository := setupPersonHandler(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add two events and associate them to the person
+
+	event1ToInsert := models.CreateEvent{
+		ID:          testutil.ToPtr(uuid.New()),
+		EventType:   models.EventTypeApplied,
+		Description: testutil.ToPtr("Event1Description"),
+		Notes:       testutil.ToPtr("Event1Notes"),
+		EventDate:   time.Now().AddDate(0, 0, 5),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+	_, err := eventRepository.Create(&event1ToInsert)
+	assert.NoError(t, err)
+
+	event2ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 6))).ID
+
+	// associate persons and events
+
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, *event1ToInsert.ID, personID, nil)
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
+
+	// get all persons
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=ids", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	retrievedPerson := response[0]
+	assert.Equal(t, personID, retrievedPerson.ID)
+	assert.NotNil(t, retrievedPerson.Events)
+	assert.Len(t, *retrievedPerson.Events, 2)
+
+	assert.Equal(t, event2ID, *(*retrievedPerson.Events)[0].ID)
+
+	event2 := (*retrievedPerson.Events)[1]
+	assert.Equal(t, event1ToInsert.ID, event2.ID)
+	assert.Nil(t, event2.EventType)
+	assert.Nil(t, event2.Description)
+	assert.Nil(t, event2.Notes)
+	assert.Nil(t, event2.EventDate)
+	assert.Nil(t, event2.CreatedDate)
+	assert.Nil(t, event2.UpdatedDate)
+}
+
+func TestGetAllPersons_ShouldReturnNoEventsIfIncludeEventsIsSetToIDsAndThereAreNoEventPersonsInRepository(t *testing.T) {
+	personHandler, _, _, personRepository, _, _ := setupPersonHandler(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// get all persons
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=ids", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	retrievedPerson := response[0]
+	assert.Equal(t, personID, retrievedPerson.ID)
+	assert.Nil(t, retrievedPerson.Events)
+}
+
+func TestGetAllPersons_ShouldReturnNoEventsIfIncludeEventsIsSetToNone(t *testing.T) {
+	personHandler, _, eventRepository, personRepository, _, eventPersonRepository := setupPersonHandler(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add an event and associate it to the person
+
+	eventID := repositoryhelpers.CreateEvent(t, eventRepository, nil, nil, nil).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, eventID, personID, nil)
+
+	// get all persons
+
+	getRequest, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=none", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, getRequest)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.NotEmpty(t, responseBodyString)
+
+	var response []responses.PersonResponse
+	err = json.NewDecoder(responseRecorder.Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, response)
+	assert.Len(t, response, 1)
+
+	retrievedPerson := response[0]
+	assert.Equal(t, personID, retrievedPerson.ID)
+	assert.Nil(t, retrievedPerson.Events)
+}
+
 // -------- UpdatePerson tests: --------
 
 func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// create a person
 
@@ -1024,7 +1295,7 @@ func TestUpdatePerson_ShouldUpdatePerson(t *testing.T) {
 }
 
 func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// create a person
 	createRequest := requests.CreatePersonRequest{
@@ -1061,7 +1332,7 @@ func TestUpdatePerson_ShouldReturnBadRequestIfNothingToUpdate(t *testing.T) {
 // -------- DeletePerson tests: --------
 
 func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	// insert a person
 
@@ -1100,7 +1371,7 @@ func TestDeletePerson_ShouldDeletePerson(t *testing.T) {
 }
 
 func TestDeletePerson_ShouldReturnStatusNotFoundIfPersonDoesNotExist(t *testing.T) {
-	personHandler, _, _ := setupPersonHandler(t)
+	personHandler, _, _, _, _, _ := setupPersonHandler(t)
 
 	deleteRequest, err := http.NewRequest(http.MethodDelete, "/api/v1/person/delete/", nil)
 	assert.NoError(t, err)

@@ -70,7 +70,7 @@ func TestDelete_ShouldReturnValidationErrorIfPersonIDIsNil(t *testing.T) {
 
 // -------- buildCompaniesCoalesceAndJoin tests: --------
 
-func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestPersonRepositoryBuildCompaniesCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	personRepository := NewPersonRepository(nil)
 
 	coalesce, join := personRepository.buildCompaniesCoalesceAndJoin(models.IncludeExtraDataTypeNone)
@@ -79,7 +79,7 @@ func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDat
 	assert.Equal(t, "", join)
 }
 
-func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+func TestPersonRepositoryBuildCompaniesCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
 	personRepository := NewPersonRepository(nil)
 
 	coalesce, join := personRepository.buildCompaniesCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
@@ -102,7 +102,7 @@ func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDat
 	assert.Equal(t, expectedJoin, join)
 }
 
-func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+func TestPersonRepositoryBuildCompaniesCoalesceAndJoin_ShouldBuildWithAllColumnsIncludeExtraDataTypeIsAll(t *testing.T) {
 	personRepository := NewPersonRepository(nil)
 
 	coalesce, join := personRepository.buildCompaniesCoalesceAndJoin(models.IncludeExtraDataTypeAll)
@@ -127,6 +127,69 @@ func TestBuildCompaniesCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDat
 	expectedJoin := `
 		LEFT JOIN company_person cp ON cp.person_id = p.id 
 		LEFT JOIN company c ON c.id = cp.company_id `
+
+	assert.Equal(t, expectedJoin, join)
+}
+
+// -------- buildEventsCoalesceAndJoin tests: --------
+
+func TestPersonRepositoryBuildEventsCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+
+	assert.Equal(t, "null \n", coalesce)
+	assert.Equal(t, "", join)
+}
+
+func TestPersonRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events`
+	assert.Equal(t, expectedCoalesce, coalesce)
+
+	expectedJoin := `
+		LEFT JOIN event_person ep ON ep.person_id = p.id 
+		LEFT JOIN event e ON e.id = ep.event_id `
+
+	assert.Equal(t, expectedJoin, join)
+}
+
+func TestPersonRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDataTypeIsAll(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id, 
+					'EventType', e.event_type, 
+					'Description', e.description,  
+					'Notes', e.notes, 
+					'EventDate', e.event_date, 
+					'CreatedDate', e.created_date, 
+					'UpdatedDate', e.updated_date 
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events`
+	assert.Equal(t, expectedCoalesce, coalesce)
+
+	expectedJoin := `
+		LEFT JOIN event_person ep ON ep.person_id = p.id 
+		LEFT JOIN event e ON e.id = ep.event_id `
 
 	assert.Equal(t, expectedJoin, join)
 }

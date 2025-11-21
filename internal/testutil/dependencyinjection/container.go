@@ -516,6 +516,20 @@ func SetupPersonRepositoryTestContainer(t *testing.T, config configPackage.Confi
 		log.Fatal("Failed to provide CompanyPersonRepository", err)
 	}
 
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide EventRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.EventPersonRepository {
+		return repositories.NewEventPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide EventPersonRepository", err)
+	}
+
 	return container
 }
 
