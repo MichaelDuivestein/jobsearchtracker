@@ -113,7 +113,7 @@ func TestAssociateCompanyToPerson_ShouldReturnConflictErrorIfCompanyIDAndPersonI
 
 // -------- GetByID tests: --------
 
-func TestGetByID_ShouldGetRecordsMatchingCompanyID(t *testing.T) {
+func TestCompanyPersonServiceGetByID_ShouldGetRecordsMatchingCompanyID(t *testing.T) {
 	companyPersonService, companyRepository, personRepository := setupCompanyPersonService(t)
 
 	company1 := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil)
