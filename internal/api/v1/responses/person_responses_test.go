@@ -326,7 +326,7 @@ func TestNewPersonResponse_ShouldHandleEvents(t *testing.T) {
 	assert.Len(t, *response.Events, 2)
 
 	event1 := (*response.Events)[0]
-	assert.Equal(t, event1Model.ID, *event1.ID)
+	assert.Equal(t, event1Model.ID, event1.ID)
 	assert.Equal(t, event1Model.EventType.String(), event1.EventType.String())
 	assert.Equal(t, event1Model.Description, event1.Description)
 	assert.Equal(t, event1Model.Notes, event1.Notes)
@@ -335,7 +335,7 @@ func TestNewPersonResponse_ShouldHandleEvents(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, event1.UpdatedDate, event1Model.UpdatedDate)
 
 	event2 := (*response.Events)[1]
-	assert.Equal(t, event2Model.ID, *event2.ID)
+	assert.Equal(t, event2Model.ID, event2.ID)
 }
 
 // -------- NewPersonsResponse tests: --------

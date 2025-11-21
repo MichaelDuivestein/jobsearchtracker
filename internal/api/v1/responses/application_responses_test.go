@@ -403,7 +403,7 @@ func TestNewApplicationResponse_ShouldHandleEvents(t *testing.T) {
 	assert.Len(t, *response.Events, 2)
 
 	eventDTO1 := (*response.Events)[0]
-	assert.Equal(t, event1.ID, *eventDTO1.ID)
+	assert.Equal(t, event1.ID, eventDTO1.ID)
 	assert.Equal(t, event1.EventType.String(), eventDTO1.EventType.String())
 	assert.Equal(t, event1.Description, eventDTO1.Description)
 	assert.Equal(t, event1.Notes, eventDTO1.Notes)
@@ -411,7 +411,7 @@ func TestNewApplicationResponse_ShouldHandleEvents(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, event1.CreatedDate, eventDTO1.CreatedDate)
 	testutil.AssertEqualFormattedDateTimes(t, event1.UpdatedDate, eventDTO1.UpdatedDate)
 
-	assert.Equal(t, event2.ID, *(*response.Events)[1].ID)
+	assert.Equal(t, event2.ID, (*response.Events)[1].ID)
 }
 
 // -------- NewApplicationsResponse tests: --------

@@ -1154,10 +1154,10 @@ func TestGetAllApplications_ShouldReturnApplicationsWithEventsIfIncludeEventsIsA
 	assert.NotNil(t, retrievedApplication.Events)
 	assert.Len(t, *retrievedApplication.Events, 2)
 
-	assert.Equal(t, event2ID, *(*retrievedApplication.Events)[1].ID)
+	assert.Equal(t, event2ID, (*retrievedApplication.Events)[1].ID)
 
 	event1 := (*retrievedApplication.Events)[0]
-	assert.Equal(t, event1ToInsert.ID, event1.ID)
+	assert.Equal(t, *event1ToInsert.ID, event1.ID)
 	assert.Equal(t, event1ToInsert.EventType.String(), event1.EventType.String())
 	assert.Equal(t, event1ToInsert.Description, event1.Description)
 	assert.Equal(t, event1ToInsert.Notes, event1.Notes)
@@ -1281,10 +1281,10 @@ func TestGetAllApplications_ShouldReturnApplicationsWithEventIDsIfIncludeEventsI
 	assert.NotNil(t, retrievedApplication.Events)
 	assert.Len(t, *retrievedApplication.Events, 2)
 
-	assert.Equal(t, event2ID, *(*retrievedApplication.Events)[1].ID)
+	assert.Equal(t, event2ID, (*retrievedApplication.Events)[1].ID)
 
 	event1 := (*retrievedApplication.Events)[0]
-	assert.Equal(t, event1ToInsert.ID, event1.ID)
+	assert.Equal(t, *event1ToInsert.ID, event1.ID)
 	assert.Nil(t, event1.EventType)
 	assert.Nil(t, event1.Description)
 	assert.Nil(t, event1.Notes)

@@ -30,7 +30,7 @@ func TestNewEventDTO_ShouldWork(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, eventDTO)
 
-	assert.Equal(t, model.ID, *eventDTO.ID)
+	assert.Equal(t, model.ID, eventDTO.ID)
 	assert.Equal(t, model.EventType.String(), eventDTO.EventType.String())
 	assert.Equal(t, model.Description, eventDTO.Description)
 	assert.Equal(t, model.Notes, eventDTO.Notes)
@@ -46,7 +46,7 @@ func TestNewEventDTO_ShouldWorkWithOnlyID(t *testing.T) {
 	eventDTO, err := NewEventDTO(&model)
 	assert.NoError(t, err)
 	assert.NotNil(t, eventDTO)
-	assert.Equal(t, model.ID, *eventDTO.ID)
+	assert.Equal(t, model.ID, eventDTO.ID)
 }
 
 func TestNewEventDTO_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
@@ -179,7 +179,7 @@ func TestNewEventResponse_ShouldWork(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, eventResponse)
 
-	assert.Equal(t, model.ID, *eventResponse.ID)
+	assert.Equal(t, model.ID, eventResponse.ID)
 	assert.Equal(t, model.EventType.String(), eventResponse.EventType.String())
 	assert.Equal(t, model.Description, eventResponse.Description)
 	assert.Equal(t, model.Notes, eventResponse.Notes)
@@ -195,7 +195,7 @@ func TestNewEventResponse_ShouldWorkWithOnlyID(t *testing.T) {
 	eventResponse, err := NewEventResponse(&model)
 	assert.NoError(t, err)
 	assert.NotNil(t, eventResponse)
-	assert.Equal(t, model.ID, *eventResponse.ID)
+	assert.Equal(t, model.ID, eventResponse.ID)
 }
 
 func TestNewEventResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testing.T) {
