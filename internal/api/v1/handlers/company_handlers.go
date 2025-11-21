@@ -266,6 +266,9 @@ func (companyHandler *CompanyHandler) GetCompaniesByName(writer http.ResponseWri
 // @Description - include_persons=all: Returns `person`s with all fields
 // @Description - include_persons=ids: Returns `person`s with only `id`
 // @Description - include_persons=none: No `person` data included (default)
+// @Description - include_events=all: Returns `event`s with all fields
+// @Description - include_events=ids: Returns `event`s with only `id`
+// @Description - include_events=none: No `event` data included (default)
 // @Tags company
 // @Produce json
 // @Param include_applications query string false "string enums" Enums(all, ids, none)

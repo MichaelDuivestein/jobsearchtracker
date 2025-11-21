@@ -1126,8 +1126,8 @@ func TestCompanyRepositoryGetAll_ShouldReturnPersonsIfIncludePersonsIsSetToAll(t
 	assert.Equal(t, person1.Email, company1Person2.Email)
 	assert.Equal(t, person1.Phone, company1Person2.Phone)
 	assert.Equal(t, person1.Notes, company1Person2.Notes)
-	testutil.AssertEqualFormattedDateTimes(t, company1Person2.CreatedDate, company1Person2.CreatedDate)
-	testutil.AssertEqualFormattedDateTimes(t, company1Person2.UpdatedDate, company1Person2.UpdatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, person1.CreatedDate, company1Person2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, person1.UpdatedDate, company1Person2.UpdatedDate)
 }
 
 func TestGetAll_ShouldReturnNilPersonsIfIncludePersonsIsSetToAllAndThereAreNoPersonsInDB(t *testing.T) {
