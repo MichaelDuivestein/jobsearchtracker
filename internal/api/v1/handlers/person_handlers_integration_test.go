@@ -1041,10 +1041,10 @@ func TestGetAllPersons_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *testing.T)
 	assert.NotNil(t, retrievedPerson.Events)
 	assert.Len(t, *retrievedPerson.Events, 2)
 
-	assert.Equal(t, event2ID, *(*retrievedPerson.Events)[0].ID)
+	assert.Equal(t, event2ID, (*retrievedPerson.Events)[0].ID)
 
 	event2 := (*retrievedPerson.Events)[1]
-	assert.Equal(t, event1ToInsert.ID, event2.ID)
+	assert.Equal(t, *event1ToInsert.ID, event2.ID)
 	assert.Equal(t, event1ToInsert.EventType.String(), event2.EventType.String())
 	assert.Equal(t, event1ToInsert.Description, event2.Description)
 	assert.Equal(t, event1ToInsert.Notes, event2.Notes)
@@ -1143,10 +1143,10 @@ func TestGetAllPersons_ShouldReturnEventIDsIfIncludeEventsIsSetToIDs(t *testing.
 	assert.NotNil(t, retrievedPerson.Events)
 	assert.Len(t, *retrievedPerson.Events, 2)
 
-	assert.Equal(t, event2ID, *(*retrievedPerson.Events)[0].ID)
+	assert.Equal(t, event2ID, (*retrievedPerson.Events)[0].ID)
 
 	event2 := (*retrievedPerson.Events)[1]
-	assert.Equal(t, event1ToInsert.ID, event2.ID)
+	assert.Equal(t, *event1ToInsert.ID, event2.ID)
 	assert.Nil(t, event2.EventType)
 	assert.Nil(t, event2.Description)
 	assert.Nil(t, event2.Notes)

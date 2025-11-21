@@ -11,7 +11,7 @@ import (
 )
 
 type EventDTO struct {
-	ID          *uuid.UUID          `json:"id,omitempty" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
+	ID          uuid.UUID           `json:"id" swaggertype:"string" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000" extensions:"x-order=0"`
 	EventType   *requests.EventType `json:"event_type,omitempty" example:"interviewCompleted" extensions:"x-order=2"`
 	Description *string             `json:"description,omitempty" example:"Event Description" extensions:"x-order=2"`
 	Notes       *string             `json:"notes,omitempty" example:"Notes go here" extensions:"x-order=3"`
@@ -36,7 +36,7 @@ func NewEventDTO(eventModel *models.Event) (*EventDTO, error) {
 	}
 
 	eventDto := EventDTO{
-		ID:          &eventModel.ID,
+		ID:          eventModel.ID,
 		EventType:   eventType,
 		Description: eventModel.Description,
 		Notes:       eventModel.Notes,

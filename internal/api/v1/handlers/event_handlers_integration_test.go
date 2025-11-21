@@ -81,7 +81,7 @@ func TestCreateEvent_ShouldInsertAndReturnEvent(t *testing.T) {
 	err = json.NewDecoder(responseRecorder.Body).Decode(&eventResponse)
 	assert.NoError(t, err)
 
-	assert.Equal(t, requestBody.ID, eventResponse.ID)
+	assert.Equal(t, *requestBody.ID, eventResponse.ID)
 	assert.Equal(t, requestBody.EventType.String(), eventResponse.EventType.String())
 	assert.Equal(t, requestBody.Description, eventResponse.Description)
 	assert.Equal(t, requestBody.Notes, eventResponse.Notes)
@@ -196,13 +196,13 @@ func TestGetAllEvents_ShouldReturnAllEvents(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Len(t, response, 2)
 
-	assert.Equal(t, event2ID, *response[0].ID)
+	assert.Equal(t, event2ID, response[0].ID)
 	assert.NotNil(t, response[0].EventType)
 	testutil.AssertEqualFormattedDateTimes(t, &event2EventDate, response[0].EventDate)
 	assert.NotNil(t, response[0].CreatedDate)
 	assert.Nil(t, response[0].UpdatedDate)
 
-	assert.Equal(t, event1.ID, *response[1].ID)
+	assert.Equal(t, event1.ID, response[1].ID)
 	assert.Equal(t, event1.EventType.String(), response[1].EventType.String())
 	assert.Equal(t, event1.Description, response[1].Description)
 	assert.Equal(t, event1.Notes, response[1].Notes)
