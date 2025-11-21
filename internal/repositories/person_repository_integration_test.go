@@ -47,6 +47,7 @@ func setupPersonRepository(t *testing.T) (
 	err = container.Invoke(func(repository *repositories.EventRepository) {
 		eventRepository = repository
 	})
+	assert.NoError(t, err)
 
 	var companyPersonRepository *repositories.CompanyPersonRepository
 	err = container.Invoke(func(repository *repositories.CompanyPersonRepository) {
@@ -58,6 +59,7 @@ func setupPersonRepository(t *testing.T) (
 	err = container.Invoke(func(repository *repositories.EventPersonRepository) {
 		eventPersonRepository = repository
 	})
+	assert.NoError(t, err)
 
 	return personRepository, companyRepository, eventRepository, companyPersonRepository, eventPersonRepository
 }

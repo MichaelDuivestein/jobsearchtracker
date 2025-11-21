@@ -52,6 +52,7 @@ func setupPersonHandler(t *testing.T) (
 	err = container.Invoke(func(repository *repositories.EventRepository) {
 		eventRepository = repository
 	})
+	assert.NoError(t, err)
 
 	var personRepository *repositories.PersonRepository
 	err = container.Invoke(func(repository *repositories.PersonRepository) {
