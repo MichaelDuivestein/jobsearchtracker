@@ -77,8 +77,12 @@ func (eventService *EventService) GetEventByID(eventID *uuid.UUID) (*models.Even
 }
 
 // GetAllEvents can return InternalServiceError
-func (eventService *EventService) GetAllEvents() ([]*models.Event, error) {
-	events, err := eventService.eventRepository.GetAll()
+func (eventService *EventService) GetAllEvents(
+	includeApplications models.IncludeExtraDataType,
+	includeCompanies models.IncludeExtraDataType,
+	includePersons models.IncludeExtraDataType) ([]*models.Event, error) {
+
+	events, err := eventService.eventRepository.GetAll(includeApplications, includeCompanies, includePersons)
 	if err != nil {
 		return nil, err
 	}

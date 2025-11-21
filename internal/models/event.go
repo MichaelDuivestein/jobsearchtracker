@@ -8,13 +8,16 @@ import (
 )
 
 type Event struct {
-	ID          uuid.UUID
-	EventType   *EventType
-	Description *string
-	Notes       *string
-	EventDate   *time.Time
-	CreatedDate *time.Time
-	UpdatedDate *time.Time
+	ID           uuid.UUID
+	EventType    *EventType
+	Description  *string
+	Notes        *string
+	EventDate    *time.Time
+	CreatedDate  *time.Time
+	UpdatedDate  *time.Time
+	Applications *[]*Application
+	Companies    *[]*Company
+	Persons      *[]*Person
 }
 
 type CreateEvent struct {

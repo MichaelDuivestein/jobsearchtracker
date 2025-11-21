@@ -129,6 +129,62 @@ func TestGetEventById_ShouldReturnErrorIfIdIsNotUUID(t *testing.T) {
 	assert.Equal(t, "event ID is not a valid UUID\n", responseBodyString)
 }
 
+// -------- GetAllEvents tests: --------
+
+func TestGetAllEvents_ShouldReturnErrorIfIncludeApplicationsIsInvalid(t *testing.T) {
+	eventHandler := v1.NewEventHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/event/get/all?include_applications=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	eventHandler.GetAllEvents(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
+func TestGetAllEvents_ShouldReturnErrorIfIncludeCompaniesIsInvalid(t *testing.T) {
+	eventHandler := v1.NewEventHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/event/get/all?include_companies=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	eventHandler.GetAllEvents(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_companies. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
+func TestGetAllEvents_ShouldReturnErrorIfIncludePersonsIsInvalid(t *testing.T) {
+	eventHandler := v1.NewEventHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/event/get/all?include_persons=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	eventHandler.GetAllEvents(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_persons. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdateEvent tests: --------
 
 func TestUpdateEvent_ShouldRespondWithBadRequestStatus(t *testing.T) {

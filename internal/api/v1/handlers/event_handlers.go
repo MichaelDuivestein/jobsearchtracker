@@ -192,6 +192,15 @@ func (eventHandler *EventHandler) GetEventByID(writer http.ResponseWriter, reque
 //
 // @Summary Get all events
 // @Description Get all `event`s
+// @Description - include_applications=all: Returns `application`s with all fields
+// @Description - include_applications=ids: Returns `application`s with only `id`, `application_id`, and `recruiter_id`
+// @Description - include_applications=none: No `application` data included (default)
+// @Description - include_companies=all: Returns `company`s with all fields
+// @Description - include_companies=ids: Returns `company`s with only `id`
+// @Description - include_companies=none: No `company` data included (default)
+// @Description - include_persons=all: Returns `person`s with all fields
+// @Description - include_persons=ids: Returns `person`s with only `id`
+// @Description - include_persons=none: No `person` data included (default)
 // @Tags event
 // @Produce json
 // @Success 200 {array} responses.EventResponse
@@ -199,8 +208,53 @@ func (eventHandler *EventHandler) GetEventByID(writer http.ResponseWriter, reque
 // @Failure 500
 // @Router /v1/event/get/all [get]
 func (eventHandler *EventHandler) GetAllEvents(writer http.ResponseWriter, request *http.Request) {
+
+	query := request.URL.Query()
+
+	includeApplications, err := GetExtraDataTypeParam(query.Get("include_applications"))
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_applications param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
+	includeCompanies, err := GetExtraDataTypeParam(query.Get("include_companies"))
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_companies param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_companies. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
+	includePersons, err := GetExtraDataTypeParam(query.Get("include_persons"))
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_persons param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_persons. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	events, err := eventHandler.eventService.GetAllEvents()
+	events, err := eventHandler.eventService.GetAllEvents(
+		*includeApplications,
+		*includeCompanies,
+		*includePersons)
 	if err != nil {
 		errorMessage := "Internal service error while getting all events"
 		status := http.StatusInternalServerError

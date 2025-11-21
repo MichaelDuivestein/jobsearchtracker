@@ -477,6 +477,48 @@ func SetupEventRepositoryTestContainer(t *testing.T, config configPackage.Config
 		log.Fatal("Failed to provide eventRepository", err)
 	}
 
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationRepository {
+		return repositories.NewApplicationRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide ApplicationRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide CompanyRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.PersonRepository {
+		return repositories.NewPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide PersonRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.ApplicationEventRepository {
+		return repositories.NewApplicationEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide ApplicationEventRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyEventRepository {
+		return repositories.NewCompanyEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide CompanyEventRepository", err)
+	}
+
+	err = container.Provide(func(db *sql.DB) *repositories.EventPersonRepository {
+		return repositories.NewEventPersonRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide EventPersonRepository", err)
+	}
+
 	return container
 }
 

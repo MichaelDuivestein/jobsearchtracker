@@ -470,7 +470,7 @@ func TestGetAllPersons_ShouldReturnEmptyResponseIfNoPersonsInDatabase(t *testing
 	assert.Len(t, response, 0)
 }
 
-// -------- GetAll - Application tests: --------
+// -------- GetAllPersons - Applications tests: --------
 
 func TestGetAllPersons_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testing.T) {
 	personHandler,
@@ -813,9 +813,9 @@ func TestGetAllPersons_ShouldReturnNoApplicationsIfIncludeApplicationsIsSetToNon
 	assert.Nil(t, (response[0]).Applications)
 }
 
-// -------- GetAllPersons - companies tests: --------
+// -------- GetAllPersons - Companies tests: --------
 
-func TestGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
+func TestGetAllPersons_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
 	personHandler, _, companyRepository, _, _, _, companyPersonRepository, _ := setupPersonHandler(t)
 
 	// setup persons
@@ -1340,7 +1340,7 @@ func TestGetAllPersons_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *t
 	assert.Nil(t, response[2].Companies)
 }
 
-// -------- GetAllPersons - events tests: --------
+// -------- GetAllPersons - Events tests: --------
 
 func TestGetAllPersons_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *testing.T) {
 	personHandler, _, _, eventRepository, personRepository, _, _, eventPersonRepository := setupPersonHandler(t)

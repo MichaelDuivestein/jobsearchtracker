@@ -66,6 +66,9 @@ func NewEventDTOs(events []*models.Event) ([]*EventDTO, error) {
 
 type EventResponse struct {
 	EventDTO
+	Applications *[]*ApplicationDTO `json:"applications" extensions:"x-order=7"`
+	Companies    *[]*CompanyDTO     `json:"companies" extensions:"x-order=8"`
+	Persons      *[]*PersonDTO      `json:"events" extensions:"x-order=9"`
 }
 
 func NewEventResponse(eventModel *models.Event) (*EventResponse, error) {
@@ -79,8 +82,38 @@ func NewEventResponse(eventModel *models.Event) (*EventResponse, error) {
 		return nil, err
 	}
 
+	var applications []*ApplicationDTO
+	if eventModel.Applications != nil {
+		// can return InternalServerError
+		applications, err = NewApplicationDTOs(*eventModel.Applications)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var companies []*CompanyDTO
+	if eventModel.Companies != nil {
+		// can return InternalServerError
+		companies, err = NewCompanyDTOs(*eventModel.Companies)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var persons []*PersonDTO
+	if eventModel.Persons != nil {
+		// can return InternalServerError
+		persons, err = NewPersonDTOs(*eventModel.Persons)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	eventResponse := EventResponse{
-		EventDTO: *eventDto,
+		EventDTO:     *eventDto,
+		Applications: &applications,
+		Companies:    &companies,
+		Persons:      &persons,
 	}
 
 	return &eventResponse, nil

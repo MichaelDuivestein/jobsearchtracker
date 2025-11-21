@@ -208,6 +208,157 @@ func TestNewEventResponse_ShouldReturnInternalServiceErrorIfModelIsNil(t *testin
 	assert.Equal(t, internalServiceError.Error(), "internal service error: Error building response: Event is nil")
 }
 
+func TestNewEventResponse_ShouldHandleApplications(t *testing.T) {
+	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
+	application1Model := models.Application{
+		ID:                   uuid.New(),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Application 1 Job Title"),
+		JobAdURL:             testutil.ToPtr("Application 1 Job Ad URL"),
+		Country:              testutil.ToPtr("Application 1 Job Country"),
+		Area:                 testutil.ToPtr("Application 1 Job Area"),
+		RemoteStatusType:     &application1RemoteStatusType,
+		WeekdaysInOffice:     testutil.ToPtr(2),
+		EstimatedCycleTime:   testutil.ToPtr(30),
+		EstimatedCommuteTime: testutil.ToPtr(40),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+
+	application2Model := models.Application{
+		ID: uuid.New(),
+	}
+
+	applicationModels := []*models.Application{&application1Model, &application2Model}
+	model := models.Event{
+		ID:           uuid.New(),
+		Applications: &applicationModels,
+	}
+
+	response, err := NewEventResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID.String(), response.ID.String())
+	assert.NotNil(t, response.Applications)
+
+	assert.Len(t, *response.Applications, 2)
+
+	application1 := (*response.Applications)[0]
+	assert.Equal(t, application1Model.ID, application1.ID)
+	assert.Equal(t, application1Model.CompanyID, application1.CompanyID)
+	assert.Equal(t, application1Model.RecruiterID, application1.RecruiterID)
+	assert.Equal(t, application1Model.JobTitle, application1.JobTitle)
+	assert.Equal(t, application1Model.JobAdURL, application1.JobAdURL)
+	assert.Equal(t, application1Model.Country, application1.Country)
+	assert.Equal(t, application1Model.Area, application1.Area)
+	assert.Equal(t, application1Model.RemoteStatusType.String(), application1.RemoteStatusType.String())
+	assert.Equal(t, application1Model.WeekdaysInOffice, application1.WeekdaysInOffice)
+	assert.Equal(t, application1Model.EstimatedCycleTime, application1.EstimatedCycleTime)
+	assert.Equal(t, application1Model.EstimatedCommuteTime, application1.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.ApplicationDate, application1.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.CreatedDate, application1.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.UpdatedDate, application1.UpdatedDate)
+
+	application2 := (*response.Applications)[1]
+	assert.Equal(t, application2Model.ID, application2.ID)
+}
+
+func TestNewEventResponse_ShouldHandleCompanies(t *testing.T) {
+	var company1CompanyType models.CompanyType = models.CompanyTypeRecruiter
+	company1Model := models.Company{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Company1Name"),
+		CompanyType: &company1CompanyType,
+		Notes:       testutil.ToPtr("Company1Notes"),
+		LastContact: testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+
+	company2Model := models.Company{
+		ID: uuid.New(),
+	}
+
+	companyModels := []*models.Company{&company1Model, &company2Model}
+	model := models.Event{
+		ID:        uuid.New(),
+		Companies: &companyModels,
+	}
+
+	response, err := NewEventResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID.String(), response.ID.String())
+	assert.NotNil(t, response.Companies)
+
+	assert.Len(t, *response.Companies, 2)
+
+	company1 := (*response.Companies)[0]
+	assert.Equal(t, company1Model.ID, company1.ID)
+	assert.Equal(t, company1Model.Name, company1.Name)
+	assert.Equal(t, company1Model.CompanyType.String(), company1.CompanyType.String())
+	assert.Equal(t, company1Model.Notes, company1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, company1.LastContact, company1Model.LastContact)
+	testutil.AssertEqualFormattedDateTimes(t, company1.CreatedDate, company1Model.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, company1.UpdatedDate, company1Model.UpdatedDate)
+
+	company2 := (*response.Companies)[1]
+	assert.Equal(t, company2Model.ID, company2.ID)
+}
+
+func TestNewEventResponse_ShouldHandlePersons(t *testing.T) {
+
+	var personType models.PersonType = models.PersonTypeDeveloper
+	person1 := models.Person{
+		ID:          uuid.New(),
+		Name:        testutil.ToPtr("Person Name"),
+		PersonType:  &personType,
+		Email:       testutil.ToPtr("Person Email"),
+		Phone:       testutil.ToPtr("Person Phone"),
+		Notes:       testutil.ToPtr("Person Notes"),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
+		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 13)),
+	}
+
+	person2 := models.Person{
+		ID:          uuid.New(),
+		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 14)),
+	}
+
+	persons := []*models.Person{
+		&person1,
+		&person2,
+	}
+
+	model := models.Event{
+		ID:      uuid.New(),
+		Persons: &persons,
+	}
+
+	response, err := NewEventResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID, response.ID)
+	assert.NotNil(t, response.Persons)
+	assert.Len(t, *response.Persons, 2)
+
+	personDTO1 := (*response.Persons)[0]
+	assert.Equal(t, person1.ID, personDTO1.ID)
+	assert.Equal(t, person1.Name, personDTO1.Name)
+	assert.Equal(t, person1.PersonType.String(), personDTO1.PersonType.String())
+	assert.Equal(t, person1.Email, personDTO1.Email)
+	assert.Equal(t, person1.Phone, personDTO1.Phone)
+	assert.Equal(t, person1.Notes, personDTO1.Notes)
+	testutil.AssertEqualFormattedDateTimes(t, person1.CreatedDate, personDTO1.CreatedDate)
+
+	assert.Equal(t, person2.ID, (*response.Persons)[1].ID)
+}
+
 // -------- NewEventsResponse tests: --------
 
 func TestNewEventsResponse_ShouldWork(t *testing.T) {
