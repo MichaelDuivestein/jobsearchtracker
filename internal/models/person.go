@@ -8,16 +8,17 @@ import (
 )
 
 type Person struct {
-	ID          uuid.UUID
-	Name        *string
-	PersonType  *PersonType
-	Email       *string
-	Phone       *string
-	Notes       *string
-	CreatedDate *time.Time
-	UpdatedDate *time.Time
-	Companies   *[]*Company
-	Events      *[]*Event
+	ID           uuid.UUID
+	Name         *string
+	PersonType   *PersonType
+	Email        *string
+	Phone        *string
+	Notes        *string
+	CreatedDate  *time.Time
+	UpdatedDate  *time.Time
+	Companies    *[]*Company
+	Events       *[]*Event
+	Applications *[]*Application
 }
 
 type CreatePerson struct {

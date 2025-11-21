@@ -68,6 +68,76 @@ func TestDelete_ShouldReturnValidationErrorIfPersonIDIsNil(t *testing.T) {
 	assert.Equal(t, "validation error on field 'ID': ID is nil", validationError.Error())
 }
 
+// -------- buildApplicationsCoalesceAndJoin tests: --------
+
+func TestPersonRepositoryBuildApplicationsCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+	assert.Equal(t, "null \n", coalesce)
+	assert.Equal(t, "", join)
+}
+
+func TestPersonRepositoryBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	expectedJoin := `
+		LEFT JOIN application_person ap ON ap.person_id = p.id 
+		LEFT JOIN application a ON a.id = ap.application_id `
+	assert.Equal(t, expectedJoin, join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', a.id
+				) ORDER BY a.created_date DESC
+			) FILTER (WHERE a.id IS NOT NULL),
+			JSON_ARRAY()
+		) as applications
+		`
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+func TestPersonRepositoryBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllColumnsIncludeExtraDataTypeIsAll(t *testing.T) {
+	personRepository := NewPersonRepository(nil)
+
+	coalesce, join := personRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	expectedJoin := `
+		LEFT JOIN application_person ap ON ap.person_id = p.id 
+		LEFT JOIN application a ON a.id = ap.application_id `
+	assert.Equal(t, expectedJoin, join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', a.id,
+					'CompanyID', a.company_id,
+					'RecruiterID', a.recruiter_id,
+					'JobTitle', a.job_title,
+					'JobAdURL', a.job_ad_url,
+					'Country', a.country,
+					'Area', a.area,
+					'RemoteStatusType', a.remote_status_type,
+					'WeekdaysInOffice', a.weekdays_in_office,
+					'EstimatedCycleTime', a.estimated_cycle_time,
+					'EstimatedCommuteTime', a.estimated_commute_time,
+					'ApplicationDate', a.application_date,
+					'CreatedDate', a.created_date,
+					'UpdatedDate', a.updated_date
+				) ORDER BY a.created_date DESC
+			) FILTER (WHERE a.id IS NOT NULL),
+			JSON_ARRAY()
+		) as applications
+		`
+
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
 // -------- buildCompaniesCoalesceAndJoin tests: --------
 
 func TestPersonRepositoryBuildCompaniesCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {

@@ -338,6 +338,67 @@ func TestNewPersonResponse_ShouldHandleEvents(t *testing.T) {
 	assert.Equal(t, event2Model.ID, event2.ID)
 }
 
+func TestNewPersonResponse_ShouldHandleApplications(t *testing.T) {
+	var application1RemoteStatusType models.RemoteStatusType = models.RemoteStatusTypeHybrid
+	application1Model := models.Application{
+		ID:                   uuid.New(),
+		CompanyID:            testutil.ToPtr(uuid.New()),
+		RecruiterID:          testutil.ToPtr(uuid.New()),
+		JobTitle:             testutil.ToPtr("Application 1 Job Title"),
+		JobAdURL:             testutil.ToPtr("Application 1 Job Ad URL"),
+		Country:              testutil.ToPtr("Application 1 Job Country"),
+		Area:                 testutil.ToPtr("Application 1 Job Area"),
+		RemoteStatusType:     &application1RemoteStatusType,
+		WeekdaysInOffice:     testutil.ToPtr(2),
+		EstimatedCycleTime:   testutil.ToPtr(30),
+		EstimatedCommuteTime: testutil.ToPtr(40),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 1)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 2)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+	}
+
+	application2Model := models.Application{
+		ID: uuid.New(),
+	}
+
+	applicationModels := []*models.Application{&application1Model, &application2Model}
+	var personType models.PersonType = models.PersonTypeJobContact
+	model := models.Person{
+		ID:           uuid.New(),
+		Name:         testutil.ToPtr("PersonName"),
+		PersonType:   &personType,
+		Applications: &applicationModels,
+	}
+
+	response, err := NewPersonResponse(&model)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Equal(t, model.ID.String(), response.ID.String())
+	assert.NotNil(t, response.Applications)
+
+	assert.Len(t, *response.Applications, 2)
+
+	application1 := (*response.Applications)[0]
+	assert.Equal(t, application1Model.ID, application1.ID)
+	assert.Equal(t, application1Model.CompanyID, application1.CompanyID)
+	assert.Equal(t, application1Model.RecruiterID, application1.RecruiterID)
+	assert.Equal(t, application1Model.JobTitle, application1.JobTitle)
+	assert.Equal(t, application1Model.JobAdURL, application1.JobAdURL)
+	assert.Equal(t, application1Model.Country, application1.Country)
+	assert.Equal(t, application1Model.Area, application1.Area)
+	assert.Equal(t, application1Model.RemoteStatusType.String(), application1.RemoteStatusType.String())
+	assert.Equal(t, application1Model.WeekdaysInOffice, application1.WeekdaysInOffice)
+	assert.Equal(t, application1Model.EstimatedCycleTime, application1.EstimatedCycleTime)
+	assert.Equal(t, application1Model.EstimatedCommuteTime, application1.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.ApplicationDate, application1.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.CreatedDate, application1.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, application1Model.UpdatedDate, application1.UpdatedDate)
+
+	application2 := (*response.Applications)[1]
+	assert.Equal(t, application2Model.ID, application2.ID)
+}
+
 // -------- NewPersonsResponse tests: --------
 
 func TestNewPersonsResponse_ShouldWork(t *testing.T) {

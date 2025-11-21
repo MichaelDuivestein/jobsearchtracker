@@ -19,8 +19,10 @@ import (
 
 func setupPersonRepository(t *testing.T) (
 	*repositories.PersonRepository,
+	*repositories.ApplicationRepository,
 	*repositories.CompanyRepository,
 	*repositories.EventRepository,
+	*repositories.ApplicationPersonRepository,
 	*repositories.CompanyPersonRepository,
 	*repositories.EventPersonRepository) {
 
@@ -37,6 +39,12 @@ func setupPersonRepository(t *testing.T) (
 	})
 	assert.NoError(t, err)
 
+	var applicationRepository *repositories.ApplicationRepository
+	err = container.Invoke(func(repository *repositories.ApplicationRepository) {
+		applicationRepository = repository
+	})
+	assert.NoError(t, err)
+
 	var companyRepository *repositories.CompanyRepository
 	err = container.Invoke(func(repository *repositories.CompanyRepository) {
 		companyRepository = repository
@@ -46,6 +54,12 @@ func setupPersonRepository(t *testing.T) (
 	var eventRepository *repositories.EventRepository
 	err = container.Invoke(func(repository *repositories.EventRepository) {
 		eventRepository = repository
+	})
+	assert.NoError(t, err)
+
+	var applicationPersonRepository *repositories.ApplicationPersonRepository
+	err = container.Invoke(func(repository *repositories.ApplicationPersonRepository) {
+		applicationPersonRepository = repository
 	})
 	assert.NoError(t, err)
 
@@ -61,13 +75,19 @@ func setupPersonRepository(t *testing.T) (
 	})
 	assert.NoError(t, err)
 
-	return personRepository, companyRepository, eventRepository, companyPersonRepository, eventPersonRepository
+	return personRepository,
+		applicationRepository,
+		companyRepository,
+		eventRepository,
+		applicationPersonRepository,
+		companyPersonRepository,
+		eventPersonRepository
 }
 
 // -------- Create tests: --------
 
 func TestCreate_ShouldInsertPerson(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	person := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
@@ -95,7 +115,7 @@ func TestCreate_ShouldInsertPerson(t *testing.T) {
 }
 
 func TestCreate_ShouldInsertPersonWithMinimumRequiredFields(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	person := models.CreatePerson{
 		Name:       "Abc Def",
@@ -118,7 +138,7 @@ func TestCreate_ShouldInsertPersonWithMinimumRequiredFields(t *testing.T) {
 }
 
 func TestCreate_ShouldReturnConflictErrorOnDuplicatePersonId(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	id := uuid.New()
 
@@ -151,7 +171,7 @@ func TestCreate_ShouldReturnConflictErrorOnDuplicatePersonId(t *testing.T) {
 // -------- GetById tests: --------
 
 func TestGetById_ShouldGetPerson(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	personToInsert := models.CreatePerson{
 		ID:         testutil.ToPtr(uuid.New()),
@@ -170,7 +190,7 @@ func TestGetById_ShouldGetPerson(t *testing.T) {
 }
 
 func TestGetById_ShouldReturnNotFoundErrorIfPersonIDDoesNotExist(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	id := uuid.New()
 
@@ -188,7 +208,7 @@ func TestGetById_ShouldReturnNotFoundErrorIfPersonIDDoesNotExist(t *testing.T) {
 // -------- GetAllByName tests: --------
 
 func TestGetAllByName_ShouldReturnPerson(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	personToInsert := models.CreatePerson{
 		ID:         testutil.ToPtr(uuid.New()),
@@ -211,7 +231,7 @@ func TestGetAllByName_ShouldReturnPerson(t *testing.T) {
 }
 
 func TestGetAllByName_ShouldReturnNotFoundErrorIfPersonNameDoesNotExist(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	name := "Doesnt Exist"
 
@@ -228,7 +248,7 @@ func TestGetAllByName_ShouldReturnNotFoundErrorIfPersonNameDoesNotExist(t *testi
 }
 
 func TestGetAllByName_ShouldReturnMultiplePersonsWithSameNameSubstring(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	// insert some humans
 
@@ -277,7 +297,7 @@ func TestGetAllByName_ShouldReturnMultiplePersonsWithSameNameSubstring(t *testin
 // -------- GetAll - Base tests: --------
 
 func TestGetAll_ShouldReturnAllPersons(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	// add some humans
 
@@ -306,7 +326,10 @@ func TestGetAll_ShouldReturnAllPersons(t *testing.T) {
 	assert.NotNil(t, insertedPerson2)
 
 	// get all humans
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, persons)
 	assert.Len(t, persons, 2)
@@ -324,19 +347,294 @@ func TestGetAll_ShouldReturnAllPersons(t *testing.T) {
 }
 
 func TestGetAll_ShouldReturnNilIfNoPersonsInDatabase(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.Nil(t, persons)
+}
+
+// -------- GetAll - Application tests: --------
+
+func TestPersonRepositoryGetAll_ShouldReturnApplicationsIfIncludeApplicationsIsSetToAll(t *testing.T) {
+	personRepository, applicationRepository, companyRepository, _, applicationPersonRepository, _, _ := setupPersonRepository(t)
+
+	// create persons
+
+	person1ID := repositoryhelpers.CreatePerson(
+		t,
+		personRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+
+	person2ID := repositoryhelpers.CreatePerson(
+		t,
+		personRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 2))).ID
+
+	// add two companies
+
+	company1ID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	company2ID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// add two applications
+
+	createApplication1 := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            &company1ID,
+		RecruiterID:          &company2ID,
+		JobTitle:             testutil.ToPtr("Application1JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application1JobAdURL"),
+		Country:              testutil.ToPtr("Application1Country"),
+		Area:                 testutil.ToPtr("Application1Area"),
+		RemoteStatusType:     models.RemoteStatusTypeHybrid,
+		WeekdaysInOffice:     testutil.ToPtr(0),
+		EstimatedCycleTime:   testutil.ToPtr(1),
+		EstimatedCommuteTime: testutil.ToPtr(2),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+	}
+	_, err := applicationRepository.Create(&createApplication1)
+	assert.NoError(t, err)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&company1ID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+
+	// associate persons and applications
+
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, *createApplication1.ID, person1ID, nil)
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, person1ID, nil)
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, person2ID, nil)
+
+	// get all persons
+
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 2)
+
+	assert.Equal(t, person1ID, persons[0].ID)
+	assert.Len(t, *(persons[0]).Applications, 2)
+
+	assert.Equal(t, application2ID, (*(*persons[0]).Applications)[0].ID)
+
+	person1Application2 := (*(*persons[0]).Applications)[1]
+	assert.Equal(t, *createApplication1.ID, person1Application2.ID)
+	assert.Equal(t, createApplication1.CompanyID, person1Application2.CompanyID)
+	assert.Equal(t, createApplication1.RecruiterID, person1Application2.RecruiterID)
+	assert.Equal(t, createApplication1.JobTitle, person1Application2.JobTitle)
+	assert.Equal(t, createApplication1.JobAdURL, person1Application2.JobAdURL)
+	assert.Equal(t, createApplication1.Country, person1Application2.Country)
+	assert.Equal(t, createApplication1.Area, person1Application2.Area)
+	assert.Equal(t, createApplication1.RemoteStatusType.String(), person1Application2.RemoteStatusType.String())
+	assert.Equal(t, createApplication1.WeekdaysInOffice, person1Application2.WeekdaysInOffice)
+	assert.Equal(t, createApplication1.EstimatedCycleTime, person1Application2.EstimatedCycleTime)
+	assert.Equal(t, createApplication1.EstimatedCommuteTime, person1Application2.EstimatedCommuteTime)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.ApplicationDate, person1Application2.ApplicationDate)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.CreatedDate, person1Application2.CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, createApplication1.UpdatedDate, person1Application2.UpdatedDate)
+
+	assert.Len(t, *(persons[1]).Applications, 1)
+	assert.Equal(t, application2ID, (*(*persons[1]).Applications)[0].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnNoApplicationsIfIncludeApplicationsIsSetToAllAndThereAreNoApplications(t *testing.T) {
+	personRepository, applicationRepository, companyRepository, _, _, _, _ := setupPersonRepository(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// add an application
+
+	repositoryhelpers.CreateApplication(t, applicationRepository, nil, &companyID, nil, nil)
+
+	// get all persons
+
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 1)
+	assert.Equal(t, personID, persons[0].ID)
+	assert.Nil(t, persons[0].Applications)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnApplicationIDsIfIncludeApplicationsIsSetToIDs(t *testing.T) {
+	personRepository, applicationRepository, companyRepository, _, applicationPersonRepository, _, _ := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// add two applications
+
+	createApplication1 := models.CreateApplication{
+		ID:                   testutil.ToPtr(uuid.New()),
+		CompanyID:            &companyID,
+		RecruiterID:          &companyID,
+		JobTitle:             testutil.ToPtr("Application1JobTitle"),
+		JobAdURL:             testutil.ToPtr("Application1JobAdURL"),
+		Country:              testutil.ToPtr("Application1Country"),
+		Area:                 testutil.ToPtr("Application1Area"),
+		RemoteStatusType:     models.RemoteStatusTypeHybrid,
+		WeekdaysInOffice:     testutil.ToPtr(0),
+		EstimatedCycleTime:   testutil.ToPtr(1),
+		EstimatedCommuteTime: testutil.ToPtr(2),
+		ApplicationDate:      testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
+		CreatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 4)),
+		UpdatedDate:          testutil.ToPtr(time.Now().AddDate(0, 0, 5)),
+	}
+	_, err := applicationRepository.Create(&createApplication1)
+	assert.NoError(t, err)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+
+	// associate person and applications
+
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, *createApplication1.ID, personID, nil)
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// get all persons
+
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 1)
+
+	assert.Equal(t, personID, persons[0].ID)
+	assert.Len(t, *(persons[0]).Applications, 2)
+
+	assert.Equal(t, application2ID, (*(*persons[0]).Applications)[0].ID)
+
+	person1Application2 := (*(*persons[0]).Applications)[1]
+	assert.Equal(t, *createApplication1.ID, person1Application2.ID)
+	assert.Nil(t, person1Application2.CompanyID)
+	assert.Nil(t, person1Application2.RecruiterID)
+	assert.Nil(t, person1Application2.JobTitle)
+	assert.Nil(t, person1Application2.JobAdURL)
+	assert.Nil(t, person1Application2.Country)
+	assert.Nil(t, person1Application2.Area)
+	assert.Nil(t, person1Application2.RemoteStatusType)
+	assert.Nil(t, person1Application2.WeekdaysInOffice)
+	assert.Nil(t, person1Application2.EstimatedCycleTime)
+	assert.Nil(t, person1Application2.EstimatedCommuteTime)
+	assert.Nil(t, person1Application2.ApplicationDate)
+	assert.Nil(t, person1Application2.CreatedDate)
+	assert.Nil(t, person1Application2.UpdatedDate)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnNoApplicationsIfIncludeApplicationsIsSetToIDsAndThereAreNoApplications(t *testing.T) {
+	personRepository, applicationRepository, companyRepository, _, _, _, _ := setupPersonRepository(t)
+
+	// create person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// add an application
+
+	repositoryhelpers.CreateApplication(t, applicationRepository, nil, &companyID, nil, nil)
+
+	// get all persons
+
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 1)
+	assert.Equal(t, personID, persons[0].ID)
+	assert.Nil(t, persons[0].Applications)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnNoApplicationsIfIncludeApplicationsIsSetToNone(t *testing.T) {
+	personRepository, applicationRepository, companyRepository, _, applicationPersonRepository, _, _ := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// add a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// add two applications
+
+	applicationID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+
+	// associate person and applications
+
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, applicationID, personID, nil)
+
+	// get all persons
+
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, persons)
+	assert.Len(t, persons, 1)
+
+	assert.Equal(t, personID, persons[0].ID)
+	assert.Nil(t, (persons[0]).Applications)
 }
 
 // -------- GetAll - Company tests: --------
 
 func TestPersonRepositoryGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAll(t *testing.T) {
-	personRepository, companyRepository, _, companyPersonRepository, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, companyPersonRepository, _ := setupPersonRepository(t)
 
 	// setup persons
+
 	person1 := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person1",
@@ -411,7 +709,10 @@ func TestPersonRepositoryGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAl
 
 	// get all persons
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeAll, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, persons)
@@ -441,9 +742,10 @@ func TestPersonRepositoryGetAll_ShouldReturnCompaniesIfIncludeCompaniesIsSetToAl
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToAllAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
-	personRepository, companyRepository, _, _, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, _, _ := setupPersonRepository(t)
 
 	// setup persons
+
 	person1 := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person1",
@@ -495,7 +797,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 
 	// get all persons
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeAll, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, persons)
@@ -515,9 +820,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToIDs(t *testing.T) {
-	personRepository, companyRepository, _, companyPersonRepository, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, companyPersonRepository, _ := setupPersonRepository(t)
 
 	// setup persons
+
 	person1 := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person1",
@@ -592,7 +898,10 @@ func TestPersonRepositoryGetAll_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToI
 
 	// get all persons
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, persons)
@@ -619,9 +928,10 @@ func TestPersonRepositoryGetAll_ShouldReturnCompanyIDsIfIncludeCompaniesIsSetToI
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToIDsAndThereAreNoCompanyPersonsInRepository(t *testing.T) {
-	personRepository, companyRepository, _, _, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, _, _ := setupPersonRepository(t)
 
 	// setup persons
+
 	person1 := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person1",
@@ -673,7 +983,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 
 	// get all persons
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, persons)
@@ -693,9 +1006,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetToNone(t *testing.T) {
-	personRepository, companyRepository, _, companyPersonRepository, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, companyPersonRepository, _ := setupPersonRepository(t)
 
 	// setup persons
+
 	person1 := models.CreatePerson{
 		ID:          testutil.ToPtr(uuid.New()),
 		Name:        "Person1",
@@ -770,7 +1084,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 
 	// get all persons
 
-	persons, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeNone)
+	persons, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, persons)
@@ -789,7 +1106,7 @@ func TestPersonRepositoryGetAll_ShouldReturnNoCompaniesIfIncludeCompaniesIsSetTo
 // -------- GetAll - events tests: --------
 
 func TestPersonRepositoryGetAll_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *testing.T) {
-	personRepository, _, eventRepository, _, eventPersonRepository := setupPersonRepository(t)
+	personRepository, _, _, eventRepository, _, _, eventPersonRepository := setupPersonRepository(t)
 
 	// create a person
 
@@ -823,7 +1140,10 @@ func TestPersonRepositoryGetAll_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *t
 
 	// get all persons
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeAll)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -847,7 +1167,7 @@ func TestPersonRepositoryGetAll_ShouldReturnEventsIfIncludeEventsIsSetToAll(t *t
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToAllAndThereAreNoEventPersonsInRepository(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	// create a person
 
@@ -855,7 +1175,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToAllAnd
 
 	// get all persons
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeAll)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeAll,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -867,7 +1190,7 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToAllAnd
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnEventIDsIfIncludeEventsIsSetToIds(t *testing.T) {
-	personRepository, _, eventRepository, _, eventPersonRepository := setupPersonRepository(t)
+	personRepository, _, _, eventRepository, _, _, eventPersonRepository := setupPersonRepository(t)
 
 	// create a person
 
@@ -901,7 +1224,10 @@ func TestPersonRepositoryGetAll_ShouldReturnEventIDsIfIncludeEventsIsSetToIds(t 
 
 	// get all persons
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -925,7 +1251,7 @@ func TestPersonRepositoryGetAll_ShouldReturnEventIDsIfIncludeEventsIsSetToIds(t 
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoEventIDsIfIncludeEventsIsSetToIDsAndThereAreNoEventPersonsInRepository(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	// create a person
 
@@ -933,7 +1259,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventIDsIfIncludeEventsIsSetToIDsA
 
 	// get all persons
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -945,7 +1274,7 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventIDsIfIncludeEventsIsSetToIDsA
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToNone(t *testing.T) {
-	personRepository, _, eventRepository, _, eventPersonRepository := setupPersonRepository(t)
+	personRepository, _, _, eventRepository, _, _, eventPersonRepository := setupPersonRepository(t)
 
 	// create a person
 
@@ -966,7 +1295,10 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToNone(t
 
 	// get all persons
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeNone)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, results)
@@ -979,8 +1311,54 @@ func TestPersonRepositoryGetAll_ShouldReturnNoEventsIfIncludeEventsIsSetToNone(t
 
 // -------- GetAll - combined objects tests: --------
 
+func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneApplicationIsSharedBetweenTwoPersons(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		_,
+		applicationPersonRepository,
+		_,
+		_ := setupPersonRepository(t)
+
+	// create two persons
+
+	person1ID := repositoryhelpers.CreatePerson(t,
+		personRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+
+	person2ID := repositoryhelpers.CreatePerson(t,
+		personRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+
+	// create a company
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// create an application and associate it to both persons
+	applicationID := repositoryhelpers.CreateApplication(t, applicationRepository, nil, &companyID, nil, nil).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, applicationID, person1ID, nil)
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, applicationID, person2ID, nil)
+
+	// ensure that two companies are returned
+
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 2)
+
+	assert.Equal(t, person2ID, results[0].ID)
+	assert.Len(t, *results[0].Applications, 1)
+
+	assert.Equal(t, person1ID, results[1].ID)
+	assert.Len(t, *results[1].Applications, 1)
+}
+
 func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneCompanyIsSharedBetweenTwoPersons(t *testing.T) {
-	personRepository, companyRepository, _, companyPersonRepository, _ := setupPersonRepository(t)
+	personRepository, _, companyRepository, _, _, companyPersonRepository, _ := setupPersonRepository(t)
 
 	// create two persons
 
@@ -1002,7 +1380,10 @@ func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneCompanyIsSharedBe
 
 	// ensure that two companies are returned
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeNone)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Len(t, results, 2)
@@ -1015,7 +1396,7 @@ func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneCompanyIsSharedBe
 }
 
 func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneEventIsSharedBetweenTwoPersons(t *testing.T) {
-	personRepository, _, eventRepository, _, eventPersonRepository := setupPersonRepository(t)
+	personRepository, _, _, eventRepository, _, _, eventPersonRepository := setupPersonRepository(t)
 
 	// create two persons
 
@@ -1037,7 +1418,10 @@ func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneEventIsSharedBetw
 
 	// ensure that two companies are returned
 
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeNone, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Len(t, results, 2)
@@ -1049,10 +1433,360 @@ func TestPersonRepositoryGetAll_ShouldReturnTwoPersonsEvenIfOneEventIsSharedBetw
 	assert.Len(t, *results[1].Events, 1)
 }
 
-func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneCompanyAndTwoEvents(t *testing.T) {
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneApplicationAndTwoCompanies(t *testing.T) {
 	personRepository,
+		applicationRepository,
+		companyRepository,
+		_,
+		applicationPersonRepository,
+		companyPersonRepository,
+		_ := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create two companies and associate them to the person
+	company1ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company1ID, personID, nil)
+
+	company2ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company2ID, personID, nil)
+
+	// create an application and associate it to the person
+	applicationID := repositoryhelpers.CreateApplication(t, applicationRepository, nil, &company1ID, nil, nil).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, applicationID, personID, nil)
+
+	// Ensure that the person is returned with one company and two companies
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 1)
+
+	assert.Len(t, *results[0].Companies, 2)
+	assert.Equal(t, company2ID, (*results[0].Companies)[0].ID)
+	assert.Equal(t, company1ID, (*results[0].Companies)[1].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoApplicationsAndOneCompany(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		_,
+		applicationPersonRepository,
+		companyPersonRepository,
+		_ := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create a company and associate it to the person
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, companyID, personID, nil)
+
+	// create two applications and associate them to the person
+	application1ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application1ID, personID, nil)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// Ensure that the person is returned with one company and two companies
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 2)
+	assert.Equal(t, application1ID, (*results[0].Applications)[0].ID)
+	assert.Equal(t, application2ID, (*results[0].Applications)[1].ID)
+
+	assert.Len(t, *results[0].Companies, 1)
+	assert.Equal(t, companyID, (*results[0].Companies)[0].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoApplicationsAndTwoCompanies(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		_,
+		applicationPersonRepository,
+		companyPersonRepository,
+		_ := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create two companies and associate them to the person
+	company1ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company1ID, personID, nil)
+
+	company2ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company2ID, personID, nil)
+
+	// create two applications and associate them to the person
+	application1ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&company2ID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application1ID, personID, nil)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&company1ID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// Ensure that the person is returned with one company and two companies
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 2)
+	assert.Equal(t, application1ID, (*results[0].Applications)[0].ID)
+	assert.Equal(t, application2ID, (*results[0].Applications)[1].ID)
+
+	assert.Len(t, *results[0].Companies, 2)
+	assert.Equal(t, company2ID, (*results[0].Companies)[0].ID)
+	assert.Equal(t, company1ID, (*results[0].Companies)[1].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneApplicationAndTwoEvents(t *testing.T) {
+	personRepository,
+		applicationRepository,
 		companyRepository,
 		eventRepository,
+		applicationPersonRepository,
+		_,
+		eventPersonRepository := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// create an application and associate it to the person
+	applicationID := repositoryhelpers.CreateApplication(t, applicationRepository, nil, &companyID, nil, nil).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, applicationID, personID, nil)
+
+	// create two events and associate them to the person
+	event1ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event1ID, personID, nil)
+
+	event2ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
+
+	// Ensure that the person is returned with one company and two events
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 1)
+
+	assert.Len(t, *results[0].Events, 2)
+	assert.Equal(t, event2ID, (*results[0].Events)[0].ID)
+	assert.Equal(t, event1ID, (*results[0].Events)[1].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoApplicationsAndOneEvent(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		eventRepository,
+		applicationPersonRepository,
+		_,
+		eventPersonRepository := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// create two applications and associate them to the person
+	application1ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application1ID, personID, nil)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// create an event and associate it to the person
+	eventID := repositoryhelpers.CreateEvent(t, eventRepository, nil, nil, nil).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, eventID, personID, nil)
+
+	// Ensure that the person is returned with one company and two events
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 2)
+	assert.Equal(t, application1ID, (*results[0].Applications)[0].ID)
+	assert.Equal(t, application2ID, (*results[0].Applications)[1].ID)
+
+	assert.Len(t, *results[0].Events, 1)
+	assert.Equal(t, eventID, (*results[0].Events)[0].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoApplicationsAndTwoEvents(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		eventRepository,
+		applicationPersonRepository,
+		_,
+		eventPersonRepository := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create a company
+
+	companyID := repositoryhelpers.CreateCompany(t, companyRepository, nil, nil).ID
+
+	// create two applications and associate them to the person
+	application1ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application1ID, personID, nil)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&companyID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// create two events and associate them to the person
+	event1ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event1ID, personID, nil)
+
+	event2ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
+
+	// Ensure that the person is returned with one company and two events
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeNone,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 2)
+	assert.Equal(t, application1ID, (*results[0].Applications)[0].ID)
+	assert.Equal(t, application2ID, (*results[0].Applications)[1].ID)
+
+	assert.Len(t, *results[0].Events, 2)
+	assert.Equal(t, event2ID, (*results[0].Events)[0].ID)
+	assert.Equal(t, event1ID, (*results[0].Events)[1].ID)
+}
+
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneCompanyAndTwoEvents(t *testing.T) {
+	personRepository,
+		_,
+		companyRepository,
+		eventRepository,
+		_,
 		companyPersonRepository,
 		eventPersonRepository := setupPersonRepository(t)
 
@@ -1084,7 +1818,10 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneCompanyAndTwoEvents(t *
 	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
 
 	// Ensure that the person is returned with one company and two events
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Len(t, results, 1)
@@ -1098,8 +1835,10 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithOneCompanyAndTwoEvents(t *
 
 func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndOneEvent(t *testing.T) {
 	personRepository,
+		_,
 		companyRepository,
 		eventRepository,
+		_,
 		companyPersonRepository,
 		eventPersonRepository := setupPersonRepository(t)
 
@@ -1129,7 +1868,10 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndOneEvent(t 
 	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, eventID, personID, nil)
 
 	// Ensure that the person is returned with one company and two events
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Len(t, results, 1)
@@ -1141,10 +1883,12 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndOneEvent(t 
 	assert.Len(t, *results[0].Events, 1)
 }
 
-func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndTwpoEvents(t *testing.T) {
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndTwoEvents(t *testing.T) {
 	personRepository,
+		_,
 		companyRepository,
 		eventRepository,
+		_,
 		companyPersonRepository,
 		eventPersonRepository := setupPersonRepository(t)
 
@@ -1187,7 +1931,10 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndTwpoEvents(
 	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
 
 	// Ensure that the person is returned with one company and two events
-	results, err := personRepository.GetAll(models.IncludeExtraDataTypeIDs, models.IncludeExtraDataTypeIDs)
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeNone)
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Len(t, results, 1)
@@ -1201,10 +1948,99 @@ func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoCompaniesAndTwpoEvents(
 	assert.Equal(t, event1ID, (*results[0].Events)[1].ID)
 }
 
+func TestPersonRepositoryGetAll_ShouldReturnPersonWithTwoApplicationsAndTwoCompaniesAndTwoEvents(t *testing.T) {
+	personRepository,
+		applicationRepository,
+		companyRepository,
+		eventRepository,
+		applicationPersonRepository,
+		companyPersonRepository,
+		eventPersonRepository := setupPersonRepository(t)
+
+	// create a person
+
+	personID := repositoryhelpers.CreatePerson(t, personRepository, nil, nil).ID
+
+	// create two companies and associate them to the person
+
+	company1ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 2))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company1ID, personID, nil)
+
+	company2ID := repositoryhelpers.CreateCompany(
+		t,
+		companyRepository,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateCompanyPerson(t, companyPersonRepository, company2ID, personID, nil)
+
+	// create two applications and associate them to the person
+	application1ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&company1ID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application1ID, personID, nil)
+
+	application2ID := repositoryhelpers.CreateApplication(
+		t,
+		applicationRepository,
+		nil,
+		&company1ID,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 3))).ID
+	repositoryhelpers.AssociateApplicationPerson(t, applicationPersonRepository, application2ID, personID, nil)
+
+	// create two events and associate them to the person
+
+	event1ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 4))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event1ID, personID, nil)
+
+	event2ID := repositoryhelpers.CreateEvent(
+		t,
+		eventRepository,
+		nil,
+		nil,
+		testutil.ToPtr(time.Now().AddDate(0, 0, 5))).ID
+	repositoryhelpers.AssociateEventPerson(t, eventPersonRepository, event2ID, personID, nil)
+
+	// Ensure that the person is returned with one company and two events
+
+	results, err := personRepository.GetAll(
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs,
+		models.IncludeExtraDataTypeIDs)
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+	assert.Len(t, results, 1)
+
+	assert.Len(t, *results[0].Applications, 2)
+	assert.Equal(t, application1ID, (*results[0].Applications)[0].ID)
+	assert.Equal(t, application2ID, (*results[0].Applications)[1].ID)
+
+	assert.Len(t, *results[0].Companies, 2)
+	assert.Equal(t, company2ID, (*results[0].Companies)[0].ID)
+	assert.Equal(t, company1ID, (*results[0].Companies)[1].ID)
+
+	assert.Len(t, *results[0].Events, 2)
+	assert.Equal(t, event2ID, (*results[0].Events)[0].ID)
+	assert.Equal(t, event1ID, (*results[0].Events)[1].ID)
+}
+
 // -------- Update tests: --------
 
 func TestUpdate_ShouldUpdatePerson(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	// create a person
 	id := uuid.New()
@@ -1248,7 +2084,7 @@ func TestUpdate_ShouldUpdatePerson(t *testing.T) {
 }
 
 func TestUpdate_ShouldNotReturnErrorIfPersonDoesNotExist(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	id := uuid.New()
 	name := "Another Name"
@@ -1265,7 +2101,7 @@ func TestUpdate_ShouldNotReturnErrorIfPersonDoesNotExist(t *testing.T) {
 // -------- Delete tests: --------
 
 func TestDelete_ShouldDeletePerson(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	id := uuid.New()
 	personToAdd := models.CreatePerson{
@@ -1285,7 +2121,7 @@ func TestDelete_ShouldDeletePerson(t *testing.T) {
 }
 
 func TestDelete_ShouldReturnNotFoundErrorIfPersonIdDoesNotExist(t *testing.T) {
-	personRepository, _, _, _, _ := setupPersonRepository(t)
+	personRepository, _, _, _, _, _, _ := setupPersonRepository(t)
 
 	id := uuid.New()
 	err := personRepository.Delete(&id)
