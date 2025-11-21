@@ -74,6 +74,7 @@ type CompanyResponse struct {
 	CompanyDTO
 	Applications *[]*ApplicationDTO `json:"applications" extensions:"x-order=7"`
 	Persons      *[]*PersonDTO      `json:"persons" extensions:"x-order=8"`
+	Events       *[]*EventDTO       `json:"events" extensions:"x-order=9"`
 }
 
 // NewCompanyResponse can return InternalServiceError
@@ -107,10 +108,20 @@ func NewCompanyResponse(companyModel *models.Company) (*CompanyResponse, error) 
 		}
 	}
 
+	var events []*EventDTO = nil
+	if companyModel.Events != nil {
+		// can return InternalServiceError
+		events, err = NewEventDTOs(*companyModel.Events)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	companyResponse := CompanyResponse{
 		CompanyDTO:   *companyDTO,
 		Applications: &applicationDTOs,
 		Persons:      &persons,
+		Events:       &events,
 	}
 
 	return &companyResponse, nil

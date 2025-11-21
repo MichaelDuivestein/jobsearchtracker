@@ -278,31 +278,30 @@ func TestNewCompanyResponse_ShouldHandleApplications(t *testing.T) {
 	testutil.AssertEqualFormattedDateTimes(t, application2.UpdatedDate, returnedApplication2.UpdatedDate)
 }
 
-func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
-	person1 := models.Person{
+func TestNewCompanyResponse_ShouldHandleEvents(t *testing.T) {
+	event1 := models.Event{
 		ID: uuid.New(),
 	}
 
-	var person2Type models.PersonType = models.PersonTypeHR
-	person2 := models.Person{
+	var event2Type models.EventType = models.EventTypeApplied
+	event2 := models.Event{
 		ID:          uuid.New(),
-		Name:        testutil.ToPtr("Person2Name"),
-		PersonType:  &person2Type,
-		Email:       testutil.ToPtr("Person2Email"),
-		Phone:       testutil.ToPtr("Person2Phone"),
-		Notes:       testutil.ToPtr("Person2Notes"),
+		EventType:   &event2Type,
+		Description: testutil.ToPtr("Event2Description"),
+		Notes:       testutil.ToPtr("Event2Notes"),
+		EventDate:   testutil.ToPtr(time.Now().AddDate(0, 0, 3)),
 		CreatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 7)),
 		UpdatedDate: testutil.ToPtr(time.Now().AddDate(0, 0, 12)),
 	}
 
-	persons := []*models.Person{
-		&person1,
-		&person2,
+	events := []*models.Event{
+		&event1,
+		&event2,
 	}
 
 	model := models.Company{
-		ID:      uuid.New(),
-		Persons: &persons,
+		ID:     uuid.New(),
+		Events: &events,
 	}
 
 	response, err := NewCompanyResponse(&model)
@@ -310,20 +309,20 @@ func TestNewCompanyResponse_ShouldHandlePersons(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.Equal(t, model.ID, response.ID)
-	assert.Len(t, *response.Persons, 2)
+	assert.Len(t, *response.Events, 2)
 
-	assert.Equal(t, person1.ID, (*response.Persons)[0].ID)
+	assert.Equal(t, event1.ID, (*response.Events)[0].ID)
 
-	assert.Equal(t, person2.ID, (*response.Persons)[1].ID)
-	assert.Equal(t, person2.Name, (*response.Persons)[1].Name)
-	assert.Equal(t, person2.PersonType.String(), (*response.Persons)[1].PersonType.String())
-	assert.Equal(t, person2.Email, (*response.Persons)[1].Email)
-	assert.Equal(t, person2.Phone, (*response.Persons)[1].Phone)
-	assert.Equal(t, person2.Notes, (*response.Persons)[1].Notes)
-	testutil.AssertEqualFormattedDateTimes(t, person2.CreatedDate, (*response.Persons)[1].CreatedDate)
+	assert.Equal(t, event2.ID, (*response.Events)[1].ID)
+	assert.Equal(t, event2.EventType.String(), (*response.Events)[1].EventType.String())
+	assert.Equal(t, event2.Description, (*response.Events)[1].Description)
+	assert.Equal(t, event2.Notes, (*response.Events)[1].Notes)
+	testutil.AssertEqualFormattedDateTimes(t, event2.EventDate, (*response.Events)[1].EventDate)
+	testutil.AssertEqualFormattedDateTimes(t, event2.CreatedDate, (*response.Events)[1].CreatedDate)
+	testutil.AssertEqualFormattedDateTimes(t, event2.UpdatedDate, (*response.Events)[1].UpdatedDate)
 }
 
-func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
+func TestNewCompanyResponse_ShouldHandleApplicationsAndEventsAndPersons(t *testing.T) {
 	companyId := uuid.New()
 
 	application1 := models.Application{
@@ -338,6 +337,21 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 	applications := []*models.Application{
 		&application1,
 		&application2,
+	}
+
+	event1ID := uuid.New()
+	event1 := models.Event{
+		ID: event1ID,
+	}
+
+	event2ID := uuid.New()
+	event2 := models.Event{
+		ID: event2ID,
+	}
+
+	events := []*models.Event{
+		&event1,
+		&event2,
 	}
 
 	person1ID := uuid.New()
@@ -359,6 +373,7 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 		ID:           companyId,
 		Applications: &applications,
 		Persons:      &persons,
+		Events:       &events,
 	}
 
 	response, err := NewCompanyResponse(&model)
@@ -377,6 +392,9 @@ func TestNewCompanyResponse_ShouldHandleApplicationsAndPersons(t *testing.T) {
 	assert.Equal(t, application2.ID, application.ID)
 	assert.Nil(t, application.CompanyID)
 	assert.Equal(t, companyId, *application.RecruiterID)
+
+	assert.Equal(t, event1ID, (*response.Events)[0].ID)
+	assert.Equal(t, event2ID, (*response.Events)[1].ID)
 
 	assert.Equal(t, person1ID, (*response.Persons)[0].ID)
 	assert.Equal(t, person2ID, (*response.Persons)[1].ID)

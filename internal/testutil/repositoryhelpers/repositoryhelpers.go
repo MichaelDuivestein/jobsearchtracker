@@ -71,6 +71,25 @@ func AssociateApplicationPerson(
 	return associatedApplicationPerson
 }
 
+func AssociateCompanyEvent(
+	t *testing.T,
+	repository *repositories.CompanyEventRepository,
+	companyID uuid.UUID,
+	eventID uuid.UUID,
+	createdDate *time.Time) *models.CompanyEvent {
+
+	model := models.AssociateCompanyEvent{
+		CompanyID:   companyID,
+		EventID:     eventID,
+		CreatedDate: createdDate,
+	}
+
+	associatedCompanyEvent, err := repository.AssociateCompanyEvent(&model)
+	assert.NoError(t, err)
+
+	return associatedCompanyEvent
+}
+
 func AssociateCompanyPerson(
 	t *testing.T,
 	repository *repositories.CompanyPersonRepository,

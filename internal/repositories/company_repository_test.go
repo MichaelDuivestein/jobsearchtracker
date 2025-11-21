@@ -32,9 +32,8 @@ func TestCompanyRepositoryBuildApplicationsCoalesceAndJoin_ShouldReturnNullTextA
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildApplicationsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
-	assert.Equal(t, "", coalesce)
+	assert.Equal(t, "null \n", coalesce)
 	assert.Equal(t, "", join)
-
 }
 
 func TestCompanyRepositoryBuildApplicationsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
@@ -94,13 +93,74 @@ func TestCompanyRepositoryBuildApplicationsCoalesceAndJoin_ShouldBuildWithAllCol
 	assert.Equal(t, expectedCoalesce, coalesce)
 }
 
+// -------- buildEventsCoalesceAndJoin tests: --------
+
+func TestCompanyRepositoryBuildEventsCoalesceAndJoin_ShouldNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
+	assert.Equal(t, "null \n", coalesce)
+	assert.Equal(t, "", join)
+}
+
+func TestCompanyRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithOnlyIDsIfIncludeExtraDataTypeIsIDs(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeIDs)
+
+	assert.Equal(
+		t,
+		"LEFT JOIN company_event ce ON (ce.company_id = c.id)\n\t\tLEFT JOIN event e ON (ce.event_id = e.id)\n",
+		join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events
+`
+
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
+func TestCompanyRepositoryBuildEventsCoalesceAndJoin_ShouldBuildWithAllColumnsIncludeExtraDataTypeIsAll(t *testing.T) {
+	companyRepository := NewCompanyRepository(nil)
+
+	coalesce, join := companyRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeAll)
+
+	assert.Equal(t, "LEFT JOIN company_event ce ON (ce.company_id = c.id)\n\t\tLEFT JOIN event e ON (ce.event_id = e.id)\n", join)
+
+	expectedCoalesce := `
+		COALESCE(
+			JSON_GROUP_ARRAY(
+				DISTINCT JSON_OBJECT(
+					'ID', e.id,
+					'EventType', e.event_type,
+					'Description', e.description,
+					'Notes', e.notes,
+					'EventDate', e.event_date,
+					'CreatedDate', e.created_date,
+					'UpdatedDate', e.updated_date
+				) ORDER BY e.event_date DESC
+			) FILTER (WHERE e.id IS NOT NULL),
+			JSON_ARRAY()
+		) as events
+`
+
+	assert.Equal(t, expectedCoalesce, coalesce)
+}
+
 // -------- buildPersonsCoalesceAndJoin tests: --------
 
 func TestCompanyRepositoryBuildPersonsCoalesceAndJoin_ShouldNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	companyRepository := NewCompanyRepository(nil)
 
 	coalesce, join := companyRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
-	assert.Equal(t, "", coalesce)
+	assert.Equal(t, "null \n", coalesce)
 	assert.Equal(t, "", join)
 
 }
