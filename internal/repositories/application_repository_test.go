@@ -109,7 +109,7 @@ func TestBuildRecruiterCoalesceAndJoin_ShouldBuildWithAllColumnsIfIncludeExtraDa
 
 // -------- buildPersonsCoalesceAndJoin tests: --------
 
-func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	applicationRepository := NewApplicationRepository(nil)
 
 	coalesce, join := applicationRepository.buildPersonsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
@@ -169,7 +169,7 @@ func TestApplicationRepositoryBuildPersonsCoalesceAndJoin_ShouldBuildWithAllColu
 
 // -------- buildEventsCoalesceAndJoin tests: --------
 
-func TestBuildEventsCoalesceAndJoin_ShouldReturnEmptyStringsIfIncludeExtraDataTypeIsNone(t *testing.T) {
+func TestApplicationRepositoryBuildEventsCoalesceAndJoin_ShouldReturnNullTextAndEmptyStringIfIncludeExtraDataTypeIsNone(t *testing.T) {
 	applicationRepository := NewApplicationRepository(nil)
 
 	coalesce, join := applicationRepository.buildEventsCoalesceAndJoin(models.IncludeExtraDataTypeNone)
