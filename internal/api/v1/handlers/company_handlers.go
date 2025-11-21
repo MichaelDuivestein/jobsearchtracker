@@ -304,8 +304,25 @@ func (companyHandler *CompanyHandler) GetAllCompanies(writer http.ResponseWriter
 		return
 	}
 
+	includeEvents, err := GetExtraDataTypeParam(query.Get("include_events"))
+	if err != nil {
+		slog.Error("v1.CompanyHandler.GetAllCompanies: Could not parse include_events param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_events. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	companies, err := companyHandler.companyService.GetAllCompanies(*includeApplications, *includePersons)
+	companies, err := companyHandler.companyService.GetAllCompanies(
+		*includeApplications,
+		*includePersons,
+		*includeEvents)
+
 	if err != nil {
 		errorMessage := "Internal service error while getting all companies"
 		slog.Error("v1.CompanyHandler.GetAllCompanies: "+errorMessage, "error", err)
