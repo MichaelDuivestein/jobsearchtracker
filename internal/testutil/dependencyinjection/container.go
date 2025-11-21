@@ -337,6 +337,63 @@ func SetupCompanyHandlerTestContainer(t *testing.T, config configPackage.Config)
 	return container
 }
 
+// -------- CompanyEvent containers: --------
+
+func SetupCompanyEventRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupDatabaseTestContainer(t, config)
+
+	err := container.Provide(func(db *sql.DB) *repositories.CompanyEventRepository {
+		return repositories.NewCompanyEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyEventRepository", err)
+	}
+
+	// Add CompanyRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.CompanyRepository {
+		return repositories.NewCompanyRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyRepository", err)
+	}
+
+	// Add EventRepository in order to insert data for testing
+	err = container.Provide(func(db *sql.DB) *repositories.EventRepository {
+		return repositories.NewEventRepository(db)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide eventRepository", err)
+	}
+
+	return container
+}
+
+func SetupCompanyEventServiceTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyEventRepositoryTestContainer(t, config)
+
+	err := container.Provide(func(repository *repositories.CompanyEventRepository) *services.CompanyEventService {
+		return services.NewCompanyEventService(repository)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyEventService", err)
+	}
+
+	return container
+}
+
+func SetupCompanyEventHandlerTestContainer(t *testing.T, config configPackage.Config) *dig.Container {
+	container := SetupCompanyEventServiceTestContainer(t, config)
+
+	err := container.Provide(func(service *services.CompanyEventService) *apiV1.CompanyEventHandler {
+		return apiV1.NewCompanyEventHandler(service)
+	})
+	if err != nil {
+		log.Fatal("Failed to provide companyEventHandler", err)
+	}
+
+	return container
+}
+
 // -------- CompanyPerson containers: --------
 
 func SetupCompanyPersonRepositoryTestContainer(t *testing.T, config configPackage.Config) *dig.Container {

@@ -39,6 +39,10 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	companyService := services.NewCompanyService(companyRepository)
 	companyHandler := apiV1.NewCompanyHandler(companyService)
 
+	companyEventRepository := repositories.NewCompanyEventRepository(database)
+	companyEventService := services.NewCompanyEventService(companyEventRepository)
+	companyEventHandler := apiV1.NewCompanyEventHandler(companyEventService)
+
 	companyPersonRepository := repositories.NewCompanyPersonRepository(database)
 	companyPersonService := services.NewCompanyPersonService(companyPersonRepository)
 	companyPersonHandler := apiV1.NewCompanyPersonHandler(companyPersonService)
@@ -79,6 +83,11 @@ func NewServer(database *sql.DB, logger *slog.Logger) *Server {
 	router.HandleFunc("/api/v1/company/get/all", companyHandler.GetAllCompanies).Methods(http.MethodGet)
 	router.HandleFunc("/api/v1/company/update", companyHandler.UpdateCompany).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/company/delete/{id}", companyHandler.DeleteCompany).Methods(http.MethodDelete)
+
+	router.HandleFunc("/api/v1/company-event/associate", companyEventHandler.AssociateCompanyEvent).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/company-event/get/id", companyEventHandler.GetCompanyEventsByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-event/get/all", companyEventHandler.GetAllCompanyEvents).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/company-event/delete", companyEventHandler.DeleteCompanyEvent).Methods(http.MethodDelete)
 
 	router.HandleFunc("/api/v1/company-person/associate", companyPersonHandler.AssociateCompanyPerson).Methods(http.MethodPost)
 	router.HandleFunc("/api/v1/company-person/get/id", companyPersonHandler.GetCompanyPersonsByID).Methods(http.MethodGet)
