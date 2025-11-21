@@ -265,6 +265,9 @@ func (personHandler *PersonHandler) GetPersonsByName(writer http.ResponseWriter,
 // @Description - include_events=all: Returns `event`s with all fields
 // @Description - include_events=ids: Returns `event`s with only `id` field
 // @Description - include_events=none: No `event` data included (default)
+// @Description - include_applications=all: Returns `application`s with all fields
+// @Description - include_applications=ids: Returns `application`s with only `id`, `application_id`, and `recruiter_id`
+// @Description - include_applications=none: No `application` data included (default)
 // @Tags person
 // @Produce json
 // @Success 200 {array} responses.PersonResponse
@@ -300,8 +303,21 @@ func (personHandler *PersonHandler) GetAllPersons(writer http.ResponseWriter, re
 		return
 	}
 
+	includeApplications, err := GetExtraDataTypeParam(query.Get("include_applications"))
+	if err != nil {
+		slog.Error("v1.personHandler.GetAllPersons: Could not parse include_applications param", "error", err)
+
+		status := http.StatusBadRequest
+		writer.WriteHeader(status)
+		http.Error(
+			writer,
+			"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'",
+			status)
+		return
+	}
+
 	// can return InternalServiceError
-	persons, err := personHandler.personService.GetAllPersons(*includeCompanies, *includeEvents)
+	persons, err := personHandler.personService.GetAllPersons(*includeCompanies, *includeEvents, *includeApplications)
 	if err != nil {
 		errorMessage := "Internal service error while getting all persons"
 		status := http.StatusInternalServerError

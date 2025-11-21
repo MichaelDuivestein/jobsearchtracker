@@ -159,6 +159,62 @@ func TestGetPersonsByName_ShouldReturnErrorIfNameIsEmpty(t *testing.T) {
 	assert.Equal(t, "person Name is empty\n", responseBodyString)
 }
 
+// -------- GetAllPersons tests: --------
+
+func TestGetAllPersons_ShouldReturnErrorIfIncludeApplicationsIsInvalid(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_applications=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_applications. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
+func TestGetAllPersons_ShouldReturnErrorIfIncludeCompaniesIsInvalid(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_companies=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_companies. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
+func TestGetAllPersons_ShouldReturnErrorIfIncludeEventsIsInvalid(t *testing.T) {
+	personHandler := v1.NewPersonHandler(nil)
+
+	request, err := http.NewRequest(http.MethodGet, "/api/v1/person/get/all?include_events=maybe", nil)
+	assert.NoError(t, err)
+
+	responseRecorder := httptest.NewRecorder()
+
+	personHandler.GetAllPersons(responseRecorder, request)
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+
+	responseBodyString := responseRecorder.Body.String()
+	assert.Equal(
+		t,
+		"Invalid value for include_events. Accepted params are 'all', 'ids', and 'none'\n",
+		responseBodyString)
+}
+
 // -------- UpdatePerson tests: --------
 
 func TestUpdatePerson_ShouldRespondWithBadRequestStatus(t *testing.T) {
